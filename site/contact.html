@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact — AudioProctor</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/site/site.css">
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<div class="site-section" style="border-top: var(--border);">
+  <div class="site-container">
+    <span class="section-label">Schedule a Demo</span>
+    <h1 class="section-headline">See it in your division.</h1>
+    <p class="section-intro">A 20-minute demo covers the teacher upload flow, the student extension, and the IT deployment process from the Google Admin Console. No slides, no sales deck.</p>
+
+    <div class="contact-grid">
+
+      <!-- Form -->
+      <div class="contact-form-col">
+
+        <div id="form-success" class="notice notice--success hidden" style="margin-bottom:1.5rem;">
+          Message sent. We'll be in touch within one business day.
+        </div>
+        <div id="form-error" class="notice notice--error hidden" style="margin-bottom:1.5rem;"></div>
+
+        <form id="contact-form" novalidate>
+
+          <!-- Honeypot — hidden from real users, filled by bots -->
+          <div style="display:none;" aria-hidden="true">
+            <input type="text" name="website" id="honeypot" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="site-form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required autocomplete="name">
+          </div>
+
+          <div class="site-form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required autocomplete="email">
+          </div>
+
+          <div class="site-form-group">
+            <label for="division">School Division</label>
+            <input type="text" id="division" name="division" placeholder="e.g. Rocky View School Division">
+          </div>
+
+          <div class="site-form-group">
+            <label for="role">Your Role</label>
+            <select id="role" name="role">
+              <option value="">Select one&hellip;</option>
+              <option value="Teacher">Teacher</option>
+              <option value="Learning Support">Learning Support / Resource</option>
+              <option value="IT">IT / Technology Coordinator</option>
+              <option value="Administrator">School or Division Administrator</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="site-form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" required placeholder="Tell us about your situation — how many schools, what assessments, any questions."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn--primary" id="btn-submit">Send Message</button>
+
+        </form>
+      </div>
+
+      <!-- Info -->
+      <div class="contact-info-col">
+        <p class="label" style="margin-bottom:1rem;">Direct contact</p>
+        <p style="font-size:0.95rem; margin-bottom:2rem;">
+          <a href="mailto:hello@audioproctor.com" style="color:var(--ink); font-weight:500;">hello@audioproctor.com</a>
+        </p>
+
+        <p class="label" style="margin-bottom:1rem;">What to expect</p>
+        <p style="font-size:0.9rem; color:var(--muted); line-height:1.7; margin-bottom:1rem;">Response within one business day. Demo is 20 minutes over Google Meet — we'll walk through a live upload, show the student extension, and cover IT deployment.</p>
+        <p style="font-size:0.9rem; color:var(--muted); line-height:1.7; margin-bottom:1.5rem;">The first division signs free for one full school year in exchange for structured feedback.</p>
+
+        <p class="label" style="margin-bottom:0.5rem;">Pilot Program</p>
+        <p style="font-size:0.9rem; color:var(--muted); line-height:1.7;">Free for one year. Full division-tier access. We ask for structured feedback at the mid-year and end-of-year mark, and a written testimonial at renewal.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="site-footer"></div>
+<script src="/site/nav.js"></script>
+<script>
+  document.getElementById('contact-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const btn = document.getElementById('btn-submit');
+    const errEl = document.getElementById('form-error');
+    const successEl = document.getElementById('form-success');
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    errEl.classList.add('hidden');
+
+    const body = {
+      name:     document.getElementById('name').value.trim(),
+      email:    document.getElementById('email').value.trim(),
+      division: document.getElementById('division').value.trim(),
+      role:     document.getElementById('role').value,
+      message:  document.getElementById('message').value.trim(),
+      website:  document.getElementById('honeypot').value, // honeypot
+    };
+
+    try {
+      const res  = await fetch('/api/contact', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Something went wrong. Please email hello@audioproctor.com directly.';
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Send Message';
+        return;
+      }
+
+      document.getElementById('contact-form').classList.add('hidden');
+      successEl.classList.remove('hidden');
+
+    } catch {
+      errEl.textContent = 'Network error. Please email hello@audioproctor.com directly.';
+      errEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+    }
+  });
+</script>
+</body>
+</html>

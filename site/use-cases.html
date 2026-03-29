@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Use Cases — AudioProctor</title>
+  <meta name="description" content="How Alberta schools use AudioProctor for provincial assessment audio accommodation.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/site/site.css">
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<div class="site-section" style="border-top: var(--border);">
+  <div class="site-container">
+    <span class="section-label">Use Cases</span>
+    <h1 class="section-headline">Who uses AudioProctor and how.</h1>
+    <p class="section-intro">AudioProctor is for any assessed student who needs audio support: students with reading disabilities, English Language Learners in applicable assessments, and students with IEPs or designations requiring an audio accommodation.</p>
+  </div>
+</div>
+
+<!-- Use Case Cards -->
+<div class="site-section" style="padding-top:0; border-top:none;">
+  <div class="site-container">
+    <div class="card-grid">
+      <div class="site-card">
+        <span class="site-card__label">Provincial Assessment</span>
+        <p class="site-card__title">IEP or designation requiring audio</p>
+        <p class="site-card__body">A student has a designation requiring audio support during provincial assessments. The teacher uploads the official audio track — or records their own read-aloud — and shares the access code for the assessment window. The student uses the extension during the exam on their managed Chromebook.<br><br>
+        <em style="font-size:0.8rem; color:var(--muted);">Free tier — one teacher, no commitment.</em></p>
+      </div>
+      <div class="site-card">
+        <span class="site-card__label">Small School</span>
+        <p class="site-card__title">Flexible accommodation without infrastructure</p>
+        <p class="site-card__body">Schools with only a few accommodation students don't need a full assistive tech platform. One teacher, one upload, one code. There's no provisioning, no student accounts, and no coordination with IT for each assessment.<br><br>
+        <em style="font-size:0.8rem; color:var(--muted);">Free tier — one teacher, no commitment.</em></p>
+      </div>
+      <div class="site-card">
+        <span class="site-card__label">Division Rollout</span>
+        <p class="site-card__title">IT deploys once, every school has it</p>
+        <p class="site-card__body">IT adds the AudioProctor extension to the Google Admin Console policy. Every managed Chromebook in the division gets it automatically on next sign-in. No teacher installation, no help desk tickets, no version mismatch across schools.<br><br>
+        <em style="font-size:0.8rem; color:var(--muted);">Division tier — IT deploys once, every school has it.</em></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="site-section">
+  <div class="site-container">
+    <span class="section-label">Common Questions</span>
+    <h2 class="section-headline">Things divisions ask before signing.</h2>
+
+    <div class="faq-list" style="margin-top:2rem;">
+      <div class="faq-item">
+        <p class="faq-item__q">Does this work on any Chromebook?</p>
+        <p class="faq-item__a">Yes. AudioProctor works on any Chromebook running Chrome OS. For managed devices, IT can force-install the extension through Google Admin Console so teachers don't need to do anything. Unmanaged Chromebooks can also install it manually from the Chrome Web Store (coming in a later release).</p>
+      </div>
+      <div class="faq-item">
+        <p class="faq-item__q">Do students need accounts?</p>
+        <p class="faq-item__a">No. Students never sign in. They enter a short access code — given verbally by the teacher — and the extension opens directly to the audio player. There is no student-facing login, no email required, and no account creation.</p>
+      </div>
+      <div class="faq-item">
+        <p class="faq-item__q">Who can see uploaded audio files?</p>
+        <p class="faq-item__a">Only the teacher who uploaded the file. Files are stored in a private storage bucket, and access is controlled by row-level security tied to the teacher's Google account. Even the access code doesn't reveal the file — it only works through our API, which verifies the code and generates a short-lived link.</p>
+      </div>
+      <div class="faq-item">
+        <p class="faq-item__q">What happens when the access code expires?</p>
+        <p class="faq-item__a">Files and codes expire automatically after 7 days by default (the division tier allows custom expiry windows). When an upload expires, the access code stops working and the audio file is deleted from storage. Teachers can also delete uploads manually at any time from the dashboard.</p>
+      </div>
+      <div class="faq-item">
+        <p class="faq-item__q">Is this compliant with Alberta FOIP?</p>
+        <p class="faq-item__a">AudioProctor does not trigger a Privacy Impact Assessment under Alberta's FOIP Act. No student personal information is collected or stored at any point — students are completely anonymous to the system. The only personal data processed is teacher email addresses, which are already covered by existing Google Workspace agreements at participating divisions.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-band">
+  <div class="site-container">
+    <span class="section-label" style="color:var(--warm-mid);">Ready to see it?</span>
+    <h2 class="section-headline">A 20-minute demo is all it takes.</h2>
+    <p class="section-intro">We'll walk through the teacher upload flow, the student experience, and the IT deployment process. No sales deck.</p>
+    <a href="/contact" class="btn btn--primary">Schedule a Demo</a>
+  </div>
+</div>
+
+<div id="site-footer"></div>
+<script src="/site/nav.js"></script>
+</body>
+</html>

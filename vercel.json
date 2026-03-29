@@ -1,0 +1,19 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "audioproctor.com" }],
+      "destination": "/site/index.html"
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.audioproctor.com" }],
+      "destination": "/site/index.html"
+    },
+    { "source": "/use-cases", "destination": "/site/use-cases.html" },
+    { "source": "/about",     "destination": "/site/about.html" },
+    { "source": "/contact",   "destination": "/site/contact.html" },
+    { "source": "/privacy",   "destination": "/site/privacy.html" },
+    { "source": "/terms",     "destination": "/site/terms.html" }
+  ]
+}

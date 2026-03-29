@@ -12,8 +12,8 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - [ ] Better upload progress — show a real progress bar for large files
 - [ ] Handle duplicate filenames gracefully in the dashboard
 - [ ] Add a label/title field to uploads so teachers can name them ("Grade 4 Reading Assessment - May")
-- [ ] Responsive dashboard for teachers on phones/tablets
 - [ ] Test on an actual managed Chromebook end-to-end
+- [ ] Audio normalization on upload — transcode all uploaded files to 32kbps mono MP3 via a Supabase Edge Function triggered on upload. Reduces file, ensures consistent playback quality, and protects against teachers uploading large high-bitrate files. Implementation: browser uploads original to a staging path in Supabase storage → Edge Function runs ffmpeg transcoding → normalized file moves to final path → staging file deleted.
 
 ---
 
@@ -23,8 +23,6 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - [ ] **Rate limiting on the session API** — prevent brute-force guessing of access codes
 - [ ] **Domain restriction on Google login** — optionally limit sign-in to a specific school email domain (e.g. `@yourschool.ca`)
 - [ ] **Signed URL refresh** — if a student's session expires mid-test (>1 hour), show a graceful error rather than silent failure
-- [ ] **FOIP/PIPEDA compliance note** — document that no student personally identifiable information is stored (no names, no student IDs, no login)
-- [ ] **Audit log** — record when each access code was used (timestamp + rough geographic region, no student identity)
 - [ ] Supabase backups enabled and confirmed
 
 ---
@@ -87,3 +85,57 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - Student accessibility options in the player (high contrast mode, larger text)
 - Integration with Vretta or other provincial assessment platforms directly
 - iOS/Android companion app for teachers to share codes and monitor sessions
+
+
+---
+
+## Pricing Tiers
+*Reference model for when billing is implemented in Stage 6.*
+
+**Free — Individual Teacher**
+- 1 teacher account
+- 5 active uploads at a time
+- 7-day expiry only (no override)
+- Randomly assigned exit words and access codes (no customization)
+- No analytics
+- Purpose: gives teachers enough to champion the product internally before a division decision is made
+
+**Division — Annual Contract, Priced by Enrolment**
+- Unlimited teacher accounts across all schools in the division
+- All features across all stages
+- Division admin role, school grouping, usage reports
+- Priority support and onboarding call
+- Single annual invoice to the division office
+
+| Division Size | Enrolled Students | Annual Price (CAD) | Example |
+|---|---|---|---|
+| Small | Under 2,000 | $800 | Most rural Alberta divisions |
+| Medium | 2,000–8,000 | $1,500 | Foothills SD, Rocky View SD |
+| Large | 8,000–25,000 | $3,000 | Red Deer Public, Lethbridge SD |
+| Metro | 25,000+ | $6,000 | Edmonton Public, Calgary Board |
+
+*Enrolment figures from Alberta Education's annual school authority report.*
+
+**Pricing rationale:** Cost scales with the number of assessed students, not the number of features
+used. A metro division gets identical functionality to a small rural division — the price difference
+reflects load, support overhead, and the administrative value of a single division-wide contract
+covering hundreds of teachers and thousands of Chromebooks. Individual school purchases are not
+offered; the division tier is the only paid option.
+
+**Pilot program:** First division signs free for one full school year in exchange for structured
+feedback and a written testimonial. Converts to paid at renewal.
+
+---
+
+## Marketing Site — Pricing Communication
+*How the pricing model should be framed consistently across the marketing site.*
+
+- **Home page** — include a Pricing section after the "Why AudioProctor" columns. Two cards: Free tier and Division tier with the enrolment table. Headline: "One price. The whole division." Sets the expectation that AudioProctor sells to divisions, not individual teachers.
+
+- **Use Cases page** — add a one-line pricing callout to each use case card: small school card gets "Free tier — one teacher, no commitment." Division rollout card gets "Division tier — IT deploys once, every school has it." Provincial assessment card omits pricing, focuses on credibility.
+
+- **About page** — include a short paragraph explaining the pricing philosophy in plain language: AudioProctor is priced by division enrolment, not by feature tier. A small rural division pays less than a metro division not because they get less, but because the price reflects the scale of what's being covered.
+
+- **Contact / Demo Request form** — add a Division Enrolment dropdown so leads self-segment on arrival: Under 2,000 students / 2,000–8,000 / 8,000–25,000 / 25,000+ / Just exploring or individual teacher. This means every demo request arrives pre-qualified for the correct pricing band.
+
+- **Privacy Policy and Terms of Service** — no pricing mention needed.
