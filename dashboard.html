@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioProctor — Dashboard</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="page-container">
+      <div class="top-bar__inner">
+        <span class="wordmark">Audio<span class="accent">Proctor</span></span>
+        <div style="display:flex; align-items:center; gap:1.5rem;">
+          <span id="user-email" class="label"></span>
+          <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-container" style="padding-top:2.5rem; padding-bottom:4rem;">
+
+    <!-- Upload Card -->
+    <div class="card">
+      <div class="card__header">
+        <p class="label">New Assessment</p>
+      </div>
+
+      <div id="upload-notice" class="notice hidden"></div>
+
+      <div class="form-group">
+        <label class="label" for="file-input">MP3 Audio File</label>
+        <input
+          type="file"
+          id="file-input"
+          class="input-field"
+          accept=".mp3,audio/mpeg"
+          onchange="handleFileSelect(this)"
+        >
+        <span id="file-hint" class="label text-muted">Max 100 MB · MP3 only</span>
+      </div>
+
+      <button
+        id="btn-upload"
+        class="btn btn--primary"
+        onclick="handleUpload()"
+        disabled
+      >
+        Upload Assessment
+      </button>
+
+      <span id="upload-status" class="label text-muted mt-2 hidden"></span>
+    </div>
+
+    <!-- Uploads List -->
+    <div class="card mt-4">
+      <div class="card__header">
+        <p class="label">Your Uploads</p>
+      </div>
+
+      <div id="uploads-container">
+        <div class="empty-state">
+          <p class="label">No assessments uploaded yet</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/dashboard.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAuth();
+      document.getElementById('user-email').textContent = user.email;
+      await loadUploads();
+    })();
+  </script>
+
+</body>
+</html>

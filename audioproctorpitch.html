@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AudioProctor – Elevator Pitch</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f8f5ef;
+    --accent: #c0392b;
+    --warm-mid: #e8e0d0;
+    --muted: #6b6560;
+    --light-accent: #fdf0ee;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 48px 24px;
+  }
+
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 24px 0 20px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .wordmark {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.6rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+
+  .wordmark span {
+    color: var(--accent);
+  }
+
+  .tagline {
+    font-size: 0.85rem;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: right;
+  }
+
+  /* Lead */
+  .lead {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.55rem;
+    font-weight: 400;
+    line-height: 1.5;
+    margin-bottom: 36px;
+    color: var(--ink);
+    max-width: 640px;
+  }
+
+  .lead em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  /* Problem / Solution columns */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-bottom: 36px;
+    border: 1px solid var(--ink);
+  }
+
+  .col {
+    padding: 24px 28px;
+  }
+
+  .col:first-child {
+    border-right: 1px solid var(--ink);
+    background: var(--warm-mid);
+  }
+
+  .col-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .col-label.solution-label {
+    color: var(--accent);
+  }
+
+  .col p {
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+
+  /* How it works */
+  .section-title {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border: 1px solid var(--ink);
+    margin-bottom: 36px;
+  }
+
+  .step {
+    padding: 20px 20px 24px;
+    border-right: 1px solid var(--ink);
+    position: relative;
+  }
+
+  .step:last-child {
+    border-right: none;
+  }
+
+  .step-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--warm-mid);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .step-text {
+    font-size: 0.88rem;
+    font-weight: 300;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  .step-text strong {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Features */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+
+  .feature {
+    padding: 18px 20px;
+    background: var(--light-accent);
+    border-left: 3px solid var(--accent);
+  }
+
+  .feature-title {
+    font-size: 0.82rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .feature-body {
+    font-size: 0.85rem;
+    font-weight: 300;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  /* Pricing & ask */
+  .bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid var(--ink);
+    margin-bottom: 40px;
+  }
+
+  .pricing-block {
+    padding: 24px 28px;
+    border-right: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .pricing-block .col-label {
+    color: rgba(255,255,255,0.45);
+  }
+
+  .price {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .price-sub {
+    font-size: 0.82rem;
+    font-weight: 300;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.5;
+  }
+
+  .ask-block {
+    padding: 24px 28px;
+  }
+
+  .ask-block p {
+    font-size: 0.92rem;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--ink);
+    padding-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .footer-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .footer-note {
+    font-size: 0.78rem;
+    font-weight: 300;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  @media (max-width: 600px) {
+    .two-col, .steps, .bottom { grid-template-columns: 1fr; }
+    .col:first-child { border-right: none; border-bottom: 1px solid var(--ink); }
+    .step { border-right: none; border-bottom: 1px solid var(--ink); }
+    .step:last-child { border-bottom: none; }
+    .pricing-block { border-right: none; border-bottom: 1px solid var(--ink); }
+    .features { grid-template-columns: 1fr; }
+    .header { flex-direction: column; gap: 8px; }
+    .tagline { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="wordmark">Audio<span>Proctor</span></div>
+    <div class="tagline">Accessible assessment audio<br>for Alberta classrooms</div>
+  </header>
+
+  <p class="lead">
+    Provincial testing tools don't support audio accommodations.
+    AudioProctor fills that gap with a <em>simple, locked-down audio player</em>
+    that teachers control and students can't bypass.
+  </p>
+
+  <div class="two-col">
+    <div class="col">
+      <div class="col-label">The problem today</div>
+      <p>Students requiring audio accommodations during Vretta assessments are served by a patchwork of shared generic accounts, MP3 files on Google Drive, and manual setup — creating extra administrative burden, privacy concerns, and no reliable way to prevent students from wandering outside the test environment.</p>
+    </div>
+    <div class="col">
+      <div class="col-label solution-label">The solution</div>
+      <p>A teacher uploads an MP3 to the AudioProctor dashboard and generates a session link and one-time PIN. A managed Chromebook extension opens the audio in a locked browser overlay — no new tabs, no escape without the teacher's PIN. Clean, simple, and purpose-built for assessment day.</p>
+    </div>
+  </div>
+
+  <div class="section-title">How it works on assessment day</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-text"><strong>Teacher uploads</strong>MP3 goes up via the web dashboard in seconds. A session link and PIN are generated automatically.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-text"><strong>Student opens</strong>The Chromebook extension intercepts the session link and launches the locked audio player overlay.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-text"><strong>Student tests</strong>The audio plays. No new tabs can open. The student can't leave the player without the teacher's PIN.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-text"><strong>Teacher unlocks</strong>When the session ends, the teacher enters the PIN and the student is returned to normal Chromebook use.</div>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="feature-title">Google Sign-In</div>
+      <div class="feature-body">Teachers authenticate with their school Google account. No separate credentials to manage.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">Managed extension</div>
+      <div class="feature-body">Deployed silently via Google Admin to any OU. Students never install anything manually.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">Auto-expiring uploads</div>
+      <div class="feature-body">Audio files expire after the assessment window. No long-term student data stored.</div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="pricing-block">
+      <div class="col-label">Proposed pricing</div>
+      <div class="price">$X / yr</div>
+      <div class="price-sub">Per school or per division.<br>Exact pricing TBD — open to discussion.</div>
+    </div>
+    <div class="ask-block">
+      <div class="col-label">The ask</div>
+      <p>Would Foothills School Division be interested in an early-adopter subscription if this tool were built and priced to cover modest hosting costs? Your feedback shapes what gets built first.</p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-name">Concept by Adam — FSD38 Technology Services</div>
+    <div class="footer-note">Built for Alberta. Designed for assessment day.</div>
+  </footer>
+
+</div>
+</body>
+</html>

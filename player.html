@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioProctor — Player</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="player-page">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="page-container">
+      <div class="top-bar__inner">
+        <span class="wordmark">Audio<span class="accent">Proctor</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="player-content">
+
+    <!-- Loading state -->
+    <div id="state-loading" class="player-card">
+      <p class="label">Loading assessment&hellip;</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="state-error" class="player-card hidden">
+      <p class="label text-accent" id="error-message">Something went wrong.</p>
+    </div>
+
+    <!-- Player -->
+    <div id="state-player" class="player-card hidden">
+      <div class="player-card__filename">
+        <span class="label">Now Playing</span>
+        <strong id="player-filename"></strong>
+      </div>
+
+      <audio id="audio-el" preload="auto"></audio>
+
+      <div class="audio-controls">
+        <!-- Progress -->
+        <div class="progress-row">
+          <input
+            type="range"
+            id="progress-bar"
+            class="progress-bar"
+            value="0"
+            min="0"
+            step="0.1"
+          >
+          <span class="time-display">
+            <span id="time-current">0:00</span> / <span id="time-total">0:00</span>
+          </span>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-row">
+          <button class="play-btn" id="btn-play" title="Play / Pause">&#9654;</button>
+          <button class="btn btn--ghost btn--small" onclick="rewind()">&#8592; 10s</button>
+          <select class="speed-select" id="speed-select" onchange="changeSpeed(this.value)">
+            <option value="0.75">0.75×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.25">1.25×</option>
+            <option value="1.5">1.5×</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/js/player.js"></script>
+
+</body>
+</html>
