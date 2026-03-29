@@ -5,6 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AudioProctor — Dashboard</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .upload-progress {
+      margin-top: 1rem;
+      display: none;
+    }
+    .upload-progress__bar {
+      width: 100%;
+      height: 4px;
+      background: var(--warm-mid);
+      margin-bottom: 0.4rem;
+    }
+    .upload-progress__fill {
+      height: 100%;
+      background: var(--ink);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+    .upload-progress__label {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .col-assessment { min-width: 180px; }
+    .col-assessment__label { font-weight: 500; }
+    .col-assessment__filename { font-size: 0.78rem; color: var(--muted); margin-top: 0.1rem; }
+  </style>
 </head>
 <body>
 
@@ -32,6 +57,17 @@
       <div id="upload-notice" class="notice hidden"></div>
 
       <div class="form-group">
+        <label class="label" for="label-input">Assessment Label <span style="font-weight:300; text-transform:none; letter-spacing:0;">(optional)</span></label>
+        <input
+          type="text"
+          id="label-input"
+          class="input-field"
+          placeholder="e.g. Grade 4 Reading — May 2026"
+          maxlength="120"
+        >
+      </div>
+
+      <div class="form-group">
         <label class="label" for="file-input">MP3 Audio File</label>
         <input
           type="file"
@@ -43,6 +79,13 @@
         <span id="file-hint" class="label text-muted">Max 100 MB · MP3 only</span>
       </div>
 
+      <div class="upload-progress" id="upload-progress">
+        <div class="upload-progress__bar">
+          <div class="upload-progress__fill" id="progress-fill"></div>
+        </div>
+        <span class="upload-progress__label" id="progress-label">Uploading…</span>
+      </div>
+
       <button
         id="btn-upload"
         class="btn btn--primary"
@@ -51,8 +94,6 @@
       >
         Upload Assessment
       </button>
-
-      <span id="upload-status" class="label text-muted mt-2 hidden"></span>
     </div>
 
     <!-- Uploads List -->

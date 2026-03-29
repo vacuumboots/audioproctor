@@ -1,5 +1,4 @@
 // ─── Exit Word List ──────────────────────────────────────────────
-// ~100 simple 4-6 letter English words, easy to say and spell aloud.
 const EXIT_WORDS = [
   'maple', 'river', 'cloud', 'stone', 'bread', 'storm', 'flame',
   'lunar', 'amber', 'cedar', 'crane', 'ember', 'frost', 'grove',
@@ -18,7 +17,6 @@ const EXIT_WORDS = [
   'witch', 'wolfe', 'woods', 'world', 'wrath', 'xenon', 'yarns',
 ];
 
-// Characters for access codes — ambiguous chars removed (O, I, L, 0, 1)
 const CODE_LETTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 const CODE_DIGITS  = '23456789';
 
@@ -96,7 +94,7 @@ function handleFileSelect(input) {
     return;
   }
 
-  hint.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+  hint.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB`;
   btn.disabled = false;
   hideUploadNotice();
 }
@@ -108,38 +106,58 @@ async function handleUpload() {
   const file = fileInput.files[0];
   if (!file) return;
 
-  const btn    = document.getElementById('btn-upload');
-  const status = document.getElementById('upload-status');
+  const label = document.getElementById('label-input').value.trim() || null;
+  const btn   = document.getElementById('btn-upload');
 
   btn.disabled = true;
-  status.classList.remove('hidden');
   hideUploadNotice();
 
   try {
-    // Get current user
     const session = await getSession();
-    if (!session) { window.location.href = '/index.html'; return; }
+    if (!session) { window.location.href = '/login.html'; return; }
     const userId = session.user.id;
 
-    // Generate unique access code
-    setStatus('Generating code…');
-    const accessCode = await generateAccessCode();
+    // Check for duplicate filename
+    const { data: existing } = await supabaseClient
+      .from('uploads')
+      .select('id')
+      .eq('teacher_id', userId)
+      .eq('filename', file.name)
+      .maybeSingle();
 
-    // Pick and hash exit word
+    if (existing) {
+      const proceed = confirm(`You already have an upload named "${file.name}". Upload another copy anyway?`);
+      if (!proceed) {
+        btn.disabled = false;
+        return;
+      }
+    }
+
+    // Generate access code and exit word
+    showProgress(0, 'Preparing…');
+    const accessCode   = await generateAccessCode();
     const exitWord     = pickExitWord();
     const exitWordHash = await hashWord(exitWord);
 
-    // Upload to Supabase Storage
-    setStatus('Uploading audio…');
+    // Upload to Supabase Storage with progress tracking
     const storagePath = `${userId}/${accessCode}.mp3`;
+    showProgress(0, 'Uploading…');
+
     const { error: storageError } = await supabaseClient.storage
       .from('audio-files')
-      .upload(storagePath, file, { contentType: 'audio/mpeg', upsert: false });
+      .upload(storagePath, file, {
+        contentType: 'audio/mpeg',
+        upsert: false,
+        onUploadProgress: (progress) => {
+          const pct = Math.round((progress.loaded / progress.total) * 100);
+          showProgress(pct, `Uploading… ${pct}%`);
+        },
+      });
 
     if (storageError) throw new Error('Upload failed: ' + storageError.message);
 
-    // Insert DB row
-    setStatus('Saving…');
+    // Save to database
+    showProgress(100, 'Saving…');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const { error: dbError } = await supabaseClient
@@ -147,6 +165,7 @@ async function handleUpload() {
       .insert({
         teacher_id:     userId,
         filename:       file.name,
+        label:          label,
         storage_path:   storagePath,
         access_code:    accessCode,
         exit_word:      exitWord,
@@ -155,31 +174,40 @@ async function handleUpload() {
       });
 
     if (dbError) {
-      // Cleanup orphaned storage file
       await supabaseClient.storage.from('audio-files').remove([storagePath]);
       throw new Error('Could not save upload record: ' + dbError.message);
     }
 
     // Success
-    setStatus('');
-    status.classList.add('hidden');
+    hideProgress();
     fileInput.value = '';
+    document.getElementById('label-input').value = '';
     document.getElementById('file-hint').textContent = 'Max 100 MB · MP3 only';
     btn.disabled = true;
     showUploadNotice('Assessment uploaded successfully.', 'success');
     await loadUploads();
 
   } catch (err) {
-    setStatus('');
-    status.classList.add('hidden');
+    hideProgress();
     btn.disabled = false;
     showUploadNotice(err.message, 'error');
   }
 }
 
-function setStatus(text) {
-  const el = document.getElementById('upload-status');
-  el.textContent = text;
+// ─── Progress Bar ─────────────────────────────────────────────────
+
+function showProgress(pct, text) {
+  const wrap  = document.getElementById('upload-progress');
+  const fill  = document.getElementById('progress-fill');
+  const lbl   = document.getElementById('progress-label');
+  wrap.style.display = 'block';
+  fill.style.width   = pct + '%';
+  lbl.textContent    = text;
+}
+
+function hideProgress() {
+  document.getElementById('upload-progress').style.display = 'none';
+  document.getElementById('progress-fill').style.width = '0%';
 }
 
 // ─── Uploads Table ───────────────────────────────────────────────
@@ -189,7 +217,7 @@ async function loadUploads() {
 
   const { data: uploads, error } = await supabaseClient
     .from('uploads')
-    .select('id, filename, access_code, exit_word, expires_at, storage_path')
+    .select('id, filename, label, access_code, exit_word, expires_at, storage_path')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -199,33 +227,36 @@ async function loadUploads() {
 
   if (!uploads || uploads.length === 0) {
     container.innerHTML = `
-      <div class="empty-state">
-        <p class="label">No assessments uploaded yet</p>
+      <div class="empty-state" style="text-align:left; padding:2.5rem;">
+        <p class="label" style="margin-bottom:1rem;">Get started in three steps</p>
+        <ol style="list-style:none; display:flex; flex-direction:column; gap:0.75rem;">
+          <li style="font-size:0.9rem; color:var(--muted);"><strong style="color:var(--ink);">1. Add a label</strong> — give the assessment a name your students will recognise</li>
+          <li style="font-size:0.9rem; color:var(--muted);"><strong style="color:var(--ink);">2. Choose an MP3</strong> — the audio file for this assessment</li>
+          <li style="font-size:0.9rem; color:var(--muted);"><strong style="color:var(--ink);">3. Upload</strong> — you'll get an access code and exit word to share with your student</li>
+        </ol>
       </div>`;
     return;
   }
 
   const rows = uploads.map(u => {
     const { text: expiryText, expired } = formatExpiry(u.expires_at);
-    const chipClass = expired ? 'chip--expired' : 'chip--active';
+    const chipClass    = expired ? 'chip--expired' : 'chip--active';
+    const displayName  = u.label || u.filename;
+    const showFilename = u.label && u.label !== u.filename;
+
     return `
-      <tr data-id="${u.id}" data-path="${u.storage_path}">
-        <td class="col-filename">${escapeHtml(u.filename)}</td>
-        <td class="col-code">
-          <span class="monospace">${u.access_code}</span>
+      <tr>
+        <td class="col-assessment">
+          <div class="col-assessment__label">${escapeHtml(displayName)}</div>
+          ${showFilename ? `<div class="col-assessment__filename">${escapeHtml(u.filename)}</div>` : ''}
         </td>
+        <td class="col-code"><span class="monospace">${u.access_code}</span></td>
         <td class="col-word">${escapeHtml(u.exit_word)}</td>
         <td><span class="chip ${chipClass}">${expiryText}</span></td>
         <td>
           <div class="action-row">
-            <button
-              class="btn btn--ghost btn--small"
-              onclick="copyCode('${u.access_code}', this)"
-            >Copy Code</button>
-            <button
-              class="btn btn--danger btn--small"
-              onclick="deleteUpload('${u.id}', '${u.storage_path}', this)"
-            >Delete</button>
+            <button class="btn btn--ghost btn--small" onclick="copyCode('${u.access_code}', this)">Copy Code</button>
+            <button class="btn btn--danger btn--small" onclick="deleteUpload('${u.id}', '${u.storage_path}', this)">Delete</button>
           </div>
         </td>
       </tr>`;
@@ -235,7 +266,7 @@ async function loadUploads() {
     <table class="uploads-table">
       <thead>
         <tr>
-          <th>Filename</th>
+          <th>Assessment</th>
           <th>Access Code</th>
           <th>Exit Word</th>
           <th>Expires</th>
@@ -253,10 +284,10 @@ function formatExpiry(expiresAt) {
 
   if (diff < 0) return { text: 'Expired', expired: true };
 
-  const days    = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours   = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const days  = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-  if (days > 0) return { text: `${days}d left`, expired: false };
+  if (days > 0)  return { text: `${days}d left`, expired: false };
   if (hours > 0) return { text: `${hours}h left`, expired: false };
   return { text: 'Expiring soon', expired: false };
 }
@@ -264,30 +295,26 @@ function formatExpiry(expiresAt) {
 async function deleteUpload(id, storagePath, btn) {
   if (!confirm('Delete this assessment? Students will lose access immediately.')) return;
 
-  btn.disabled = true;
+  btn.disabled    = true;
   btn.textContent = 'Deleting…';
 
-  // Delete storage object first
   const { error: storageErr } = await supabaseClient.storage
     .from('audio-files')
     .remove([storagePath]);
 
   if (storageErr) {
     alert('Could not delete audio file: ' + storageErr.message);
-    btn.disabled = false;
+    btn.disabled    = false;
     btn.textContent = 'Delete';
     return;
   }
 
-  // Delete DB row
   const { error: dbErr } = await supabaseClient
     .from('uploads')
     .delete()
     .eq('id', id);
 
-  if (dbErr) {
-    alert('Audio file deleted, but could not remove record: ' + dbErr.message);
-  }
+  if (dbErr) alert('Audio file deleted, but could not remove record: ' + dbErr.message);
 
   await loadUploads();
 }
@@ -295,7 +322,7 @@ async function deleteUpload(id, storagePath, btn) {
 async function copyCode(code, btn) {
   try {
     await navigator.clipboard.writeText(code);
-    const original = btn.textContent;
+    const original  = btn.textContent;
     btn.textContent = 'Copied!';
     setTimeout(() => { btn.textContent = original; }, 1500);
   } catch {
@@ -306,9 +333,9 @@ async function copyCode(code, btn) {
 // ─── Notices ─────────────────────────────────────────────────────
 
 function showUploadNotice(message, type) {
-  const el = document.getElementById('upload-notice');
+  const el    = document.getElementById('upload-notice');
   el.textContent = message;
-  el.className = 'notice' + (type === 'error' ? ' notice--error' : ' notice--success');
+  el.className   = 'notice' + (type === 'error' ? ' notice--error' : ' notice--success');
   el.classList.remove('hidden');
 }
 

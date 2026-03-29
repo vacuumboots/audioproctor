@@ -7,11 +7,11 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 ## Stage 1 — Polish the MVP
 *Make it feel finished before anyone else sees it.*
 
-- [ ] Proper extension icons (branded, not placeholders)
-- [ ] Friendly onboarding on first login ("Upload your first assessment to get started")
-- [ ] Better upload progress — show a real progress bar for large files
-- [ ] Handle duplicate filenames gracefully in the dashboard
-- [ ] Add a label/title field to uploads so teachers can name them ("Grade 4 Reading Assessment - May")
+- [x] Proper extension icons (branded, not placeholders)
+- [x] Friendly onboarding on first login ("Upload your first assessment to get started")
+- [x] Better upload progress — show a real progress bar for large files
+- [x] Handle duplicate filenames gracefully in the dashboard
+- [x] Add a label/title field to uploads so teachers can name them ("Grade 4 Reading Assessment - May")
 - [ ] Test on an actual managed Chromebook end-to-end
 - [ ] Audio normalization on upload — transcode all uploaded files to 32kbps mono MP3 via a Supabase Edge Function triggered on upload. Reduces file, ensures consistent playback quality, and protects against teachers uploading large high-bitrate files. Implementation: browser uploads original to a staging path in Supabase storage → Edge Function runs ffmpeg transcoding → normalized file moves to final path → staging file deleted.
 
