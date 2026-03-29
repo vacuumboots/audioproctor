@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioProctor — Sign In</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <a href="/" class="wordmark">Audio<span class="accent">Proctor</span></a>
+      <p class="tagline">Assessment audio for managed Chromebooks</p>
+
+      <div id="notice" class="notice notice--error hidden"></div>
+
+      <button id="btn-signin" class="btn btn--primary" onclick="signInWithGoogle()">
+        Sign in with Google
+      </button>
+
+      <p class="login-footer">For teachers only. Students use the Chrome extension.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    // Redirect to dashboard if already signed in
+    (async () => {
+      const session = await getSession();
+      if (session) window.location.href = '/dashboard.html';
+    })();
+
+    // Also catch the OAuth callback redirect
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        window.location.href = '/dashboard.html';
+      }
+    });
+
+    // Show error from URL param (e.g. if auth fails)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error')) {
+      const el = document.getElementById('notice');
+      el.textContent = 'Sign-in failed. Please try again.';
+      el.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
