@@ -44,13 +44,27 @@ async function getSession() {
   return data.session;
 }
 
+// Ensures a profiles row exists for this teacher.
+// Called silently on every authenticated page load.
+async function ensureProfile(userId) {
+  const { data } = await supabaseClient
+    .from('profiles')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle();
+  if (!data) {
+    await supabaseClient.from('profiles').insert({ id: userId });
+  }
+}
+
 // Call at the top of any protected page.
-// Returns the current user, or redirects to index.html if not signed in.
+// Returns the current user, or redirects to login.html if not signed in.
 async function requireAuth() {
   const session = await getSession();
   if (!session) {
     window.location.href = '/login.html';
     return null;
   }
+  await ensureProfile(session.user.id);
   return session.user;
 }

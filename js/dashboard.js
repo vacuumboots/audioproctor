@@ -133,6 +133,33 @@ async function handleUpload() {
       }
     }
 
+    // Check quota (UI-side gate; server enforces via RLS)
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('tier')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!profile || profile.tier === 'free') {
+      const now        = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { count }  = await supabaseClient
+        .from('uploads')
+        .select('id', { count: 'exact', head: true })
+        .eq('teacher_id', userId)
+        .gte('created_at', monthStart);
+      if (count >= 3) {
+        btn.disabled  = false;
+        const reset   = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const resetFmt = reset.toLocaleDateString('en-CA', { month: 'long', day: 'numeric' });
+        showUploadNotice(
+          `You've used all 3 uploads for this month. Your quota resets on ${resetFmt}.`,
+          'error'
+        );
+        return;
+      }
+    }
+
     // Generate access code and exit word
     showProgress(0, 'Preparing…');
     const accessCode   = await generateAccessCode();
@@ -171,6 +198,7 @@ async function handleUpload() {
         exit_word:      exitWord,
         exit_word_hash: exitWordHash,
         expires_at:     expiresAt,
+        file_size_mb:   file.size / 1024 / 1024,
       });
 
     if (dbError) {
@@ -186,6 +214,8 @@ async function handleUpload() {
     btn.disabled = true;
     showUploadNotice('Assessment uploaded successfully.', 'success');
     await loadUploads();
+    await recalculateStorage(userId);
+    await loadQuota();
 
   } catch (err) {
     hideProgress();
@@ -317,6 +347,11 @@ async function deleteUpload(id, storagePath, btn) {
   if (dbErr) alert('Audio file deleted, but could not remove record: ' + dbErr.message);
 
   await loadUploads();
+  const session = await getSession();
+  if (session) {
+    await recalculateStorage(session.user.id);
+    await loadQuota();
+  }
 }
 
 async function copyCode(code, btn) {
@@ -328,6 +363,66 @@ async function copyCode(code, btn) {
   } catch {
     alert('Could not copy. Code: ' + code);
   }
+}
+
+// ─── Quota ───────────────────────────────────────────────────────
+
+async function loadQuota() {
+  const session = await getSession();
+  if (!session) return;
+  const userId = session.user.id;
+
+  const { data: profile } = await supabaseClient
+    .from('profiles')
+    .select('tier, storage_used_mb')
+    .eq('id', userId)
+    .maybeSingle();
+
+  const tier = profile?.tier || 'free';
+  const el   = document.getElementById('quota-indicator');
+  if (!el) return;
+
+  if (tier !== 'free') {
+    el.classList.add('hidden');
+    return;
+  }
+
+  const now        = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { count }  = await supabaseClient
+    .from('uploads')
+    .select('id', { count: 'exact', head: true })
+    .eq('teacher_id', userId)
+    .gte('created_at', monthStart);
+
+  const used   = count || 0;
+  const limit  = 3;
+  const reset  = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const resetFmt = reset.toLocaleDateString('en-CA', { month: 'long', day: 'numeric' });
+
+  el.classList.remove('hidden', 'quota-bar--full');
+
+  if (used >= limit) {
+    el.classList.add('quota-bar--full');
+    el.innerHTML = `You've used all ${limit} uploads for this month. Quota resets on ${resetFmt}.`;
+    document.getElementById('btn-upload').disabled = true;
+  } else {
+    el.textContent = `${used} of ${limit} uploads used this month · Resets ${resetFmt}`;
+  }
+}
+
+async function recalculateStorage(userId) {
+  const { data } = await supabaseClient
+    .from('uploads')
+    .select('file_size_mb')
+    .eq('teacher_id', userId);
+
+  const total = (data || []).reduce((sum, row) => sum + (row.file_size_mb || 0), 0);
+
+  await supabaseClient
+    .from('profiles')
+    .update({ storage_used_mb: total })
+    .eq('id', userId);
 }
 
 // ─── Notices ─────────────────────────────────────────────────────

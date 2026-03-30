@@ -10,6 +10,9 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
+const RATE_LIMIT_MAX    = 10;   // max failed attempts per IP per window
+const RATE_LIMIT_WINDOW = 60;   // minutes
+
 module.exports = async (req, res) => {
   // CORS — required so the Chrome extension can call this endpoint.
   // The extension origin is chrome-extension://... not audioproctor.com.
@@ -28,7 +31,28 @@ module.exports = async (req, res) => {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // Look up upload by access code
+  // ─── Rate limiting ────────────────────────────────────────────
+  // Track failed lookups per IP. Blocks brute-force code guessing.
+  const clientIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW * 60 * 1000).toISOString();
+
+  // Purge stale entries (older than 2× window) to keep the table small
+  await supabase
+    .from('rate_limit_log')
+    .delete()
+    .lt('attempted_at', new Date(Date.now() - RATE_LIMIT_WINDOW * 2 * 60 * 1000).toISOString());
+
+  const { count } = await supabase
+    .from('rate_limit_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('ip', clientIp)
+    .gte('attempted_at', windowStart);
+
+  if (count >= RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: 'Too many attempts. Try again later.' });
+  }
+
+  // ─── Access code lookup ───────────────────────────────────────
   const { data: upload, error } = await supabase
     .from('uploads')
     .select('id, filename, storage_path, exit_word_hash, expires_at')
@@ -36,11 +60,13 @@ module.exports = async (req, res) => {
     .single();
 
   if (error || !upload) {
+    await supabase.from('rate_limit_log').insert({ ip: clientIp });
     return res.status(404).json({ error: 'Access code not found' });
   }
 
   // Check expiry
   if (new Date(upload.expires_at) < new Date()) {
+    await supabase.from('rate_limit_log').insert({ ip: clientIp });
     return res.status(410).json({ error: 'This assessment has expired' });
   }
 
