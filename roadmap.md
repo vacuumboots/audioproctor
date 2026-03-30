@@ -20,11 +20,11 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 ## Stage 2 — Security & Reliability
 *Build the foundation of trust before pitching to anyone in a school.*
 
-- [ ] **Rate limiting on the session API** — prevent brute-force guessing of access codes
+- [x] **Rate limiting on the session API** — prevent brute-force guessing of access codes
 - [ ] **Domain restriction on Google login** — optionally limit sign-in to a specific school email domain (e.g. `@yourschool.ca`)
-- [ ] **Signed URL refresh** — if a student's session expires mid-test (>1 hour), show a graceful error rather than silent failure
+- [x] **Signed URL refresh** — if a student's session expires mid-test (>1 hour), show a graceful error rather than silent failure
 - [ ] Supabase backups enabled and confirmed
-- [ ] **Enforce free tier upload limits server-side** — limit free tier
+- [x] **Enforce free tier upload limits server-side** — limit free tier
   teachers to 3 uploads per calendar month. This must be enforced in the
   API, not just the UI, so it cannot be bypassed by calling the upload
   endpoint directly.
@@ -67,14 +67,14 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
   - Monitor the `uploads` table weekly for anomalous patterns — many
     uploads from a single account, large file sizes, non-.mp3 extensions
     that slipped through.
-  - [ ] **Free tier quota indicator in the dashboard UI** — show a persistent
+  - [x] **Free tier quota indicator in the dashboard UI** — show a persistent
   "X of 3 uploads used this month" indicator on the dashboard for free
   tier teachers. Resets visually on the first of each month. When the
   limit is reached, replace the upload button with a friendly gate:
   "You've used all 3 uploads for this month. Upgrade for unlimited
   uploads, or your quota resets on [date]." Include a link to the
   pricing section of the marketing site.
-  - [ ] **Update marketing site copy to reflect correct free tier limits** —
+  - [x] **Update marketing site copy to reflect correct free tier limits** —
   the free tier was changed from "5 active uploads at a time" to "3
   uploads per calendar month." Find and update every reference across the
   site:
