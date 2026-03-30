@@ -4,86 +4,67 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AudioProctor is a SaaS tool for K-12 schools in Alberta. Teachers upload MP3 audio tracks for accessibility during assessments; students on managed Chromebooks use a Chrome extension to play audio in a locked-down environment.
-
-**The core problem**: Provincial assessments provide MP3 files, but Google Forms (used for lockdown testing on Chromebooks) won't play them. Schools currently use cassettes/CD players.
+AudioProctor is a SaaS tool for K-12 schools in Alberta. Teachers upload MP3 audio tracks for accessibility during assessments; students on managed Chromebooks use a Chrome extension to play audio in a locked-down fullscreen environment with no way to navigate away without a teacher-provided exit word.
 
 ## Architecture
 
-Two components that communicate through Supabase:
+**Two domains, one Vercel deployment:**
+- `audioproctor.com` — marketing site (root `index.html` + `site/` pages)
+- `app.audioproctor.com` — teacher app (`login.html`, `dashboard.html`, `player.html`)
 
-**Web app** (Vercel-hosted, vanilla HTML/CSS/JS):
-- Teacher login via Google OAuth (Supabase Auth)
-- Upload MP3 → system generates 6-char access code (e.g. "TK4-92A") and exit PIN
-- Teachers see a list of uploads with codes and exit PINs
-- Simple player page (`/player?code=TK4-92A`) fetches and plays audio by code
+Both are served from the same repo. `vercel.json` rewrites `/use-cases`, `/about`, `/contact`, `/privacy`, `/terms` to `site/*.html`. No host-based routing — it was tried and didn't work reliably on Vercel.
 
-**Chrome Extension** (Manifest V3, vanilla JS, deployed via Google Admin Console — not Web Store):
-- Code entry screen
-- Launches a fullscreen locked window with the audio player
-- Student cannot navigate away or close without the teacher's exit PIN
-- Exit PIN is checked client-side (stored as a hash in the upload record)
+**Web app** (Vercel, vanilla HTML/CSS/JS):
+- `login.html` — Google OAuth via Supabase Auth; redirects to `https://app.audioproctor.com/dashboard.html`
+- `dashboard.html` — upload form + uploads table; requires auth
+- `player.html` — student-facing audio player, no login required; reads `?code=` param
+
+**Chrome Extension** (Manifest V3, `extension/`):
+- `popup.js` — validates code format, calls `/api/session`, stores result in `chrome.storage.session`, opens `player.html` tab
+- `player.js` — reads session, goes fullscreen, plays audio; exit word verified by SHA-256 hash comparison
 
 **Supabase** (backend):
-- Postgres: `uploads` table (code, exit_pin_hash, storage path, teacher_id, expiry)
-- Storage: bucket for MP3 files
-- Auth: Google OAuth for teachers only — students have no login
+- `uploads` — teacher uploads: `id`, `teacher_id`, `filename`, `label`, `storage_path`, `access_code`, `exit_word`, `exit_word_hash`, `expires_at`, `file_size_mb`
+- `profiles` — one row per teacher: `id`, `tier` (`'free'`|`'premium'`), `storage_used_mb`, `country_code`, `division_name`
+- `rate_limit_log` — tracks failed `/api/session` lookups by IP for brute-force protection
+- Storage bucket `audio-files` (private) — files stored at `{teacher_id}/{access_code}.mp3`
+- RLS enforces: upload quota (3/month for free), 50MB storage cap, 10 uploads/hour rate limit — all at the DB layer via the uploads INSERT policy
 
-## Folder Structure
+**Serverless functions** (`api/`):
+- `api/session.js` — validates access code, returns `{ signedUrl, filename, exitWordHash }`; uses service role key; rate-limits failed lookups; never exposes `storage_path` or plain exit word
+- `api/contact.js` — contact form handler via Resend
 
-```
-/
-├── index.html          # Teacher login page
-├── upload.html         # Teacher upload + uploads list
-├── player.html         # Student audio player (code= param)
-├── /api                # Vercel serverless functions (if needed)
-└── /extension          # Chrome extension
-    ├── manifest.json
-    ├── popup.html      # Code entry screen
-    ├── popup.js
-    ├── player.html     # Fullscreen lockdown player
-    └── player.js
-```
+## Key Flows
 
-Keep it flat. No build step, no bundler, no framework.
+**Upload:** `handleUpload()` in `js/dashboard.js` — checks quota and storage cap UI-side (enforced server-side via RLS), uploads file to Supabase Storage, inserts row to `uploads`, updates `storage_used_mb` in `profiles`.
 
-## Key Technical Constraints
+**Student access (extension):** popup enters code → `popup.js` calls `/api/session` → stores `{ signedUrl, exitWordHash, filename }` in `chrome.storage.session` → opens `extension/player.html` tab → `player.js` reads session, loads audio, verifies exit word by hashing input and comparing to stored hash.
 
-- **No student login** — access is purely code-based (access code + exit PIN)
-- **Exit PIN is checked client-side** in the extension — stored as a hash in Supabase
-- **Extension is force-installed** via Google Admin Console (managed ChromeOS devices)
-- **MP3 only** for MVP — audio plays natively in Chrome
-- Prefer explicit, readable code over clever abstractions
+**Exit word verification:** Both `dashboard.js` and `extension/player.js` use identical `hashWord()` — SHA-256 via Web Crypto API, lowercased and trimmed before hashing.
 
-## MVP Scope
+## Development
 
-Build only these things, in this order:
-1. Supabase project setup (auth, storage bucket, uploads table)
-2. Teacher admin: login page, upload page, uploads list with codes + exit PINs
-3. Player page: fetches audio by code param and plays it
-4. Chrome extension: code entry → lockdown player window → PIN exit
-5. Vercel deploy from GitHub
+No build step. Serve locally with `vercel dev` (reads `.env.local` for Supabase credentials). The extension must be loaded unpacked from `chrome://extensions` for local testing.
 
-Out of scope: domain restriction on login, multi-school accounts, analytics, payments, mobile support.
+Required environment variables (in `.env.local` locally, and in Vercel project settings):
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` — server-side only, never sent to browser
+- `RESEND_API_KEY`
+- `CONTACT_EMAIL`
 
 ## Design System
 
-The aesthetic is **editorial print** — mid-century typeset, quality journalism tone (The Economist style). Structure comes from borders and grid columns, not color blocks or shadows.
+Editorial print aesthetic — mid-century typeset, The Economist tone. Structure from borders and grid, not color blocks or shadows.
 
-**Color palette:**
-- Ink `#1a1a2e` — primary text, borders, dark blocks
-- Paper `#f8f5ef` — page background (warm off-white)
-- Accent `#c0392b` — highlights, used sparingly
-- Warm Mid `#e8e0d0` — secondary backgrounds
-- Muted `#6b6560` — secondary text, labels
-- Light Accent `#fdf0ee` — faintest blush for card backgrounds
+**Colors (CSS vars):** `--ink: #1a1a2e` · `--paper: #f8f5ef` · `--accent: #c0392b` · `--warm-mid: #e8e0d0` · `--muted: #6b6560` · `--light-accent: #fdf0ee`
 
-**Typography (Google Fonts):**
-- **Playfair Display** — headlines, wordmark, lead paragraph
-- **DM Sans** — body copy at `font-weight: 300`; labels/emphasis at `500`
+**Fonts:** Playfair Display (headlines) · DM Sans 300 (body) / 500 (labels, emphasis)
 
 **Conventions:**
-- Section labels: `0.7rem`, `letter-spacing: 0.14em`, `text-transform: uppercase`
-- Borders: `1px solid #1a1a2e` (full ink, never soft gray)
-- Body copy `line-height: 1.7`
-- Dark blocks invert ink/paper colors (no additional graphics needed)
+- Labels: `0.7rem`, `letter-spacing: 0.14em`, `text-transform: uppercase`
+- Borders: `1px solid var(--ink)` — never soft gray
+- No border-radius, no box-shadow, no icons except `—` list bullets
+- Dark sections invert ink/paper; no graphics needed
+
+App styles live in `css/styles.css`. Marketing-only styles (pricing grid, site nav, FAQ, etc.) live in `site/site.css`.
