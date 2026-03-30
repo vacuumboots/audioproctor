@@ -53,7 +53,9 @@ async function ensureProfile(userId) {
     .eq('id', userId)
     .maybeSingle();
   if (!data) {
-    await supabaseClient.from('profiles').insert({ id: userId });
+    const lang        = (navigator.languages?.[0] || navigator.language || '');
+    const countryCode = lang.includes('-') ? lang.split('-').pop().toUpperCase() : null;
+    await supabaseClient.from('profiles').insert({ id: userId, country_code: countryCode });
   }
 }
 

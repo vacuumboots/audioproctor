@@ -20,87 +20,19 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 ## Stage 2 — Security & Reliability
 *Build the foundation of trust before pitching to anyone in a school.*
 
-- [x] **Rate limiting on the session API** — prevent brute-force guessing of access codes
+- [x] **Rate limiting on the session API** — 10 failed code lookups per IP per hour returns 429. Failed attempts (not found + expired) are logged; successful lookups are not.
 - [ ] **Domain restriction on Google login** — optionally limit sign-in to a specific school email domain (e.g. `@yourschool.ca`)
 - [x] **Signed URL refresh** — if a student's session expires mid-test (>1 hour), show a graceful error rather than silent failure
-- [ ] Supabase backups enabled and confirmed
-- [x] **Enforce free tier upload limits server-side** — limit free tier
-  teachers to 3 uploads per calendar month. This must be enforced in the
-  API, not just the UI, so it cannot be bypassed by calling the upload
-  endpoint directly.
-
-  Implementation:
-  - Before accepting any upload, the API route checks how many rows exist
-    in the `uploads` table WHERE `teacher_id = auth.uid()` AND
-    `created_at >= date_trunc('month', now())`. If count >= 3 and the
-    teacher has no active paid tier, return HTTP 403 with a clear error
-    message.
-  - Add a Supabase database function `check_upload_quota()` that performs
-    this count and returns a boolean — call it from the upload API route
-    before writing anything to storage.
-  - The UI should also check quota before showing the upload button and
-    display a friendly gate ("You've used 3 of 3 uploads this month"),
-    but the server-side check is the real enforcement.
-
-  Abuse prevention:
-  - Add a `profiles` table (or extend existing teacher record) with
-    `country_code` populated from the Accept-Language header or a
-    lightweight IP geolocation lookup on first login. Flag non-Canadian
-    accounts for review — AudioProctor is an Alberta product and
-    international signups are anomalous. US signups are also welcome.
-  - Add a honeypot field to the sign-up flow. Consider requiring a school
-    division name on first login — a required text field costs a legitimate
-    user nothing but raises friction for automated signups.
-  - Rate limit the upload API endpoint per `teacher_id` — max 10 requests
-    per hour regardless of tier, to prevent automated abuse.
-  - Add a `storage_used_mb` running total to the teacher profile, updated
-    on each upload and delete. Free tier cap: 50MB total storage. This
-    catches someone who deletes and re-uploads to reset their monthly
-    count while still accumulating storage. **Note:** `storage_used_mb`
-    is now tracked (Stage 2), but the 50MB hard cap is not yet enforced
-    — a free tier teacher can currently upload 3 large files per month
-    and accumulate real storage. Enforce the cap as a follow-up: check
-    `storage_used_mb + file.size / 1024 / 1024 <= 50` in `handleUpload()`
-    before uploading, and block in the RLS policy via a second condition
-    in `check_upload_quota()`. Audio normalization (Stage 1 deferred)
-    will reduce the practical risk once it ships.
-  - Monitor the `uploads` table weekly for anomalous patterns — many
-    uploads from a single account, large file sizes, non-.mp3 extensions
-    that slipped through.
-  - [x] **Free tier quota indicator in the dashboard UI** — show a persistent
-  "X of 3 uploads used this month" indicator on the dashboard for free
-  tier teachers. Resets visually on the first of each month. When the
-  limit is reached, replace the upload button with a friendly gate:
-  "You've used all 3 uploads for this month. Upgrade for unlimited
-  uploads, or your quota resets on [date]." Include a link to the
-  pricing section of the marketing site.
-  - [x] **Update marketing site copy to reflect correct free tier limits** —
-  the free tier was changed from "5 active uploads at a time" to "3
-  uploads per calendar month." Find and update every reference across the
-  site:
-
-  Known locations:
-  - Homepage pricing card — "5 active uploads at a time" → "3 uploads per
-    month"
-  - Any tooltip, help text, or onboarding copy that references upload
-    limits
-
-  Audit instructions for Claude Code:
-  - Search the entire codebase for "5 active", "5 uploads", "active
-    uploads", and "at a time" — replace any free tier references found
-  - Search for "7-day" to confirm expiry copy is consistent across
-    homepage, use cases, FAQ, and dashboard
-  - Search for "FOIP" — replace with "ATIA" everywhere except where both
-    are referenced together for context. The privacy page is the known
-    location but check all pages
-  - Search for "free for one year" and "first division" — remove or revise
-    the pilot program offer from the contact page (pilot program remains
-    available but should not be advertised publicly at this stage)
-  - After changes, do a final pass reading every page as a first-time
-    visitor and flag any copy that contradicts the pricing tiers section
-    of the roadmap
-
----
+- [ ] **Supabase backups enabled** — enable Point in Time Recovery in Supabase → Project Settings → Database → Point in Time Recovery
+- [x] **Enforce free tier upload limits server-side** — `check_upload_quota()` Supabase RLS policy blocks a 4th upload at the database layer. API returns HTTP 403 if limit is reached. Cannot be bypassed by calling the API directly.
+- [x] **Free tier quota indicator in the dashboard UI** — quota bar shows "X of 3 uploads used this month", goes red and disables upload button at limit. Gate message includes reset date and link to pricing page.
+- [x] **Track storage usage** — `file_size_mb` stored on every upload; `storage_used_mb` in profiles updated on each upload and delete.
+- [x] **Enforce 50MB free tier storage cap** — check `storage_used_mb + file.size / 1024 / 1024 <= 50` in `handleUpload()` before uploading, and add a second condition to the RLS policy. Audio normalization (Stage 1, deferred) will reduce the practical risk once it ships.
+- [x] **Abuse prevention — profile enrichment** — `country_code` captured from `navigator.language` on first login and stored in profiles.
+- [x] **Abuse prevention — honeypot and division field** — modal on first dashboard load (when `division_name` is null). Includes hidden honeypot field. Cannot be dismissed without submitting a division name.
+- [x] **Abuse prevention — upload rate limiting** — RLS policy blocks more than 10 uploads per hour per `teacher_id` at the database layer.
+- [ ] **Abuse prevention — anomaly monitoring** — monitor the `uploads` table weekly for anomalous patterns: high upload counts from a single account, large file sizes, non-.mp3 file extensions.
+- [x] **Marketing site copy audit** — "5 active uploads" → "3 uploads per calendar month" on homepage pricing card. FOIP → ATIA on privacy page. Pilot program section removed from contact page.
 
 ## Stage 3 — Teacher Customization
 *Give teachers control without adding complexity.*

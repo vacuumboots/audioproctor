@@ -133,10 +133,10 @@ async function handleUpload() {
       }
     }
 
-    // Check quota (UI-side gate; server enforces via RLS)
+    // Check quota and storage cap (UI-side gate; server enforces via RLS)
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('tier')
+      .select('tier, storage_used_mb')
       .eq('id', userId)
       .maybeSingle();
 
@@ -150,10 +150,21 @@ async function handleUpload() {
         .gte('created_at', monthStart);
       if (count >= 3) {
         btn.disabled  = false;
-        const reset   = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const reset    = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const resetFmt = reset.toLocaleDateString('en-CA', { month: 'long', day: 'numeric' });
         showUploadNotice(
           `You've used all 3 uploads for this month. Your quota resets on ${resetFmt}.`,
+          'error'
+        );
+        return;
+      }
+
+      const storageUsed = profile?.storage_used_mb || 0;
+      const fileSizeMb  = file.size / 1024 / 1024;
+      if (storageUsed + fileSizeMb > 50) {
+        btn.disabled = false;
+        showUploadNotice(
+          `This file would exceed your 50 MB storage limit. You've used ${storageUsed.toFixed(1)} of 50 MB. Delete older assessments to free up space.`,
           'error'
         );
         return;
@@ -423,6 +434,47 @@ async function recalculateStorage(userId) {
     .from('profiles')
     .update({ storage_used_mb: total })
     .eq('id', userId);
+}
+
+// ─── First Login ─────────────────────────────────────────────────
+
+async function checkFirstLogin() {
+  const session = await getSession();
+  if (!session) return;
+
+  const { data: profile } = await supabaseClient
+    .from('profiles')
+    .select('division_name')
+    .eq('id', session.user.id)
+    .maybeSingle();
+
+  if (!profile || !profile.division_name) {
+    document.getElementById('first-login-modal').classList.remove('hidden');
+  }
+}
+
+async function submitDivisionSetup() {
+  // Honeypot — bots fill this; real users never see it
+  if (document.getElementById('division-honeypot').value) {
+    document.getElementById('first-login-modal').classList.add('hidden');
+    return;
+  }
+
+  const divisionName = document.getElementById('division-name-input').value.trim();
+  if (!divisionName) {
+    document.getElementById('division-name-input').focus();
+    return;
+  }
+
+  const session = await getSession();
+  if (!session) return;
+
+  await supabaseClient
+    .from('profiles')
+    .update({ division_name: divisionName })
+    .eq('id', session.user.id);
+
+  document.getElementById('first-login-modal').classList.add('hidden');
 }
 
 // ─── Notices ─────────────────────────────────────────────────────

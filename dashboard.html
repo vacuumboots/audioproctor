@@ -41,6 +41,26 @@
       border-color: var(--accent);
       color: var(--accent);
     }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,26,46,0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-box {
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      padding: 2.5rem;
+      max-width: 460px;
+      width: 90%;
+    }
+    .modal-box h2 {
+      font-size: 1.35rem;
+      margin-bottom: 0.75rem;
+    }
   </style>
 </head>
 <body>
@@ -125,6 +145,21 @@
 
   </div>
 
+  <!-- First-login modal: shown once until teacher enters their division name -->
+  <div id="first-login-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <p class="label" style="margin-bottom:0.75rem;">One quick thing</p>
+      <h2>What division or school do you work for?</h2>
+      <p style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;">This helps us understand how AudioProctor is being used across Alberta.</p>
+      <!-- Honeypot — hidden from real users, filled by bots -->
+      <input type="text" id="division-honeypot" style="display:none;" tabindex="-1" autocomplete="off">
+      <div class="form-group">
+        <input type="text" id="division-name-input" class="input-field" placeholder="e.g. Foothills School Division No. 38" maxlength="120">
+      </div>
+      <button class="btn btn--primary" onclick="submitDivisionSetup()">Continue</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="/js/supabase-client.js"></script>
   <script src="/js/auth.js"></script>
@@ -138,6 +173,7 @@
       const user = await requireAuth();
       document.getElementById('user-email').textContent = user.email;
       await Promise.all([loadUploads(), loadQuota()]);
+      await checkFirstLogin();
     })();
   </script>
 
