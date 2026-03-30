@@ -113,7 +113,41 @@
         <span id="file-hint" class="label text-muted">Max 100 MB · MP3 only</span>
       </div>
 
-      <div class="upload-progress" id="upload-progress">
+      <!-- Advanced Options — premium only, hidden for free tier -->
+      <div id="advanced-options" class="hidden" style="margin-top:1.25rem; border-top: 1px solid var(--warm-mid); padding-top:1.25rem;">
+        <p class="label" style="margin-bottom:1rem;">Advanced Options</p>
+
+        <div class="form-group">
+          <label class="label" for="exit-word-mode">Exit Word</label>
+          <select id="exit-word-mode" class="input-field" onchange="toggleCustomExitWord()">
+            <option value="random-short">Random — short word (default)</option>
+            <option value="random-long">Random — long word</option>
+            <option value="random-phrase">Random — two-word phrase</option>
+            <option value="random-pin">Random — numeric PIN</option>
+            <option value="custom">Custom — I'll type my own</option>
+          </select>
+        </div>
+        <div id="custom-exit-word-group" class="form-group hidden">
+          <label class="label" for="custom-exit-word">Your Exit Word or Phrase</label>
+          <input type="text" id="custom-exit-word" class="input-field" placeholder="e.g. willow" maxlength="60">
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="code-format">Access Code Format</label>
+          <select id="code-format" class="input-field" onchange="toggleCustomCode()">
+            <option value="standard">Standard — ABC-123 (default)</option>
+            <option value="short">Short — AB12</option>
+            <option value="custom">Custom — I'll type my own</option>
+          </select>
+        </div>
+        <div id="custom-code-group" class="form-group hidden">
+          <label class="label" for="custom-code">Your Access Code</label>
+          <input type="text" id="custom-code" class="input-field input-field--code" placeholder="e.g. SCIENCE7" maxlength="20">
+          <span class="label text-muted" style="text-transform:none; letter-spacing:0; font-size:0.8rem;">Letters and numbers only. Students will enter this exactly.</span>
+        </div>
+      </div>
+
+      <div class="upload-progress" id="upload-progress" style="margin-top:1rem;">
         <div class="upload-progress__bar">
           <div class="upload-progress__fill" id="progress-fill"></div>
         </div>
@@ -143,6 +177,37 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Edit Label modal -->
+  <div id="edit-label-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <p class="label" style="margin-bottom:0.75rem;">Rename Assessment</p>
+      <div class="form-group">
+        <label class="label" for="edit-label-input">Label</label>
+        <input type="text" id="edit-label-input" class="input-field" maxlength="120">
+      </div>
+      <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+        <button class="btn btn--primary" onclick="saveEditLabel()">Save</button>
+        <button class="btn btn--ghost" onclick="document.getElementById('edit-label-modal').classList.add('hidden')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Expiry modal -->
+  <div id="edit-expiry-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <p class="label" style="margin-bottom:0.75rem;">Edit Expiry</p>
+      <div class="form-group">
+        <label class="label" for="expiry-date-input">Expiry Date &amp; Time</label>
+        <input type="datetime-local" id="expiry-date-input" class="input-field">
+      </div>
+      <div style="display:flex; gap:0.75rem; margin-top:0.5rem; flex-wrap:wrap;">
+        <button class="btn btn--primary" onclick="saveExpiryDate()">Save Date</button>
+        <button class="btn btn--ghost" onclick="extendSevenDays()">Extend 7 Days</button>
+        <button class="btn btn--ghost" onclick="document.getElementById('edit-expiry-modal').classList.add('hidden')">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- First-login modal: shown once until teacher enters their division name -->

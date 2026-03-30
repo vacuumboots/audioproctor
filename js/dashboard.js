@@ -1,4 +1,4 @@
-// ─── Exit Word List ──────────────────────────────────────────────
+// ─── Exit Word Lists ─────────────────────────────────────────────
 const EXIT_WORDS = [
   'maple', 'river', 'cloud', 'stone', 'bread', 'storm', 'flame',
   'lunar', 'amber', 'cedar', 'crane', 'ember', 'frost', 'grove',
@@ -17,8 +17,24 @@ const EXIT_WORDS = [
   'witch', 'wolfe', 'woods', 'world', 'wrath', 'xenon', 'yarns',
 ];
 
+const LONG_EXIT_WORDS = [
+  'anchor', 'basket', 'beacon', 'blanket', 'cabinet', 'captain',
+  'careful', 'central', 'chapter', 'charter', 'cluster', 'coastal',
+  'comfort', 'council', 'counter', 'current', 'curtain', 'decimal',
+  'distant', 'eastern', 'evening', 'express', 'falling', 'feature',
+  'federal', 'finding', 'flowing', 'forward', 'freedom', 'general',
+  'granite', 'harbour', 'harvest', 'heading', 'highway', 'history',
+  'horizon', 'justice', 'kitchen', 'landing', 'lantern', 'lasting',
+  'morning', 'network', 'outdoor', 'passage', 'quarter', 'railway',
+  'section', 'shelter', 'thunder', 'venture', 'western', 'younger',
+];
+
 const CODE_LETTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 const CODE_DIGITS  = '23456789';
+
+// ─── Module state ────────────────────────────────────────────────
+let currentTier   = 'free';
+let editTargetId  = null;
 
 // ─── Access Code Generation ──────────────────────────────────────
 
@@ -32,11 +48,29 @@ function generateCodeString() {
   return letters + '-' + digits;
 }
 
-async function generateAccessCode() {
+function generateShortCodeString() {
+  const letters = [0,1].map(() => randomChar(CODE_LETTERS)).join('');
+  const digits  = [0,1].map(() => randomChar(CODE_DIGITS)).join('');
+  return letters + digits;
+}
+
+async function generateAccessCode(format, customCode) {
+  if (format === 'custom') {
+    const code = (customCode || '').toUpperCase().trim();
+    if (!/^[A-Z0-9]{3,20}$/.test(code)) {
+      throw new Error('Custom code must be 3–20 letters and numbers, no spaces or symbols.');
+    }
+    if (await checkCodeExists(code)) {
+      throw new Error(`The code "${code}" is already in use. Choose a different one.`);
+    }
+    return code;
+  }
+
+  const generator = format === 'short' ? generateShortCodeString : generateCodeString;
   let code;
   let attempts = 0;
   do {
-    code = generateCodeString();
+    code = generator();
     attempts++;
     if (attempts > 20) throw new Error('Could not generate a unique access code. Please try again.');
   } while (await checkCodeExists(code));
@@ -58,12 +92,48 @@ function pickExitWord() {
   return EXIT_WORDS[Math.floor(Math.random() * EXIT_WORDS.length)];
 }
 
+function pickExitWordByComplexity(complexity) {
+  switch (complexity) {
+    case 'long':   return LONG_EXIT_WORDS[Math.floor(Math.random() * LONG_EXIT_WORDS.length)];
+    case 'phrase': return pickTwoWordPhrase();
+    case 'pin':    return pickNumericPin();
+    default:       return pickExitWord();
+  }
+}
+
+function pickTwoWordPhrase() {
+  const a = pickExitWord();
+  let b;
+  do { b = pickExitWord(); } while (b === a);
+  return a + ' ' + b;
+}
+
+function pickNumericPin() {
+  return [0,1,2,3].map(() => randomChar('0123456789')).join('');
+}
+
 async function hashWord(word) {
   const data = new TextEncoder().encode(word.toLowerCase().trim());
   const buf  = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(buf))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+// ─── Advanced Options UI ─────────────────────────────────────────
+
+function toggleCustomExitWord() {
+  const mode  = document.getElementById('exit-word-mode')?.value;
+  const group = document.getElementById('custom-exit-word-group');
+  if (!group) return;
+  group.classList.toggle('hidden', mode !== 'custom');
+}
+
+function toggleCustomCode() {
+  const format = document.getElementById('code-format')?.value;
+  const group  = document.getElementById('custom-code-group');
+  if (!group) return;
+  group.classList.toggle('hidden', format !== 'custom');
 }
 
 // ─── File Select ─────────────────────────────────────────────────
@@ -171,10 +241,31 @@ async function handleUpload() {
       }
     }
 
-    // Generate access code and exit word
+    // Read advanced options (premium only — elements absent for free tier)
+    const codeFormat   = document.getElementById('code-format')?.value   || 'standard';
+    const exitWordMode = document.getElementById('exit-word-mode')?.value || 'random-short';
+    const customCode   = document.getElementById('custom-code')?.value?.trim()           || '';
+    const customWord   = document.getElementById('custom-exit-word')?.value?.trim()      || '';
+
+    // Validate custom exit word before doing any work
+    if (exitWordMode === 'custom' && !customWord) {
+      btn.disabled = false;
+      showUploadNotice('Please enter your custom exit word.', 'error');
+      return;
+    }
+
+    // Generate access code
     showProgress(0, 'Preparing…');
-    const accessCode   = await generateAccessCode();
-    const exitWord     = pickExitWord();
+    const accessCode = await generateAccessCode(codeFormat, customCode);
+
+    // Generate exit word
+    let exitWord;
+    if (exitWordMode === 'custom') {
+      exitWord = customWord.toLowerCase().trim();
+    } else {
+      const complexity = exitWordMode.replace('random-', '');
+      exitWord = pickExitWordByComplexity(complexity);
+    }
     const exitWordHash = await hashWord(exitWord);
 
     // Upload to Supabase Storage with progress tracking
@@ -217,11 +308,17 @@ async function handleUpload() {
       throw new Error('Could not save upload record: ' + dbError.message);
     }
 
-    // Success
+    // Reset form
     hideProgress();
     fileInput.value = '';
     document.getElementById('label-input').value = '';
     document.getElementById('file-hint').textContent = 'Max 100 MB · MP3 only';
+    if (document.getElementById('exit-word-mode'))  document.getElementById('exit-word-mode').value  = 'random-short';
+    if (document.getElementById('code-format'))     document.getElementById('code-format').value     = 'standard';
+    if (document.getElementById('custom-exit-word')) document.getElementById('custom-exit-word').value = '';
+    if (document.getElementById('custom-code'))     document.getElementById('custom-code').value     = '';
+    toggleCustomExitWord();
+    toggleCustomCode();
     btn.disabled = true;
     showUploadNotice('Assessment uploaded successfully.', 'success');
     await loadUploads();
@@ -258,7 +355,7 @@ async function loadUploads() {
 
   const { data: uploads, error } = await supabaseClient
     .from('uploads')
-    .select('id, filename, label, access_code, exit_word, expires_at, storage_path')
+    .select('id, filename, label, access_code, exit_word, expires_at, storage_path, file_size_mb')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -285,6 +382,10 @@ async function loadUploads() {
     const displayName  = u.label || u.filename;
     const showFilename = u.label && u.label !== u.filename;
 
+    const extendBtn = (!expired && currentTier !== 'free')
+      ? `<button class="btn btn--ghost btn--small" onclick="openExpiryModal('${u.id}', '${u.expires_at}')">Edit Expiry</button>`
+      : '';
+
     return `
       <tr>
         <td class="col-assessment">
@@ -297,6 +398,9 @@ async function loadUploads() {
         <td>
           <div class="action-row">
             <button class="btn btn--ghost btn--small" onclick="copyCode('${u.access_code}', this)">Copy Code</button>
+            <button class="btn btn--ghost btn--small" onclick="openEditModal('${u.id}', '${escapeHtml(u.label || u.filename)}')">Rename</button>
+            <button class="btn btn--ghost btn--small" onclick="duplicateUpload('${u.id}', this)">Duplicate</button>
+            ${extendBtn}
             <button class="btn btn--danger btn--small" onclick="deleteUpload('${u.id}', '${u.storage_path}', this)">Delete</button>
           </div>
         </td>
@@ -339,15 +443,24 @@ async function deleteUpload(id, storagePath, btn) {
   btn.disabled    = true;
   btn.textContent = 'Deleting…';
 
-  const { error: storageErr } = await supabaseClient.storage
-    .from('audio-files')
-    .remove([storagePath]);
+  // Only delete the storage file if no other upload shares this path (duplicates)
+  const { count } = await supabaseClient
+    .from('uploads')
+    .select('id', { count: 'exact', head: true })
+    .eq('storage_path', storagePath)
+    .neq('id', id);
 
-  if (storageErr) {
-    alert('Could not delete audio file: ' + storageErr.message);
-    btn.disabled    = false;
-    btn.textContent = 'Delete';
-    return;
+  if (count === 0) {
+    const { error: storageErr } = await supabaseClient.storage
+      .from('audio-files')
+      .remove([storagePath]);
+
+    if (storageErr) {
+      alert('Could not delete audio file: ' + storageErr.message);
+      btn.disabled    = false;
+      btn.textContent = 'Delete';
+      return;
+    }
   }
 
   const { error: dbErr } = await supabaseClient
@@ -376,6 +489,141 @@ async function copyCode(code, btn) {
   }
 }
 
+// ─── Rename ──────────────────────────────────────────────────────
+
+function openEditModal(id, currentLabel) {
+  editTargetId = id;
+  document.getElementById('edit-label-input').value = currentLabel;
+  document.getElementById('edit-label-modal').classList.remove('hidden');
+  document.getElementById('edit-label-input').focus();
+}
+
+async function saveEditLabel() {
+  const newLabel = document.getElementById('edit-label-input').value.trim();
+  if (!newLabel || !editTargetId) return;
+
+  const { error } = await supabaseClient
+    .from('uploads')
+    .update({ label: newLabel })
+    .eq('id', editTargetId);
+
+  if (error) {
+    alert('Could not save label: ' + error.message);
+    return;
+  }
+
+  document.getElementById('edit-label-modal').classList.add('hidden');
+  editTargetId = null;
+  await loadUploads();
+}
+
+// ─── Expiry ───────────────────────────────────────────────────────
+
+function openExpiryModal(id, currentExpiry) {
+  editTargetId = id;
+  // Format the current expiry as a local datetime-local value
+  const d   = new Date(currentExpiry);
+  const pad = n => String(n).padStart(2, '0');
+  const localVal = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  document.getElementById('expiry-date-input').value = localVal;
+  document.getElementById('edit-expiry-modal').classList.remove('hidden');
+}
+
+async function saveExpiryDate() {
+  const val = document.getElementById('expiry-date-input').value;
+  if (!val || !editTargetId) return;
+
+  const newExpiry = new Date(val).toISOString();
+
+  const { error } = await supabaseClient
+    .from('uploads')
+    .update({ expires_at: newExpiry })
+    .eq('id', editTargetId);
+
+  if (error) {
+    alert('Could not update expiry: ' + error.message);
+    return;
+  }
+
+  document.getElementById('edit-expiry-modal').classList.add('hidden');
+  editTargetId = null;
+  await loadUploads();
+}
+
+async function extendSevenDays() {
+  if (!editTargetId) return;
+  const newExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { error } = await supabaseClient
+    .from('uploads')
+    .update({ expires_at: newExpiry })
+    .eq('id', editTargetId);
+
+  if (error) {
+    alert('Could not extend expiry: ' + error.message);
+    return;
+  }
+
+  document.getElementById('edit-expiry-modal').classList.add('hidden');
+  editTargetId = null;
+  await loadUploads();
+}
+
+// ─── Duplicate ───────────────────────────────────────────────────
+
+async function duplicateUpload(id, btn) {
+  if (!confirm('Create a new access code for this audio file? The original will remain unchanged.')) return;
+
+  btn.disabled    = true;
+  btn.textContent = 'Duplicating…';
+
+  try {
+    const session = await getSession();
+    if (!session) { window.location.href = '/login.html'; return; }
+    const userId = session.user.id;
+
+    // Fetch source row
+    const { data: source, error: fetchErr } = await supabaseClient
+      .from('uploads')
+      .select('filename, label, storage_path, file_size_mb')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr || !source) throw new Error('Could not load assessment details.');
+
+    // Generate new code and exit word (always standard format defaults)
+    const newCode     = await generateAccessCode('standard');
+    const newWord     = pickExitWord();
+    const newWordHash = await hashWord(newWord);
+    const expiresAt   = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { error: insertErr } = await supabaseClient
+      .from('uploads')
+      .insert({
+        teacher_id:     userId,
+        filename:       source.filename,
+        label:          source.label,
+        storage_path:   source.storage_path,
+        access_code:    newCode,
+        exit_word:      newWord,
+        exit_word_hash: newWordHash,
+        expires_at:     expiresAt,
+        file_size_mb:   source.file_size_mb || 0,
+      });
+
+    if (insertErr) throw new Error('Could not create duplicate: ' + insertErr.message);
+
+    await loadUploads();
+    await loadQuota();
+
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Duplicate';
+  }
+}
+
 // ─── Quota ───────────────────────────────────────────────────────
 
 async function loadQuota() {
@@ -389,11 +637,18 @@ async function loadQuota() {
     .eq('id', userId)
     .maybeSingle();
 
-  const tier = profile?.tier || 'free';
-  const el   = document.getElementById('quota-indicator');
+  currentTier = profile?.tier || 'free';
+
+  // Show/hide premium advanced options section
+  const advancedSection = document.getElementById('advanced-options');
+  if (advancedSection) {
+    advancedSection.classList.toggle('hidden', currentTier === 'free');
+  }
+
+  const el = document.getElementById('quota-indicator');
   if (!el) return;
 
-  if (tier !== 'free') {
+  if (currentTier !== 'free') {
     el.classList.add('hidden');
     return;
   }
@@ -406,9 +661,9 @@ async function loadQuota() {
     .eq('teacher_id', userId)
     .gte('created_at', monthStart);
 
-  const used   = count || 0;
-  const limit  = 3;
-  const reset  = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const used     = count || 0;
+  const limit    = 3;
+  const reset    = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const resetFmt = reset.toLocaleDateString('en-CA', { month: 'long', day: 'numeric' });
 
   el.classList.remove('hidden', 'quota-bar--full');
@@ -425,10 +680,16 @@ async function loadQuota() {
 async function recalculateStorage(userId) {
   const { data } = await supabaseClient
     .from('uploads')
-    .select('file_size_mb')
+    .select('storage_path, file_size_mb')
     .eq('teacher_id', userId);
 
-  const total = (data || []).reduce((sum, row) => sum + (row.file_size_mb || 0), 0);
+  // De-duplicate by storage_path so duplicated uploads don't double-count
+  const seen  = new Set();
+  const total = (data || []).reduce((sum, row) => {
+    if (seen.has(row.storage_path)) return sum;
+    seen.add(row.storage_path);
+    return sum + (row.file_size_mb || 0);
+  }, 0);
 
   await supabaseClient
     .from('profiles')
@@ -454,7 +715,6 @@ async function checkFirstLogin() {
 }
 
 async function submitDivisionSetup() {
-  // Honeypot — bots fill this; real users never see it
   if (document.getElementById('division-honeypot').value) {
     document.getElementById('first-login-modal').classList.add('hidden');
     return;
