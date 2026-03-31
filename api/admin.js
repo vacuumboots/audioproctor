@@ -67,33 +67,25 @@ module.exports = async (req, res) => {
         { count: divCount },
         { count: schoolCount },
         { count: teacherCount },
-        { data: anomalies },
+        { data: foreignAccounts },
       ] = await Promise.all([
         supabase.from('divisions').select('id', { count: 'exact', head: true }),
         supabase.from('schools').select('id', { count: 'exact', head: true }),
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        // Anomalies: non-CA country_code or very high upload count
+        // Anomaly: profiles where country_code is not CA (and not null/empty)
         supabase
           .from('profiles')
-          .select('id, country_code, division_name, role, notes')
-          .not('country_code', 'in', '("CA","","null")')
-          .is('country_code', null)
-          .limit(0), // placeholder — real anomaly query below
+          .select('id, country_code, division_name')
+          .not('country_code', 'eq', 'CA')
+          .not('country_code', 'is', null)
+          .neq('country_code', ''),
       ]);
 
-      // Anomaly: profiles where country_code is not CA (and not null/empty)
-      const { data: foreignAccounts } = await supabase
-        .from('profiles')
-        .select('id, country_code, division_name')
-        .not('country_code', 'in', '("CA")')
-        .not('country_code', 'is', null)
-        .neq('country_code', '');
-
       return res.status(200).json({
-        divisionCount:  divCount  || 0,
-        schoolCount:    schoolCount || 0,
-        teacherCount:   teacherCount || 0,
-        anomalies:      foreignAccounts || [],
+        divisionCount: divCount  || 0,
+        schoolCount:   schoolCount || 0,
+        teacherCount:  teacherCount || 0,
+        anomalies:     foreignAccounts || [],
       });
     }
 
