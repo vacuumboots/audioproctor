@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioProctor — School Admin</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-box {
+      border: var(--border);
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-box__value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .admin-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: var(--border);
+      white-space: nowrap;
+    }
+    .admin-table td {
+      padding: 0.75rem 0.75rem;
+      border-bottom: 1px solid var(--warm-mid);
+      vertical-align: middle;
+      font-size: 0.875rem;
+    }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: var(--warm-mid); }
+    .role-badge {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+      border: 1px solid var(--ink);
+      color: var(--ink);
+    }
+    .invite-placeholder {
+      border: 1px dashed var(--warm-mid);
+      padding: 1.25rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="page-container">
+      <div class="top-bar__inner">
+        <span class="wordmark">Audio<span class="accent">Proctor</span> <span style="font-size:0.8rem; font-family:'DM Sans',sans-serif; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-left:0.5rem;">School Admin</span></span>
+        <div style="display:flex; align-items:center; gap:1.5rem;">
+          <span id="admin-email" class="label"></span>
+          <a href="/dashboard.html" class="btn btn--ghost btn--small">My Dashboard</a>
+          <a href="/settings.html" class="btn btn--ghost btn--small">Settings</a>
+          <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-container" style="padding-top:2.5rem; padding-bottom:4rem;">
+
+    <div id="school-name-header" style="margin-bottom:1.5rem;">
+      <h1 style="font-size:1.6rem; line-height:1.2;" id="school-name-title">—</h1>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div id="stat-teachers" class="stat-box__value">—</div>
+        <div class="label">Teachers</div>
+      </div>
+      <div class="stat-box">
+        <div id="stat-uploads" class="stat-box__value">—</div>
+        <div class="label">Total Uploads</div>
+      </div>
+      <div class="stat-box">
+        <div id="stat-sessions" class="stat-box__value">—</div>
+        <div class="label">Total Sessions</div>
+      </div>
+      <div class="stat-box">
+        <div id="stat-completion" class="stat-box__value">—</div>
+        <div class="label">Completion Rate</div>
+      </div>
+    </div>
+
+    <!-- Invite placeholder -->
+    <div class="invite-placeholder">
+      <strong>Invite a teacher</strong> — email-based invitations are coming in Stage 6.
+      To add a teacher now, ask your platform administrator to attach them to your school.
+    </div>
+
+    <!-- Teachers -->
+    <div class="card">
+      <div class="card__header">
+        <p class="label">Teachers</p>
+      </div>
+      <div id="teachers-container">
+        <div class="empty-state"><p class="label">Loading…</p></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/school-admin.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAuth();
+      if (!user) return;
+      document.getElementById('admin-email').textContent = user.email;
+      await initSchoolAdmin(user);
+    })();
+  </script>
+
+</body>
+</html>

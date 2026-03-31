@@ -135,8 +135,8 @@ recorded. All events are anonymous by design.
 ### Privacy Boundaries (enforced at schema level)
 
 - [x] RLS policies ensure teachers can only read their own session_events
-- [ ] Division admins can read aggregated summaries for their division only — no
-  drill-down to individual session events (UI in Stage 5)
+- [x] Division admins can read aggregated summaries for their division only — no
+  drill-down to individual session events; enforced at the API layer in `api/org.js`
 - [x] Platform admin role bypasses RLS for support and monitoring purposes —
   `api/admin.js` uses service role key server-side; role check enforced before
   any data is returned
@@ -181,96 +181,94 @@ recorded. All events are anonymous by design.
 
 ### Teacher Analytics
 
-- [ ] **Per-upload summary card** — visible on each upload in the dashboard:
-  "Used 24 times · 18 completed · 6 exited early · Avg listen time 14:32"
-- [ ] **Completion rate indicator** — simple visual (green/yellow/red) showing
-  percentage of sessions that reached end of audio
-- [ ] **Replay signal** — "Audio was replayed from the beginning 9 times" — useful
-  for identifying passages students found difficult
+- [x] **Per-upload summary card** — visible on each upload in the dashboard:
+  sessions count, completion rate (colour-coded), replay count, avg listen time.
+  Hidden for free tier (no analytics per pricing model).
+- [x] **Completion rate indicator** — green ≥80%, amber ≥60%, red <60% shown inline
+  on each upload row
+- [x] **Replay signal** — replay count shown on each upload row
 - [ ] **Timeline view** — when during the audio did most pauses and replays occur,
-  shown as a simple bar chart over the waveform. Helps teachers identify whether a
-  specific question or passage caused difficulty.
-- [ ] **Teacher "Insights" tab** — aggregated view across all of a teacher's uploads:
-  total sessions delivered, total completions, most-used assessments
-- [ ] **Export session data as CSV** — one row per session event, suitable for
-  teacher records or inclusion in an IEP review
+  shown as a simple bar chart over the waveform. Deferred — requires per-position
+  event data and a client-side chart renderer.
+- [x] **Teacher "Insights" tab** — aggregated view below the uploads table:
+  total sessions, completion rate, total replays, most-used assessment
+- [x] **Export session data as CSV** — "Export CSV" button in the Insights card;
+  uses `get_my_session_events()` RPC; one row per event with upload label, event
+  type, timestamp, position
 
 ---
 
 ### School Admin UI
 
-- [ ] **Teacher list** — all teachers at the school with upload count, session count,
-  and last active date
-- [ ] **Invite teacher** — enter email, sends invitation, teacher lands in dashboard
-  already attached to the school on first login
-- [ ] **Remove teacher** — detaches teacher from school. Teacher account is preserved
+- [x] **Teacher list** — all teachers at the school with upload count, session count,
+  and last active date (`/school-admin.html`)
+- [ ] **Invite teacher** — email-based invitation deferred to Stage 6 (placeholder
+  shown in the UI with explanation)
+- [x] **Remove teacher** — detaches teacher from school. Teacher account is preserved
   with their existing uploads intact — they revert to unattached free tier. School
   Admin cannot delete accounts, only detach them.
-- [ ] **School-wide usage report** — total assessments delivered, active teachers,
-  storage used, session completion rate
+- [x] **School-wide usage report** — total assessments delivered, active teachers,
+  storage used, session completion rate — shown as stats row at top of page
 
 ---
 
 ### Division Admin UI
 
-- [ ] **School list** — all schools in the division with per-school usage metrics:
-  active teachers, total sessions, storage used
-- [ ] **Add school** — create a new school record within the division, assign or
-  invite a School Admin by email
-- [ ] **Remove school from division** — detaches a school from the division. School
+- [x] **School list** — all schools in the division with per-school teacher count
+  and total session count (`/division-admin.html`)
+- [ ] **Add school** — school creation is handled by platform admin (`/admin.html`).
+  Division Admin can view and manage schools attached to their division.
+- [x] **Remove school from division** — detaches a school from the division. School
   and its teachers revert to unattached free tier. Division Admin cannot delete
   school accounts, only detach them.
-- [ ] **Per-school drill-down** — click into a school to see the same view a School
-  Admin sees, without being able to see individual teacher session details
-- [ ] **Invite school admin** — enter email and school name, sends invitation
-- [ ] **Remove school admin** — revoke a specific teacher's school admin role without
-  removing them from the school entirely. Another admin must be assigned before the
-  role can be revoked.
-- [ ] **Division-wide usage report** — total assessments delivered across all schools,
-  active teachers, overall completion rate, storage consumed
-- [ ] **Assessment window chart** — usage over time as a simple line chart. Shows
-  spikes during provincial assessment periods — compelling visual for demonstrating
-  adoption to a superintendent or board.
-- [ ] **Active teachers report** — how many teachers have uploaded at least one
-  assessment in the current school year
-- [ ] **Export division report as CSV** — suitable for board reporting or budget
-  justification
+- [x] **Per-school drill-down** — "View Teachers" button opens an inline panel
+  showing the same teacher list a School Admin sees, without individual session
+  event details
+- [ ] **Invite school admin** — email-based invitation deferred to Stage 6 (placeholder
+  shown in the UI)
+- [x] **Remove school admin** — revoke a specific teacher's school admin role; role
+  reverts to teacher immediately
+- [x] **Division-wide usage report** — schools, teachers, active teachers this year,
+  total sessions — shown as stats row at top of page
+- [x] **Assessment window chart** — SVG bar chart showing sessions per week for the
+  last 12 weeks. Powered by `division-activity` action in `api/org.js`.
+- [x] **Active teachers report** — "Active This Year" stat counts teachers who have
+  uploaded at least one assessment since September 1 of the current school year
+- [x] **Export division report as CSV** — "Export CSV" button downloads school-level
+  summary as a CSV
 
 ---
 
 ### Tier Badge & Upgrade Prompts (teacher dashboard)
 
-- [ ] **Tier badge** — visible in dashboard header: "Free", "Teacher Premium",
+- [x] **Tier badge** — visible in dashboard header: "Free", "Teacher Premium",
   "School Plan", "Division Plan"
-- [ ] **Upgrade CTA for free tier** — when approaching or at limit, show: "Your
-  school isn't on a plan yet. Ask your principal about AudioProctor for your school."
-  with a link to the pricing page
-- [ ] **School/Division plan confirmation** — if on inherited plan, show "Your
-  [school/division] is on a plan" instead of an upgrade prompt
+- [x] **Upgrade CTA for free tier** — banner below quota bar: "Your school isn't on
+  a plan yet" with link to pricing page
+- [x] **School/Division plan confirmation** — if on inherited plan, shows "Your
+  school/division is on a plan" with link to Settings
 
 ---
 
-### Teacher Settings Page (`/dashboard/settings`)
+### Teacher Settings Page (`/settings.html`)
 
-- [ ] **Profile section** — display name (editable), email address (read-only,
-  sourced from Google), school and division affiliation (read-only, set by admin)
-- [ ] **Subscription section** — shows current tier and how it was acquired:
+- [x] **Profile section** — display name (editable via `api/account.js`), email
+  address (read-only, sourced from Google), school and division affiliation
+  (read-only, set by admin)
+- [x] **Subscription section** — shows current tier and how it was acquired:
   - "You're on the Free tier" — with upgrade CTA linking to pricing page
   - "You're on Teacher Premium" — read-only; billing management added in Stage 6
   - "Your school is on a School plan" — read-only, no action available
   - "Your division is on a Division plan" — read-only, no action available
-- [ ] **Delete account section** — clearly separated from the rest of the page,
-  below a visual divider. Two-step confirmation: first click shows a warning
-  ("This will permanently delete your account and all uploaded files. Access codes
-  will stop working immediately."), second click requires typing "DELETE" to confirm.
-  On confirmation:
+- [x] **Delete account section** — clearly separated from the rest of the page,
+  below a visual divider. Two-step confirmation: first click shows a warning,
+  second click requires typing "DELETE" to confirm. On confirmation:
   - All uploads and storage files are deleted immediately
-  - All session_events associated with their uploads are deleted
+  - All session_events associated with their uploads are deleted (cascade)
   - The profiles row is deleted
   - The auth.users record is deleted via Supabase admin API
   - Teacher is signed out and redirected to the marketing site
-  - If teacher is a School Admin, deletion is blocked until they reassign or
-    relinquish the admin role first
+  - If teacher is a School Admin, deletion is blocked with an error message
 
 ---
 

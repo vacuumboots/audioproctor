@@ -34,7 +34,10 @@ const CODE_DIGITS  = '23456789';
 
 // ─── Module state ────────────────────────────────────────────────
 let currentTier   = 'free';
+let currentRole   = 'teacher';
 let editTargetId  = null;
+let allUploads    = [];
+let allSummaries  = {};
 
 // ─── Access Code Generation ──────────────────────────────────────
 
@@ -366,6 +369,8 @@ async function loadUploads() {
     return;
   }
 
+  allUploads = uploads || [];
+
   if (!uploads || uploads.length === 0) {
     container.innerHTML = `
       <div class="empty-state" style="text-align:left; padding:2.5rem;">
@@ -379,6 +384,13 @@ async function loadUploads() {
     return;
   }
 
+  // Fetch summaries for paid tiers — fire in parallel with rendering
+  if (currentTier !== 'free') {
+    const { data: summaryRows } = await supabaseClient.rpc('get_my_upload_summaries');
+    allSummaries = {};
+    (summaryRows || []).forEach(s => { allSummaries[s.upload_id] = s; });
+  }
+
   const rows = uploads.map(u => {
     const { text: expiryText, expired } = formatExpiry(u.expires_at);
     const chipClass    = expired ? 'chip--expired' : 'chip--active';
@@ -389,11 +401,14 @@ async function loadUploads() {
       ? `<button class="btn btn--ghost btn--small" onclick="openExpiryModal('${u.id}', '${u.expires_at}')">Edit Expiry</button>`
       : '';
 
+    const statsBlock = buildUploadStatsBlock(u.id);
+
     return `
       <tr>
         <td class="col-assessment">
           <div class="col-assessment__label">${escapeHtml(displayName)}</div>
           ${showFilename ? `<div class="col-assessment__filename">${escapeHtml(u.filename)}</div>` : ''}
+          ${statsBlock}
         </td>
         <td class="col-code"><span class="monospace">${u.access_code}</span></td>
         <td class="col-word">${escapeHtml(u.exit_word)}</td>
@@ -423,6 +438,129 @@ async function loadUploads() {
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
+
+  // Show insights card for paid tiers
+  if (currentTier !== 'free') {
+    loadInsights();
+  }
+}
+
+function buildUploadStatsBlock(uploadId) {
+  if (currentTier === 'free') return '';
+  const s = allSummaries[uploadId];
+  if (!s || !s.total_sessions) return `<div class="upload-stats">No sessions yet</div>`;
+
+  const completionRate = Math.round(s.completions / s.total_sessions * 100);
+  const rateColor = completionRate >= 80 ? '#27ae60' : completionRate >= 60 ? '#e67e22' : 'var(--accent)';
+  const avgTime   = s.avg_listen_seconds ? formatDuration(s.avg_listen_seconds) : null;
+
+  let parts = [
+    `${s.total_sessions} session${s.total_sessions === 1 ? '' : 's'}`,
+    `<span style="color:${rateColor}; font-weight:500;">${completionRate}% completed</span>`,
+  ];
+  if (s.replays > 0) parts.push(`${s.replays} replay${s.replays === 1 ? '' : 's'}`);
+  if (avgTime)       parts.push(`Avg ${avgTime}`);
+
+  return `<div class="upload-stats">${parts.join(' · ')}</div>`;
+}
+
+function formatDuration(seconds) {
+  if (!seconds) return null;
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+// ─── Insights ────────────────────────────────────────────────────
+
+function loadInsights() {
+  const card = document.getElementById('insights-card');
+  if (!card) return;
+  card.classList.remove('hidden');
+
+  const container = document.getElementById('insights-container');
+  const summaryValues = Object.values(allSummaries);
+
+  if (summaryValues.length === 0) {
+    container.innerHTML = `<div class="empty-state"><p class="label">No session data yet. Stats will appear here once students use access codes.</p></div>`;
+    return;
+  }
+
+  let totalSessions = 0, totalCompletions = 0, totalReplays = 0;
+  let mostUsed = null;
+
+  summaryValues.forEach(s => {
+    totalSessions    += s.total_sessions || 0;
+    totalCompletions += s.completions    || 0;
+    totalReplays     += s.replays        || 0;
+    if (!mostUsed || (s.total_sessions || 0) > (mostUsed.total_sessions || 0)) mostUsed = s;
+  });
+
+  const completionRate = totalSessions > 0 ? Math.round(totalCompletions / totalSessions * 100) : null;
+  const rateColor = completionRate == null ? 'var(--muted)'
+    : completionRate >= 80 ? '#27ae60'
+    : completionRate >= 60 ? '#e67e22'
+    : 'var(--accent)';
+
+  const mostUsedUpload = mostUsed ? allUploads.find(u => u.id === mostUsed.upload_id) : null;
+  const mostUsedName   = mostUsedUpload ? (mostUsedUpload.label || mostUsedUpload.filename) : null;
+
+  container.innerHTML = `
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; margin-bottom:${mostUsedName ? '1.5rem' : '0'};">
+      <div class="stat-box">
+        <div class="stat-box__value">${totalSessions}</div>
+        <div class="label">Total Sessions</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box__value" style="color:${rateColor};">${completionRate != null ? completionRate + '%' : '—'}</div>
+        <div class="label">Completion Rate</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box__value">${totalReplays}</div>
+        <div class="label">Total Replays</div>
+      </div>
+    </div>
+    ${mostUsedName ? `<p style="font-size:0.85rem; color:var(--muted);">Most-used assessment: <strong style="color:var(--ink);">${escapeHtml(mostUsedName)}</strong> (${mostUsed.total_sessions} sessions)</p>` : ''}
+  `;
+}
+
+// ─── CSV Export ──────────────────────────────────────────────────
+
+async function exportCsv() {
+  const btn = document.getElementById('btn-export-csv');
+  if (btn) { btn.disabled = true; btn.textContent = 'Exporting…'; }
+
+  try {
+    const { data, error } = await supabaseClient.rpc('get_my_session_events');
+    if (error) throw new Error(error.message);
+
+    if (!data || data.length === 0) {
+      alert('No session data to export yet.');
+      return;
+    }
+
+    const headers = ['Assessment', 'Access Code', 'Event Type', 'Occurred At (UTC)', 'Position (seconds)'];
+    const rows = data.map(r => [
+      `"${(r.upload_label || '').replace(/"/g, '""')}"`,
+      r.access_code,
+      r.event_type,
+      r.occurred_at,
+      r.position_seconds != null ? r.position_seconds : '',
+    ]);
+
+    const csv  = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `audioproctor-sessions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Export failed: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Export CSV'; }
+  }
 }
 
 function formatExpiry(expiresAt) {
@@ -651,10 +789,54 @@ async function loadQuota() {
   // Resolve tier via the cascade function (division → school → teacher → free)
   currentTier = await getEffectiveTier(userId);
 
+  // Fetch profile for role and org affiliation
+  const { data: profile } = await supabaseClient
+    .from('profiles')
+    .select('role, school_id, division_id, tier, tier_override')
+    .eq('id', userId)
+    .maybeSingle();
+
+  currentRole = profile?.role || 'teacher';
+
+  // Show role-appropriate nav links
+  if (currentRole === 'platform_admin') {
+    document.getElementById('admin-nav-link')?.classList.remove('hidden');
+  } else if (currentRole === 'school_admin') {
+    document.getElementById('school-admin-nav-link')?.classList.remove('hidden');
+  } else if (currentRole === 'division_admin') {
+    document.getElementById('div-admin-nav-link')?.classList.remove('hidden');
+  }
+
+  // Tier badge
+  const badgeEl = document.getElementById('tier-badge');
+  if (badgeEl) {
+    const badgeLabels = { free: 'Free', premium: 'Teacher Premium', school: 'School Plan', division: 'Division Plan' };
+    badgeEl.textContent  = badgeLabels[currentTier] || currentTier;
+    badgeEl.classList.remove('hidden', 'tier-badge--paid');
+    if (currentTier !== 'free') badgeEl.classList.add('tier-badge--paid');
+  }
+
   // Show/hide premium advanced options section
   const advancedSection = document.getElementById('advanced-options');
   if (advancedSection) {
     advancedSection.classList.toggle('hidden', currentTier === 'free');
+  }
+
+  // Upgrade CTA (free tier only)
+  const ctaEl = document.getElementById('upgrade-cta');
+  if (ctaEl) {
+    if (currentTier === 'free') {
+      ctaEl.innerHTML = `Your school isn't on a plan yet. Analytics, CSV export, and unlimited uploads unlock at the School tier. <a href="/site/pricing.html" style="color:var(--ink); font-weight:500;">See pricing →</a>`;
+      ctaEl.classList.remove('hidden');
+    } else if (profile?.school_id) {
+      ctaEl.innerHTML = `Your school is on a plan. <a href="/settings.html" style="color:var(--ink);">View subscription details</a>`;
+      ctaEl.classList.remove('hidden');
+    } else if (profile?.division_id) {
+      ctaEl.innerHTML = `Your division is on a plan. <a href="/settings.html" style="color:var(--ink);">View subscription details</a>`;
+      ctaEl.classList.remove('hidden');
+    } else {
+      ctaEl.classList.add('hidden');
+    }
   }
 
   const el = document.getElementById('quota-indicator');

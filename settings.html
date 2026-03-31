@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioProctor — Settings</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .settings-section {
+      border-top: var(--border);
+      padding-top: 2rem;
+      margin-top: 2rem;
+    }
+    .settings-section:first-child {
+      border-top: none;
+      padding-top: 0;
+      margin-top: 0;
+    }
+    .danger-zone {
+      border-top: 2px solid var(--accent);
+      padding-top: 2rem;
+      margin-top: 2rem;
+    }
+    .danger-zone .label { color: var(--accent); }
+    .subscription-block {
+      border: var(--border);
+      padding: 1.25rem 1.5rem;
+      background: var(--warm-mid);
+      font-size: 0.9rem;
+    }
+    .subscription-block p { margin: 0; line-height: 1.6; }
+    .subscription-block strong { font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="page-container">
+      <div class="top-bar__inner">
+        <span class="wordmark">Audio<span class="accent">Proctor</span></span>
+        <div style="display:flex; align-items:center; gap:1.5rem;">
+          <span id="user-email" class="label"></span>
+          <a href="/dashboard.html" class="btn btn--ghost btn--small">Dashboard</a>
+          <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-container" style="padding-top:2.5rem; padding-bottom:4rem; max-width:640px;">
+
+    <h1 style="font-size:1.6rem; margin-bottom:2rem;">Settings</h1>
+
+    <div class="card">
+
+      <!-- ─── Profile ─────────────────────────────────────────────────── -->
+      <div class="settings-section">
+        <p class="label" style="margin-bottom:1.25rem;">Profile</p>
+
+        <div class="form-group">
+          <label class="label" for="display-name-input">Display Name <span style="font-weight:300; text-transform:none; letter-spacing:0;">(optional)</span></label>
+          <input type="text" id="display-name-input" class="input-field" maxlength="80" placeholder="e.g. Ms. Johnson">
+        </div>
+
+        <div class="form-group">
+          <label class="label">Email Address</label>
+          <p id="profile-email" style="font-size:0.9rem; color:var(--muted); margin:0.25rem 0 0;">—</p>
+          <p class="label text-muted" style="margin-top:0.25rem; text-transform:none; letter-spacing:0; font-size:0.75rem;">Sourced from your Google account. Cannot be changed here.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="label">Organization</label>
+          <p id="profile-org" style="font-size:0.9rem; color:var(--muted); margin:0.25rem 0 0;">—</p>
+          <p class="label text-muted" style="margin-top:0.25rem; text-transform:none; letter-spacing:0; font-size:0.75rem;">Set by your school or division admin. Contact them to update.</p>
+        </div>
+
+        <div id="profile-notice" class="notice hidden" style="margin-bottom:0.75rem;"></div>
+        <button class="btn btn--primary" onclick="saveDisplayName()">Save Profile</button>
+      </div>
+
+      <!-- ─── Subscription ──────────────────────────────────────────────── -->
+      <div class="settings-section">
+        <p class="label" style="margin-bottom:1.25rem;">Subscription</p>
+        <div id="subscription-block" class="subscription-block">
+          <p>Loading…</p>
+        </div>
+      </div>
+
+      <!-- ─── Delete Account ────────────────────────────────────────────── -->
+      <div class="danger-zone">
+        <p class="label" style="margin-bottom:0.75rem;">Delete Account</p>
+        <p style="font-size:0.875rem; color:var(--muted); margin-bottom:1.25rem; line-height:1.6;">
+          This will permanently delete your account and all uploaded audio files.
+          Access codes will stop working immediately. This action cannot be undone.
+        </p>
+
+        <div id="delete-step-1">
+          <button class="btn btn--danger" onclick="startDeleteFlow()">Delete My Account</button>
+        </div>
+
+        <div id="delete-step-2" class="hidden">
+          <div style="border:1px solid var(--accent); padding:1.25rem; background:var(--light-accent); margin-bottom:1rem;">
+            <p style="font-size:0.875rem; color:var(--accent); font-weight:500; margin-bottom:0.5rem;">Are you absolutely sure?</p>
+            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem; line-height:1.5;">
+              All uploads and audio files will be deleted immediately.
+              All session analytics associated with your assessments will be deleted.
+              Students with active access codes will lose access.
+            </p>
+            <div class="form-group" style="margin-bottom:0.75rem;">
+              <label class="label" for="delete-confirm-input">Type DELETE to confirm</label>
+              <input type="text" id="delete-confirm-input" class="input-field" placeholder="DELETE" style="max-width:200px;" oninput="checkDeleteConfirm()">
+            </div>
+            <div style="display:flex; gap:0.75rem;">
+              <button id="btn-confirm-delete" class="btn btn--danger" onclick="confirmDelete()" disabled>Permanently Delete</button>
+              <button class="btn btn--ghost" onclick="cancelDeleteFlow()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="delete-notice" class="notice hidden" style="margin-top:0.75rem;"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/settings.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAuth();
+      if (!user) return;
+      document.getElementById('user-email').textContent = user.email;
+      await initSettings(user);
+    })();
+  </script>
+
+</body>
+</html>

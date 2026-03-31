@@ -6,6 +6,38 @@
   <title>AudioProctor — Dashboard</title>
   <link rel="stylesheet" href="/css/styles.css">
   <style>
+    .tier-badge {
+      display: inline-block;
+      padding: 0.18rem 0.55rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+      border: 1px solid var(--ink);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+    }
+    .tier-badge--paid {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .upload-stats {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+      line-height: 1.4;
+    }
+    .stat-box {
+      border: var(--border);
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-box__value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
     .upload-progress {
       margin-top: 1rem;
       display: none;
@@ -71,7 +103,12 @@
       <div class="top-bar__inner">
         <span class="wordmark">Audio<span class="accent">Proctor</span></span>
         <div style="display:flex; align-items:center; gap:1.5rem;">
+          <span id="tier-badge" class="tier-badge hidden"></span>
           <span id="user-email" class="label"></span>
+          <a id="admin-nav-link" href="/admin.html" class="btn btn--ghost btn--small hidden">Admin</a>
+          <a id="school-admin-nav-link" href="/school-admin.html" class="btn btn--ghost btn--small hidden">School Admin</a>
+          <a id="div-admin-nav-link" href="/division-admin.html" class="btn btn--ghost btn--small hidden">Division Admin</a>
+          <a href="/settings.html" class="btn btn--ghost btn--small">Settings</a>
           <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
         </div>
       </div>
@@ -81,6 +118,7 @@
   <div class="page-container" style="padding-top:2.5rem; padding-bottom:4rem;">
 
     <div id="quota-indicator" class="quota-bar hidden"></div>
+    <div id="upgrade-cta" class="hidden" style="font-size:0.85rem; color:var(--muted); margin-bottom:1.5rem; padding:0.75rem 1rem; border:1px solid var(--warm-mid);"></div>
 
     <!-- Upload Card -->
     <div class="card">
@@ -174,6 +212,17 @@
         <div class="empty-state">
           <p class="label">No assessments uploaded yet</p>
         </div>
+      </div>
+    </div>
+
+    <!-- Insights (paid tiers only) -->
+    <div id="insights-card" class="card mt-4 hidden">
+      <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
+        <p class="label">Insights</p>
+        <button id="btn-export-csv" class="btn btn--ghost btn--small" onclick="exportCsv()">Export CSV</button>
+      </div>
+      <div id="insights-container">
+        <div class="empty-state"><p class="label">Loading…</p></div>
       </div>
     </div>
 
