@@ -305,6 +305,9 @@ async function handleUpload() {
 
     if (dbError) {
       await supabaseClient.storage.from('audio-files').remove([storagePath]);
+      if (dbError.code === '23505') {
+        throw new Error('The generated access code was already taken — this is rare. Please try uploading again.');
+      }
       throw new Error('Could not save upload record: ' + dbError.message);
     }
 
@@ -533,7 +536,11 @@ async function saveExpiryDate() {
   const val = document.getElementById('expiry-date-input').value;
   if (!val || !editTargetId) return;
 
-  const newExpiry = new Date(val).toISOString();
+  const newExpiry = new Date(val);
+  if (newExpiry <= new Date()) {
+    alert('Please choose a date and time in the future.');
+    return;
+  }
 
   const { error } = await supabaseClient
     .from('uploads')
@@ -591,27 +598,37 @@ async function duplicateUpload(id, btn) {
 
     if (fetchErr || !source) throw new Error('Could not load assessment details.');
 
-    // Generate new code and exit word (always standard format defaults)
-    const newCode     = await generateAccessCode('standard');
-    const newWord     = pickExitWord();
-    const newWordHash = await hashWord(newWord);
-    const expiresAt   = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    // Generate new code and exit word (standard format defaults).
+    // Retry up to 3 times on the rare chance of a global code collision (23505).
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    let lastErr;
+    let inserted = false;
 
-    const { error: insertErr } = await supabaseClient
-      .from('uploads')
-      .insert({
-        teacher_id:     userId,
-        filename:       source.filename,
-        label:          source.label,
-        storage_path:   source.storage_path,
-        access_code:    newCode,
-        exit_word:      newWord,
-        exit_word_hash: newWordHash,
-        expires_at:     expiresAt,
-        file_size_mb:   source.file_size_mb || 0,
-      });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const newCode     = await generateAccessCode('standard');
+      const newWord     = pickExitWord();
+      const newWordHash = await hashWord(newWord);
 
-    if (insertErr) throw new Error('Could not create duplicate: ' + insertErr.message);
+      const { error } = await supabaseClient
+        .from('uploads')
+        .insert({
+          teacher_id:     userId,
+          filename:       source.filename,
+          label:          source.label,
+          storage_path:   source.storage_path,
+          access_code:    newCode,
+          exit_word:      newWord,
+          exit_word_hash: newWordHash,
+          expires_at:     expiresAt,
+          file_size_mb:   source.file_size_mb || 0,
+        });
+
+      if (!error) { inserted = true; break; }
+      if (error.code !== '23505') { lastErr = error; break; }
+      lastErr = error; // code collision — try again
+    }
+
+    if (!inserted) throw new Error('Could not create duplicate: ' + (lastErr?.message || 'unknown error'));
 
     await loadUploads();
     await loadQuota();
@@ -757,5 +774,6 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
