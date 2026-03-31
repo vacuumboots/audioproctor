@@ -37,13 +37,13 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 ## Stage 3 — Teacher Customization
 *Give teachers control without adding complexity.*
 
-- [ ] **Custom exit word** — teacher can type their own exit word instead of the randomly assigned one
-- [ ] **Exit word complexity options** — choose between: short word (default), long word, two-word phrase, numeric PIN
-- [ ] **Access code complexity options** — choose between: standard (`ABC-123`), short 4-char (`AB12`), or a custom code the teacher sets themselves
-- [ ] **Rename uploads** — edit the display label after uploading
-- [ ] **Extend expiry** — reset the 7-day clock on an upload without re-uploading the file
-- [ ] **Manual expiry override** — set a specific expiry date/time instead of always 7 days
-- [ ] Duplicate an upload (generates a new code for the same audio file)
+- [x] **Custom exit word** — teacher can type their own exit word instead of the randomly assigned one
+- [x] **Exit word complexity options** — choose between: short word (default), long word, two-word phrase, numeric PIN
+- [x] **Access code complexity options** — choose between: standard (`ABC-123`), short 4-char (`AB12`), or a custom code the teacher sets themselves
+- [x] **Rename uploads** — edit the display label after uploading
+- [x] **Extend expiry** — reset the 7-day clock on an upload without re-uploading the file
+- [x] **Manual expiry override** — set a specific expiry date/time instead of always 7 days
+- [x] Duplicate an upload (generates a new code for the same audio file)
 
 ---
 
@@ -57,72 +57,228 @@ just presented at different levels of aggregation.
 
 No student identity is ever recorded. All events are anonymous by design.
 
----
-
-### Database Changes
-
-- [ ] **`session_events` table** — access_code_id, event_type, occurred_at, metadata (JSONB)
-  - Event types: `code_entered`, `playback_started`, `playback_paused`, `playback_resumed`,
-  `playback_completed`, `replay_triggered`, `exit_word_used`, `session_expired`
-  - Metadata captures position_seconds on pause/resume/replay events — no student identity,
-  no device fingerprint, no IP address
-- [ ] **`upload_summaries` materialized view** — aggregates session_events per upload:
-  total sessions, completions, early exits, average listen time, replay count.
-  Refreshed on a schedule rather than computed on every dashboard load.
+## Stage 4 — Database Foundation & Platform Admin
+*Build the data layer that everything else depends on, and give the 
+platform admin visibility before pilots begin.*
 
 ---
 
-### Teacher-Level Analytics
+### Session Analytics Schema
 
-- [ ] **Per-upload summary card** — visible on each upload in the dashboard:
-  "Used 24 times · 18 completed · 6 exited early · Average listen time 14:32"
-- [ ] **Completion rate indicator** — simple visual (green/yellow/red) showing what
-  percentage of sessions reached the end of the audio
-- [ ] **Replay signal** — "Audio was replayed from the beginning 9 times" — useful
-  for identifying passages students found difficult
-- [ ] **Timeline view** — when during the audio did most pauses and replays occur,
-  shown as a simple bar graph over the waveform. Helps teachers identify whether
-  a specific question or passage caused difficulty.
-- [ ] **Teacher dashboard "Insights" tab** — aggregated view across all of a teacher's
-  uploads: total sessions delivered, total completions, most-used assessments
-- [ ] **Export session data as CSV** — one row per session event, suitable for teacher
-  records or inclusion in an IEP review
-
----
-
-### Division Admin Analytics
-
-- [ ] **Division-wide summary** — total assessments delivered across all schools,
-  total sessions, overall completion rate, storage consumed
-- [ ] **Per-school breakdown** — same metrics grouped by school, sortable by usage.
-  Lets a division admin see which schools are actively using the tool and which
-  haven't started yet.
-- [ ] **Active teachers report** — how many teachers have uploaded at least one
-  assessment in the current school year
-- [ ] **Assessment window report** — usage over time shown as a simple line chart.
-  Naturally shows spikes during provincial assessment periods — a compelling visual
-  for demonstrating adoption to a superintendent or board.
-- [ ] **Export division report as CSV** — suitable for board reporting or budget
-  justification documents
+- [ ] **`session_events` table** — access_code_id, event_type, 
+  occurred_at, metadata (JSONB)
+  - Event types: `code_entered`, `playback_started`, `playback_paused`,
+    `playback_resumed`, `playback_completed`, `replay_triggered`,
+    `exit_word_used`, `session_expired`
+  - Metadata captures position_seconds on pause/resume/replay events
+  - No student identity, no device fingerprint, no IP address at any level
+- [ ] **`upload_summaries` materialized view** — aggregates session_events
+  per upload: total sessions, completions, early exits, average listen
+  time, replay count. Refreshed on a schedule rather than computed on
+  every dashboard load.
+- [ ] **Event logging in the session API** — wire `api/session.js` to
+  write to `session_events` on each state change. Successful code entry,
+  playback events, and exit word use are all logged. Failed attempts are
+  already logged (Stage 2) and remain separate.
 
 ---
 
-### Privacy Boundaries
+### Account Hierarchy Schema
 
-- [ ] All analytics are aggregate only at the division admin level — no drill-down
-  to individual session events from the division view
-- [ ] Session events contain no student identity, device fingerprint, or IP address
-  at any level
-- [ ] Teachers can only see analytics for their own uploads
-- [ ] Analytics data is retained for the duration of the division's active contract,
-  then deleted on account closure
-- [ ] Privacy Policy updated to document session event collection and retention policy
+- [ ] **`divisions` table** — name, enrolment_band, tier, admin_email,
+  expires_at, created_at
+- [ ] **`schools` table** — name, division_id (nullable), tier,
+  admin_email, expires_at, created_at
+- [ ] **Update `profiles` table** — add school_id (nullable),
+  division_id (nullable), tier_override, role
+  (teacher / school_admin / division_admin / platform_admin)
+- [ ] **`invitations` table** — email, role, school_id (nullable),
+  division_id (nullable), token, expires_at, accepted_at
+- [ ] **`get_effective_tier(user_id)` DB function** — resolves inherited
+  tier at runtime: division tier → school tier → teacher tier → free
+  (first match wins). Called from quota-checking RLS policies and the
+  dashboard. Replaces the current static `tier` read in `ensureProfile()`.
+- [ ] **Update `check_upload_quota()`** — replace direct tier read with
+  `get_effective_tier()` so quota enforcement reflects inherited tier
+  automatically.
+- [ ] **Update `ensureProfile()`** — call `get_effective_tier()` on every
+  dashboard load so a teacher whose school just upgraded gets correct
+  quota immediately without a manual profile update.
 
 ---
 
----
+### Privacy Boundaries (enforced at schema level)
+
+- [ ] RLS policies ensure teachers can only read their own session_events
+- [ ] Division admins can read aggregated summaries for their division
+  only — no drill-down to individual session events
+- [ ] Platform admin role bypasses RLS for support and monitoring purposes
+- [ ] Analytics data retained for duration of active contract, deleted on
+  account closure — document retention policy in Privacy Policy update
 
 ---
+
+### Platform Admin Dashboard (`/admin` — platform admin role only)
+
+- [ ] **Division list** — all divisions with tier, enrolment band,
+  expiry date, active teacher count, total storage used, total sessions
+  delivered
+- [ ] **School list** — all schools, filterable by division, with same
+  usage metrics
+- [ ] **Unattached teachers list** — teachers with no school or division
+  assignment, with signup date and country_code flag for anomaly review
+- [ ] **Tier management** — manually set or override tier for any
+  division, school, or teacher. Dropdown selector: Free / Teacher
+  Premium / School / Division. Takes effect immediately via
+  `get_effective_tier()`. Essential for pilot management before Stripe
+  is built.
+- [ ] **Account management** — invite, deactivate, or permanently delete
+  any division, school, or teacher account. Deactivation preserves data
+  for 30 days before deletion. Reassign a teacher or school to a
+  different division without losing their history.
+- [ ] **Invitation tool** — invite a division admin or school admin by
+  email directly from the admin dashboard
+- [ ] **Account flags** — mark an account with a status note
+  (e.g. "demo requested", "invoice sent", "pilot active", "follow up")
+  for sales pipeline tracking
+- [ ] **Anomaly review queue** — surfaces accounts flagged by abuse
+  prevention rules: non-Canadian country_code, high upload volume,
+  large file sizes. Reviewable and dismissable from the admin dashboard.
+
+  ### School Admin UI
+
+- [ ] **Teacher list** — all teachers at the school with upload count,
+  session count, and last active date
+- [ ] **Invite teacher** — enter email, sends invitation, teacher lands
+  in dashboard already attached to the school on first login
+- [ ] **Remove teacher** — detaches teacher from school. Teacher account
+  is preserved with their existing uploads intact — they revert to
+  unattached free tier. School Admin cannot delete accounts, only
+  detach them.
+- [ ] **School-wide usage report** — total assessments delivered, active
+  teachers, storage used, session completion rate
+- [ ] **Billing status** — current tier, renewal date, payment method
+  (if school purchased independently)
+
+
+### Division Admin UI
+
+- [ ] **School list** — all schools in the division with per-school
+  usage metrics: active teachers, total sessions, storage used
+- [ ] **Add school** — create a new school record within the division,
+  assign or invite a School Admin by email
+- [ ] **Remove school from division** — detaches a school from the
+  division. School and its teachers revert to unattached free tier.
+  Division Admin cannot delete school accounts, only detach them.
+- [ ] **Per-school drill-down** — click into a school to see the same
+  view a School Admin sees, without being able to see individual teacher
+  session details
+- [ ] **Invite school admin** — enter email and school name, sends
+  invitation
+- [ ] **Remove school admin** — revoke a specific teacher's school admin
+  role without removing them from the school entirely. Another admin
+  must be assigned before the role can be revoked.
+- [ ] **Division-wide usage report** — total assessments delivered across
+  all schools, active teachers, overall completion rate, storage consumed
+- [ ] **Assessment window chart** — usage over time as a simple line
+  chart. Shows spikes during provincial assessment periods — compelling
+  visual for demonstrating adoption to a superintendent or board.
+- [ ] **Active teachers report** — how many teachers have uploaded at
+  least one assessment in the current school year
+- [ ] **Export division report as CSV** — suitable for board reporting
+  or budget justification
+---
+
+### Privacy Policy Update
+
+- [ ] Update Privacy Policy to document session event collection:
+  what is recorded, what is not, how long it is retained, and that
+  no student identity is captured at any level.
+
+---
+
+## Stage 5 — Analytics & Administration UI
+*Surface the Stage 4 data to the right people at the right level.*
+
+---
+
+### Teacher Analytics
+
+- [ ] **Per-upload summary card** — visible on each upload in the
+  dashboard: "Used 24 times · 18 completed · 6 exited early · 
+  Avg listen time 14:32"
+- [ ] **Completion rate indicator** — simple visual (green/yellow/red)
+  showing percentage of sessions that reached end of audio
+- [ ] **Replay signal** — "Audio was replayed from the beginning 9 times"
+- [ ] **Timeline view** — when during the audio did most pauses and
+  replays occur, shown as a simple bar chart. Helps identify whether a
+  specific passage caused difficulty.
+- [ ] **Teacher "Insights" tab** — aggregated across all of a teacher's
+  uploads: total sessions delivered, total completions, most-used
+  assessments
+- [ ] **Export session data as CSV** — one row per session event,
+  suitable for teacher records or IEP review documentation
+
+---
+
+### School Admin UI
+
+- [ ] **Teacher list** — all teachers at the school with upload count,
+  session count, last active date
+- [ ] **Invite teacher** — enter email, sends invitation, teacher lands
+  in dashboard already attached to the school on first login
+- [ ] **Remove teacher** — detaches teacher from school (preserves their
+  uploads and account)
+- [ ] **School-wide usage report** — total assessments delivered, active
+  teachers, storage used, session completion rate
+- [ ] **Billing status** — current tier, renewal date, payment method
+  (if school purchased independently)
+
+---
+
+### Division Admin UI
+
+- [ ] **School list** — all schools in the division with per-school
+  usage metrics: active teachers, total sessions, storage used
+- [ ] **Per-school drill-down** — click into a school to see the same
+  view a School Admin sees, without being able to see individual teacher
+  session details
+- [ ] **Invite school admin** — enter email and school name, sends
+  invitation
+- [ ] **Division-wide usage report** — total assessments delivered across
+  all schools, active teachers, overall completion rate, storage consumed
+- [ ] **Assessment window chart** — usage over time as a simple line
+  chart. Shows spikes during provincial assessment periods — compelling
+  visual for demonstrating adoption to a superintendent or board.
+- [ ] **Active teachers report** — how many teachers have uploaded at
+  least one assessment in the current school year
+- [ ] **Export division report as CSV** — suitable for board reporting
+  or budget justification
+
+---
+
+### Tier Badge & Upgrade Prompts (teacher dashboard)
+
+- [ ] **Tier badge** — visible in dashboard header: "Free", "Teacher
+  Premium", "School Plan", "Division Plan"
+- [ ] **Upgrade CTA for free tier** — when approaching or at limit,
+  show: "Your school isn't on a plan yet. Ask your principal about
+  AudioProctor for your school." with a link to the pricing page
+- [ ] **School/Division plan confirmation** — if on inherited plan, show
+  "Your [school/division] is on a plan" instead of an upgrade prompt
+.
+
+---
+
+### Privacy Policy Update
+
+- [ ] Update Privacy Policy to document session event collection:
+  what is recorded, what is not, how long it is retained, and that
+  no student identity is captured at any level.
+
+---
+---
+
 
 ## Stage 5 — Administration & Tiers (Revised)
 *The hierarchy that makes a division demo compelling and a school purchase practical.*
@@ -195,82 +351,107 @@ Platform Admin (Adam)
 - Tier is inherited downward — a division purchase trickles down automatically
 - A teacher or school can purchase upward independently if their parent org hasn't
 
----
+**Detach and fallback rule:** When a teacher is detached from a school,
+or a school is detached from a division, the detached account immediately
+reverts to free tier. No grace period — quota enforcement kicks in on
+the next upload attempt. Existing uploads are preserved and remain
+accessible until they expire normally. If a teacher was on an inherited
+School or Division plan and had more than 3 uploads active, those uploads
+continue to function until expiry but no new uploads are permitted beyond
+the free tier limit. The teacher is notified by email at the moment of
+detachment that their tier has changed.
 
-### Platform Admin Dashboard (`/admin` — Adam only)
+### Teacher Analytics
 
-- List all divisions, schools, and unattached teachers
-- See tier, enrolment band, expiry date, and usage for each
-- Manually set or override tier for any account (for pilots, trials, invoiced deals)
-- Invite a division admin or school admin by email
-- Flag an account for follow-up (e.g. "demo requested", "invoice sent")
-- No Stripe required for early pilots — Adam flips tiers manually until billing is built
-
----
-
-### Division Admin Dashboard (Division tier only)
-
-- List all schools in the division and their usage
-- Invite or remove school admins by email
-- Division-wide usage report — total uploads, storage used, active teachers
-- View billing status and renewal date
-
----
-
-### School Admin Dashboard (School tier and above)
-
-- List all teachers at the school
-- Invite or remove teachers by email
-- School-wide usage report
-- View and manage billing if school purchased independently
+- [ ] **Per-upload summary card** — visible on each upload in the
+  dashboard: "Used 24 times · 18 completed · 6 exited early · 
+  Avg listen time 14:32"
+- [ ] **Completion rate indicator** — simple visual (green/yellow/red)
+  showing percentage of sessions that reached end of audio
+- [ ] **Replay signal** — "Audio was replayed from the beginning 9 times"
+- [ ] **Timeline view** — when during the audio did most pauses and
+  replays occur, shown as a simple bar chart. Helps identify whether a
+  specific passage caused difficulty.
+- [ ] **Teacher "Insights" tab** — aggregated across all of a teacher's
+  uploads: total sessions delivered, total completions, most-used
+  assessments
+- [ ] **Export session data as CSV** — one row per session event,
+  suitable for teacher records or IEP review documentation
 
 ---
 
-### Teacher Dashboard Additions
+### School Admin UI
 
-- Tier badge visible in the dashboard — "Free", "Premium", "School Plan", "Division Plan"
-- Soft gates when approaching free tier limits — friendly prompt, not a hard block
-- Upgrade CTA for free tier teachers — self-serve Teacher Premium via Stripe (Stage 6)
-- If on School or Division plan, show "Your school/division is on a plan" instead of an upgrade prompt
+- [ ] **Teacher list** — all teachers at the school with upload count,
+  session count, last active date
+- [ ] **Invite teacher** — enter email, sends invitation, teacher lands
+  in dashboard already attached to the school on first login
+- [ ] **Remove teacher** — detaches teacher from school (preserves their
+  uploads and account)
+- [ ] **School-wide usage report** — total assessments delivered, active
+  teachers, storage used, session completion rate
+- [ ] **Billing status** — current tier, renewal date, payment method
+  (if school purchased independently)
 
----
 
-### Database Changes Required
+### Division Admin UI
 
-- `divisions` table — name, enrolment_band, tier, admin_email, expires_at
-- `schools` table — name, division_id (nullable), tier, admin_email, expires_at
-- `teacher_profiles` table — user_id, school_id (nullable), division_id (nullable), tier_override
-- Effective tier resolution: division tier → school tier → teacher tier → free (first match wins)
-- `invitations` table — email, role, school_id, division_id, token, accepted_at
-- **Note on `ensureProfile()` (from Stage 2):** The current implementation writes a `profiles` row
-  once on first login and reads `tier` directly from it. When inherited tier resolution is
-  implemented here, `ensureProfile()` (in `js/auth.js`) must be replaced with a function that
-  resolves effective tier at runtime — checking division → school → teacher tier in order — so a
-  teacher whose school just upgraded gets the correct quota immediately, without waiting for a manual
-  profile update. Consider a DB function `get_effective_tier(user_id)` that performs this resolution
-  server-side, called from both the dashboard and any quota-checking RLS policy.
-
----
-
-### Billing Notes (implement in Stage 6)
-
-- Teacher Premium: Stripe self-serve, annual subscription
-- School tier: Stripe checkout or manual invoice, annual
-- Division tier: manual invoice for now — division procurement rarely works through self-serve checkout
-- All prices in CAD
-- Early pilot divisions: manually set to Division tier with no billing until renewal
-
-## Stage 6 — Distribution & Monetization
-*Turning it into a real product.*
-
-The goal of Stage 6 is to remove every manual step from the sales and onboarding
-process so that a division can go from "heard about it" to "deployed across all
-Chromebooks" without requiring your direct involvement at each step. Early customers
-will be onboarded manually — that's fine and expected. This stage systematizes what
-you've already learned from those early conversations.
+- [ ] **School list** — all schools in the division with per-school
+  usage metrics: active teachers, total sessions, storage used
+- [ ] **Per-school drill-down** — click into a school to see the same
+  view a School Admin sees, without being able to see individual teacher
+  session details
+- [ ] **Invite school admin** — enter email and school name, sends
+  invitation
+- [ ] **Division-wide usage report** — total assessments delivered across
+  all schools, active teachers, overall completion rate, storage consumed
+- [ ] **Assessment window chart** — usage over time as a simple line
+  chart. Shows spikes during provincial assessment periods — compelling
+  visual for demonstrating adoption to a superintendent or board.
+- [ ] **Active teachers report** — how many teachers have uploaded at
+  least one assessment in the current school year
+- [ ] **Export division report as CSV** — suitable for board reporting
+  or budget justification
 
 ---
 
+### Tier Badge & Upgrade Prompts (teacher dashboard)
+
+- [ ] **Tier badge** — visible in dashboard header: "Free", "Teacher
+  Premium", "School Plan", "Division Plan"
+- [ ] **Upgrade CTA for free tier** — when approaching or at limit,
+  show: "Your school isn't on a plan yet. Ask your principal about
+  AudioProctor for your school." with a link to the pricing page
+- [ ] **School/Division plan confirmation** — if on inherited plan, show
+  "Your [school/division] is on a plan" instead of an upgrade prompt
+
+  ### Teacher Settings Page (`/dashboard/settings`)
+
+- [ ] **Profile section** — display name (editable), email address
+  (read-only, sourced from Google), school and division affiliation
+  (read-only, set by admin)
+- [ ] **Subscription section** — shows current tier and how it was
+  acquired:
+  - "You're on the Free tier" — with upgrade CTA linking to pricing page
+  - "You're on Teacher Premium — renews [date]" — with manage/cancel
+    placeholder (Stripe not yet connected; show "Contact us to manage
+    your subscription" linking to hello@audioproctor.com for now)
+  - "Your school is on a School plan" — read-only, no action available
+  - "Your division is on a Division plan" — read-only, no action available
+- [ ] **Delete account section** — clearly separated from the rest of
+  the page, below a visual divider. Two-step confirmation: first click
+  shows a warning ("This will permanently delete your account and all
+  uploaded files. Access codes will stop working immediately."), second
+  click requires typing "DELETE" to confirm. On confirmation:
+  - All uploads and storage files are deleted immediately
+  - All session_events associated with their uploads are deleted
+  - The profiles row is deleted
+  - The auth.users record is deleted via Supabase admin API
+  - Teacher is signed out and redirected to the marketing site
+  - If teacher is a School Admin, deletion is blocked until they
+    reassign or relinquish the admin role first
+
+## Stage 6 
 ### Chrome Web Store
 
 - [ ] **Publish extension to Chrome Web Store** — unlisted initially (discoverable only
@@ -391,21 +572,41 @@ you've already learned from those early conversations.
 
 ---
 
-## Pricing Tiers
+### Pricing Tiers
 *Reference model for when billing is implemented in Stage 6.*
 
 **Free — Individual Teacher**
 - 1 teacher account
-- 5 active uploads at a time
+- 3 uploads per calendar month
 - 7-day expiry only (no override)
 - Randomly assigned exit words and access codes (no customization)
 - No analytics
-- Purpose: gives teachers enough to champion the product internally before a division decision is made
+- Purpose: gives teachers enough to run real assessments and champion
+  the product internally before a school or division decision is made
 
-**Division — Annual Contract, Priced by Enrolment**
-- Unlimited teacher accounts across all schools in the division
-- All features across all stages
-- Division admin role, school grouping, usage reports
+**Teacher Premium — $75 CAD/year**
+- 1 teacher account
+- Unlimited uploads
+- Extended and manual expiry override
+- Custom exit words and access code options
+- Basic session analytics and CSV export
+- For teachers whose school or division hasn't purchased, but who want
+  full access independently
+
+**School — $200 CAD/year**
+- All Teacher Premium features for every teacher at the school
+- Up to 15 teacher accounts
+- School admin role (principal or designate) — invite and remove teachers
+- School-wide usage report
+- Single annual invoice or credit card payment at the school level
+- Intended for schools spending from their own minibudget
+
+**Division — Annual contract, priced by enrolment**
+- All School features for every school in the division
+- Unlimited teacher accounts across all schools
+- Division admin role and school grouping
+- Division-wide usage reports
+- Custom subdomain
 - Priority support and onboarding call
 - Single annual invoice to the division office
 
@@ -418,26 +619,52 @@ you've already learned from those early conversations.
 
 *Enrolment figures from Alberta Education's annual school authority report.*
 
-**Pricing rationale:** Cost scales with the number of assessed students, not the number of features
-used. A metro division gets identical functionality to a small rural division — the price difference
-reflects load, support overhead, and the administrative value of a single division-wide contract
-covering hundreds of teachers and thousands of Chromebooks. Individual school purchases are not
-offered; the division tier is the only paid option.
+**Pricing rationale:** Cost scales with the scope of the purchase, not
+the number of features used. Every tier gets the same core functionality.
+A metro division pays more than a rural division because the contract
+covers more teachers, more schools, and more Chromebooks — not because
+they get a different product. Individual teachers and schools can purchase
+independently; a division contract makes the most sense when IT is
+deploying to all Chromebooks at once.
 
-**Pilot program:** First division signs free for one full school year in exchange for structured
-feedback and a written testimonial. Converts to paid at renewal.
+**Pilot program:** Offered selectively to early divisions — free for one
+full school year in exchange for structured feedback and a written
+testimonial. Managed manually through the platform admin dashboard.
+Not advertised publicly.
 
 ---
 
 ## Marketing Site — Pricing Communication
 *How the pricing model should be framed consistently across the marketing site.*
 
-- **Home page** — include a Pricing section after the "Why AudioProctor" columns. Two cards: Free tier and Division tier with the enrolment table. Headline: "One price. The whole division." Sets the expectation that AudioProctor sells to divisions, not individual teachers.
+- **Home page** — Pricing section after the "Why AudioProctor" columns.
+  Four cards: Free, Teacher Premium, School, Division (with enrolment
+  table). Section headline: "Pricing that fits how schools actually work."
+  Subhead: "Whether you're a single teacher, a school spending from a
+  minibudget, or a division deploying to every Chromebook at once —
+  there's a tier for how you actually make decisions." CTA on Free card:
+  "Sign in to get started." CTA on Teacher Premium and School: "Request
+  a quote" → /contact until Stripe is live. CTA on Division: "Request a
+  pilot" → /contact. Footer line below cards: "All prices in CAD. Division
+  pricing is by annual invoice. Teacher Premium and School tiers are
+  self-serve via credit card (coming soon — contact us to purchase in the
+  meantime)."
 
-- **Use Cases page** — add a one-line pricing callout to each use case card: small school card gets "Free tier — one teacher, no commitment." Division rollout card gets "Division tier — IT deploys once, every school has it." Provincial assessment card omits pricing, focuses on credibility.
+- **Use Cases page** — one-line pricing callout on each card: Provincial
+  Assessment card: no pricing mention, focus on credibility. Small School
+  card: "Free tier covers it — no infrastructure required." Division
+  Rollout card: "Division tier — IT deploys once, every school has it."
 
-- **About page** — include a short paragraph explaining the pricing philosophy in plain language: AudioProctor is priced by division enrolment, not by feature tier. A small rural division pays less than a metro division not because they get less, but because the price reflects the scale of what's being covered.
+- **About page** — short paragraph explaining the pricing philosophy:
+  AudioProctor is priced by the scope of the purchase. A teacher can sign
+  up free. A school can buy a plan from their minibudget. A division can
+  sign one contract that covers every school, every teacher, and every
+  Chromebook. The price scales with how much of the organization is
+  covered, not with how many features are unlocked.
 
-- **Contact / Demo Request form** — add a Division Enrolment dropdown so leads self-segment on arrival: Under 2,000 students / 2,000–8,000 / 8,000–25,000 / 25,000+ / Just exploring or individual teacher. This means every demo request arrives pre-qualified for the correct pricing band.
+- **Contact / Demo Request form** — add a Division Enrolment dropdown so
+  leads self-segment on arrival: Individual teacher / Under 2,000 students
+  / 2,000–8,000 / 8,000–25,000 / 25,000+. Every demo request arrives
+  pre-qualified for the correct pricing band before you reply.
 
 - **Privacy Policy and Terms of Service** — no pricing mention needed.
