@@ -203,14 +203,9 @@ async function handleUpload() {
       }
     }
 
-    // Check quota and storage cap (UI-side gate; server enforces via RLS)
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('tier, storage_used_mb')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (!profile || profile.tier === 'free') {
+    // Check quota and storage cap (UI-side gate; server enforces via RLS).
+    // currentTier is already set by loadQuota() which runs on page load.
+    if (currentTier === 'free') {
       const now        = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const { count }  = await supabaseClient
@@ -229,6 +224,11 @@ async function handleUpload() {
         return;
       }
 
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('storage_used_mb')
+        .eq('id', userId)
+        .maybeSingle();
       const storageUsed = profile?.storage_used_mb || 0;
       const fileSizeMb  = file.size / 1024 / 1024;
       if (storageUsed + fileSizeMb > 50) {
@@ -648,13 +648,8 @@ async function loadQuota() {
   if (!session) return;
   const userId = session.user.id;
 
-  const { data: profile } = await supabaseClient
-    .from('profiles')
-    .select('tier, storage_used_mb')
-    .eq('id', userId)
-    .maybeSingle();
-
-  currentTier = profile?.tier || 'free';
+  // Resolve tier via the cascade function (division → school → teacher → free)
+  currentTier = await getEffectiveTier(userId);
 
   // Show/hide premium advanced options section
   const advancedSection = document.getElementById('advanced-options');

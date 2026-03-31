@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioProctor — Platform Admin</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .admin-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: var(--border);
+      margin-bottom: 2rem;
+    }
+    .admin-tab {
+      padding: 0.6rem 1.25rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      border-bottom: 3px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      margin-bottom: -1px;
+    }
+    .admin-tab:hover { color: var(--ink); }
+    .admin-tab--active {
+      color: var(--ink);
+      border-bottom-color: var(--ink);
+    }
+    .admin-panel { display: none; }
+    .admin-panel--active { display: block; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-box {
+      border: var(--border);
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-box__value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .admin-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: var(--border);
+      white-space: nowrap;
+    }
+    .admin-table td {
+      padding: 0.75rem 0.75rem;
+      border-bottom: 1px solid var(--warm-mid);
+      vertical-align: middle;
+      font-size: 0.875rem;
+    }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: var(--warm-mid); }
+
+    .tier-select {
+      border: var(--border);
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.5rem;
+      cursor: pointer;
+      width: 100%;
+    }
+    .tier-select:focus { outline: 2px solid var(--ink); }
+
+    .notes-input {
+      border: 1px solid var(--warm-mid);
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.5rem;
+      width: 100%;
+    }
+    .notes-input:focus {
+      outline: 1px solid var(--ink);
+      border-color: var(--ink);
+    }
+
+    .anomaly-flag {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+      background: var(--light-accent);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .create-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap: 0.75rem;
+      align-items: end;
+      margin-bottom: 1.5rem;
+      padding: 1.25rem;
+      background: var(--warm-mid);
+      border: var(--border);
+    }
+    .create-form .form-group { margin-bottom: 0; }
+
+    .section-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="page-container">
+      <div class="top-bar__inner">
+        <span class="wordmark">Audio<span class="accent">Proctor</span> <span style="font-size:0.8rem; font-family:'DM Sans',sans-serif; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-left:0.5rem;">Admin</span></span>
+        <div style="display:flex; align-items:center; gap:1.5rem;">
+          <span id="admin-email" class="label"></span>
+          <a href="/dashboard.html" class="btn btn--ghost btn--small">Dashboard</a>
+          <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-container" style="padding-top:2.5rem; padding-bottom:4rem;">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div id="stat-divisions" class="stat-box__value">—</div>
+        <div class="label">Divisions</div>
+      </div>
+      <div class="stat-box">
+        <div id="stat-schools" class="stat-box__value">—</div>
+        <div class="label">Schools</div>
+      </div>
+      <div class="stat-box">
+        <div id="stat-teachers" class="stat-box__value">—</div>
+        <div class="label">Teachers</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="admin-tabs">
+      <button class="admin-tab admin-tab--active" onclick="switchTab('divisions', this)">Divisions</button>
+      <button class="admin-tab" onclick="switchTab('schools', this)">Schools</button>
+      <button class="admin-tab" onclick="switchTab('teachers', this)">Teachers</button>
+      <button class="admin-tab" id="anomaly-tab" onclick="switchTab('anomalies', this)">Anomalies</button>
+    </div>
+
+    <!-- Divisions panel -->
+    <div id="panel-divisions" class="admin-panel admin-panel--active">
+      <div class="section-toolbar">
+        <p class="label">All Divisions</p>
+        <button class="btn btn--ghost btn--small" onclick="toggleCreateForm('division-form')">+ New Division</button>
+      </div>
+
+      <div id="division-form" class="create-form hidden">
+        <div class="form-group">
+          <label class="label">Name</label>
+          <input type="text" id="new-div-name" class="input-field" placeholder="Foothills School Division No. 38" style="font-size:0.875rem;">
+        </div>
+        <div class="form-group">
+          <label class="label">Enrolment Band</label>
+          <select id="new-div-band" class="input-field" style="font-size:0.875rem;">
+            <option value="">— none —</option>
+            <option value="small">Small (under 2,000)</option>
+            <option value="medium">Medium (2,000–8,000)</option>
+            <option value="large">Large (8,000–25,000)</option>
+            <option value="metro">Metro (25,000+)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="label">Tier</label>
+          <select id="new-div-tier" class="input-field" style="font-size:0.875rem;">
+            <option value="free">Free</option>
+            <option value="division">Division</option>
+          </select>
+        </div>
+        <button class="btn btn--primary btn--small" onclick="createDivision()">Create</button>
+      </div>
+
+      <div id="divisions-container">
+        <div class="empty-state"><p class="label">Loading…</p></div>
+      </div>
+    </div>
+
+    <!-- Schools panel -->
+    <div id="panel-schools" class="admin-panel">
+      <div class="section-toolbar">
+        <p class="label">All Schools</p>
+        <button class="btn btn--ghost btn--small" onclick="toggleCreateForm('school-form')">+ New School</button>
+      </div>
+
+      <div id="school-form" class="create-form hidden">
+        <div class="form-group">
+          <label class="label">Name</label>
+          <input type="text" id="new-school-name" class="input-field" placeholder="Okotoks Junior High" style="font-size:0.875rem;">
+        </div>
+        <div class="form-group">
+          <label class="label">Division ID (optional)</label>
+          <input type="text" id="new-school-div" class="input-field" placeholder="uuid" style="font-size:0.875rem; font-family:monospace;">
+        </div>
+        <div class="form-group">
+          <label class="label">Tier</label>
+          <select id="new-school-tier" class="input-field" style="font-size:0.875rem;">
+            <option value="free">Free</option>
+            <option value="school">School</option>
+            <option value="division">Division</option>
+          </select>
+        </div>
+        <button class="btn btn--primary btn--small" onclick="createSchool()">Create</button>
+      </div>
+
+      <div id="schools-container">
+        <div class="empty-state"><p class="label">Loading…</p></div>
+      </div>
+    </div>
+
+    <!-- Teachers panel -->
+    <div id="panel-teachers" class="admin-panel">
+      <div class="section-toolbar">
+        <p class="label">All Teachers</p>
+        <input type="text" id="teacher-search" class="input-field" placeholder="Filter by email or division…" style="width:260px; font-size:0.875rem;" oninput="filterTeachers(this.value)">
+      </div>
+      <div id="teachers-container">
+        <div class="empty-state"><p class="label">Loading…</p></div>
+      </div>
+    </div>
+
+    <!-- Anomalies panel -->
+    <div id="panel-anomalies" class="admin-panel">
+      <p class="label" style="margin-bottom:1rem;">Accounts flagged for review</p>
+      <div id="anomalies-container">
+        <div class="empty-state"><p class="label">Loading…</p></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/admin.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAuth();
+      if (!user) return;
+      document.getElementById('admin-email').textContent = user.email;
+      await initAdmin(user);
+    })();
+  </script>
+</body>
+</html>

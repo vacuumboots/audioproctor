@@ -59,6 +59,18 @@ async function ensureProfile(userId) {
   }
 }
 
+// Returns the teacher's effective tier, resolving division → school → teacher → free.
+// Calls the get_effective_tier() Postgres function via RPC so the cascade is
+// computed server-side and always reflects the latest org structure.
+async function getEffectiveTier(userId) {
+  const { data, error } = await supabaseClient.rpc('get_effective_tier', { p_user_id: userId });
+  if (error) {
+    console.warn('get_effective_tier RPC failed, defaulting to free:', error.message);
+    return 'free';
+  }
+  return data || 'free';
+}
+
 // Call at the top of any protected page.
 // Returns the current user, or redirects to login.html if not signed in.
 async function requireAuth() {

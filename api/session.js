@@ -80,6 +80,14 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Could not generate audio link' });
   }
 
+  // Log the successful code entry — fire-and-forget, never blocks the response.
+  supabase.from('session_events').insert({
+    upload_id:  upload.id,
+    event_type: 'code_entered',
+  }).then(({ error }) => {
+    if (error) console.error('session_events insert failed:', error.message);
+  });
+
   // Return only what the client needs.
   // storage_path and exit_word (plain) are intentionally omitted.
   return res.status(200).json({
