@@ -208,8 +208,6 @@ recorded. All events are anonymous by design.
   Admin cannot delete accounts, only detach them.
 - [ ] **School-wide usage report** — total assessments delivered, active teachers,
   storage used, session completion rate
-- [ ] **Billing status** — current tier, renewal date, payment method (if school
-  purchased independently)
 
 ---
 
@@ -258,9 +256,7 @@ recorded. All events are anonymous by design.
   sourced from Google), school and division affiliation (read-only, set by admin)
 - [ ] **Subscription section** — shows current tier and how it was acquired:
   - "You're on the Free tier" — with upgrade CTA linking to pricing page
-  - "You're on Teacher Premium — renews [date]" — with manage/cancel placeholder
-    (Stripe not yet connected; show "Contact us to manage your subscription"
-    linking to hello@audioproctor.com for now)
+  - "You're on Teacher Premium" — read-only; billing management added in Stage 6
   - "Your school is on a School plan" — read-only, no action available
   - "Your division is on a Division plan" — read-only, no action available
 - [ ] **Delete account section** — clearly separated from the rest of the page,
@@ -297,6 +293,35 @@ from the sales and onboarding process so that a division can go from "heard abou
 to "deployed across all Chromebooks" without requiring direct involvement at each step.
 Early customers will be onboarded manually — that's fine and expected. This stage
 systematizes what was learned from those early conversations.*
+
+---
+
+### Account Lifecycle (deferred from Stage 4)
+
+- [ ] **Account deactivation** — platform admin can deactivate any division, school,
+  or teacher account. Deactivated accounts lose access immediately; data is preserved
+  for 30 days before permanent deletion. Reactivation possible within the grace period.
+- [ ] **Account deletion** — permanent deletion of a division, school, or teacher
+  account and all associated data (uploads, storage files, session events, profiles row,
+  auth record). Irreversible. Requires explicit confirmation in the admin dashboard.
+- [ ] **Reassign teacher / school** — move a teacher to a different school, or a
+  school to a different division, without losing upload history.
+
+---
+
+### Invitation Email Delivery (deferred from Stage 4)
+
+The `invitations` table and token generation shipped in Stage 4. This completes the flow:
+
+- [ ] **Send invitation email via Resend** — when a platform admin or school/division
+  admin creates an invitation, send an email to the invitee with a sign-in link
+  containing the token. On click, the teacher signs in with Google and lands in the
+  dashboard already attached to the correct school/division.
+- [ ] **Invitation acceptance flow** — `api/accept-invite.js` validates the token,
+  confirms it hasn't expired or been accepted, attaches the teacher to the org, marks
+  `accepted_at`, and redirects to the dashboard.
+- [ ] **Billing status in School Admin UI** — current tier, renewal date, and payment
+  method visible to the School Admin once Stripe is connected.
 
 ---
 
@@ -358,8 +383,9 @@ systematizes what was learned from those early conversations.*
   generate a Stripe invoice for the correct enrolment band. Division pays by credit
   card or requests a PO (Stripe supports both). On payment, tier is automatically
   upgraded in the database.
-- [ ] **Manual override preserved** — platform admin can still manually flip tiers
-  for pilot customers, multi-year deals, or edge cases without going through Stripe.
+- [x] **Manual override preserved** — platform admin can manually flip tiers for any
+  division, school, or teacher via the `/admin` dashboard. Takes effect immediately
+  via `get_effective_tier()`. No Stripe required.
 - [ ] **Renewal reminders** — automated email 60 and 30 days before contract renewal.
   Sent to Division Admin. Includes usage summary for the year (total sessions, active
   teachers, storage used) — gives them the data to justify renewal to their
