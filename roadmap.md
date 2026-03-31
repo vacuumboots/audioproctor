@@ -95,51 +95,51 @@ recorded. All events are anonymous by design.
 
 ### Session Analytics Schema
 
-- [ ] **`session_events` table** — access_code_id, event_type, occurred_at,
+- [x] **`session_events` table** — access_code_id, event_type, occurred_at,
   metadata (JSONB)
   - Event types: `code_entered`, `playback_started`, `playback_paused`,
     `playback_resumed`, `playback_completed`, `replay_triggered`,
     `exit_word_used`, `session_expired`
   - Metadata captures position_seconds on pause/resume/replay events
   - No student identity, no device fingerprint, no IP address at any level
-- [ ] **`upload_summaries` materialized view** — aggregates session_events per upload:
+- [x] **`upload_summaries` materialized view** — aggregates session_events per upload:
   total sessions, completions, early exits, average listen time, replay count.
   Refreshed on a schedule rather than computed on every dashboard load.
-- [ ] **Event logging in the session API** — wire `api/session.js` to write to
-  `session_events` on each state change. Successful code entry, playback events,
-  and exit word use are all logged. Failed attempts are already logged (Stage 2)
-  and remain separate.
+- [x] **Event logging in the session API** — `api/session.js` logs `code_entered` on
+  successful lookup; `api/event.js` (new) receives playback events from
+  `extension/player.js`. All 8 event types wired.
 
 ---
 
 ### Account Hierarchy Schema
 
-- [ ] **`divisions` table** — name, enrolment_band, tier, admin_email, expires_at,
-  created_at
-- [ ] **`schools` table** — name, division_id (nullable), tier, admin_email,
+- [x] **`divisions` table** — name, enrolment_band, tier, admin_email, notes,
   expires_at, created_at
-- [ ] **Update `profiles` table** — add school_id (nullable), division_id (nullable),
-  tier_override, role (teacher / school_admin / division_admin / platform_admin)
-- [ ] **`invitations` table** — email, role, school_id (nullable), division_id
+- [x] **`schools` table** — name, division_id (nullable), tier, admin_email, notes,
+  expires_at, created_at
+- [x] **Update `profiles` table** — added school_id, division_id, tier_override,
+  role (teacher / school_admin / division_admin / platform_admin), notes
+- [x] **`invitations` table** — email, role, school_id (nullable), division_id
   (nullable), token, expires_at, accepted_at
-- [ ] **`get_effective_tier(user_id)` DB function** — resolves inherited tier at
-  runtime: division tier → school tier → teacher tier → free (first match wins).
-  Called from quota-checking RLS policies and the dashboard. Replaces the current
-  static `tier` read in `ensureProfile()`.
-- [ ] **Update `check_upload_quota()`** — replace direct tier read with
-  `get_effective_tier()` so quota enforcement reflects inherited tier automatically.
-- [ ] **Update `ensureProfile()`** — call `get_effective_tier()` on every dashboard
-  load so a teacher whose school just upgraded gets correct quota immediately without
-  a manual profile update.
+- [x] **`get_effective_tier(user_id)` DB function** — resolves inherited tier at
+  runtime: tier_override → division tier → school tier → teacher tier → free.
+  SECURITY DEFINER, granted to authenticated role.
+- [x] **Update `check_upload_quota()`** — replaced; new `enforce_upload_quota` policy
+  calls `get_effective_tier()` so inherited tiers are respected automatically.
+- [x] **Update `ensureProfile()`** — added `getEffectiveTier()` to `js/auth.js`;
+  `loadQuota()` and `handleUpload()` in `dashboard.js` now use it instead of
+  reading `profiles.tier` directly.
 
 ---
 
 ### Privacy Boundaries (enforced at schema level)
 
-- [ ] RLS policies ensure teachers can only read their own session_events
+- [x] RLS policies ensure teachers can only read their own session_events
 - [ ] Division admins can read aggregated summaries for their division only — no
-  drill-down to individual session events
-- [ ] Platform admin role bypasses RLS for support and monitoring purposes
+  drill-down to individual session events (UI in Stage 5)
+- [x] Platform admin role bypasses RLS for support and monitoring purposes —
+  `api/admin.js` uses service role key server-side; role check enforced before
+  any data is returned
 - [ ] Analytics data retained for duration of active contract, deleted on account
   closure — document retention policy in Privacy Policy update
 
@@ -147,26 +147,22 @@ recorded. All events are anonymous by design.
 
 ### Platform Admin Dashboard (`/admin` — platform admin role only)
 
-- [ ] **Division list** — all divisions with tier, enrolment band, expiry date,
-  active teacher count, total storage used, total sessions delivered
-- [ ] **School list** — all schools, filterable by division, with same usage metrics
-- [ ] **Unattached teachers list** — teachers with no school or division assignment,
-  with signup date and country_code flag for anomaly review
-- [ ] **Tier management** — manually set or override tier for any division, school,
-  or teacher. Dropdown selector: Free / Teacher Premium / School / Division. Takes
-  effect immediately via `get_effective_tier()`. Essential for pilot management
-  before Stripe is built.
-- [ ] **Account management** — invite, deactivate, or permanently delete any
-  division, school, or teacher account. Deactivation preserves data for 30 days
-  before deletion. Reassign a teacher or school to a different division without
-  losing their history.
-- [ ] **Invitation tool** — invite a division admin or school admin by email directly
-  from the admin dashboard
-- [ ] **Account flags** — mark an account with a status note (e.g. "demo requested",
-  "invoice sent", "pilot active", "follow up") for sales pipeline tracking
-- [ ] **Anomaly review queue** — surfaces accounts flagged by abuse prevention rules:
-  non-Canadian country_code, high upload volume, large file sizes. Reviewable and
-  dismissable from the admin dashboard.
+- [x] **Division list** — all divisions with tier, enrolment band, expiry date;
+  inline tier selector and notes field
+- [x] **School list** — all schools with division name, tier, notes; inline editing
+- [x] **Unattached teachers list** — all teachers with email, org, country code,
+  tier override, and notes; client-side filter by email/division
+- [x] **Tier management** — inline dropdown on every division, school, and teacher
+  row; takes effect immediately via `get_effective_tier()`
+- [ ] **Account management** — deactivate or permanently delete accounts, reassign
+  teacher/school to a different division (attach-teacher endpoint exists; full
+  deactivate/delete flow not yet built)
+- [ ] **Invitation tool** — invitations table and token generation shipped; email
+  delivery not yet wired
+- [x] **Account flags** — notes field on every division, school, and teacher row;
+  saved on blur
+- [x] **Anomaly review queue** — surfaces non-Canadian country_code accounts;
+  count shown in tab badge
 
 ---
 
