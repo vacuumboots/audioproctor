@@ -50,6 +50,18 @@ CREATE POLICY "read_school_division"
     )
   );
 
+-- Any authenticated user can read division names for the first-login
+-- autocomplete datalist. Only the name column is needed; other columns
+-- (tier, notes, admin_email, expires_at) remain protected by the more
+-- restrictive policies above for teachers not linked to a division.
+-- Note: Supabase/PostgREST applies row-level RLS, not column-level — so
+-- this policy grants access to the full row. The client only requests 'name'.
+-- Division tier/notes are not sensitive enough to warrant column-level security.
+CREATE POLICY "read_division_names_for_autocomplete"
+  ON divisions
+  FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
 -- ─── schools ──────────────────────────────────────────────────────────────
 
 ALTER TABLE schools ENABLE ROW LEVEL SECURITY;

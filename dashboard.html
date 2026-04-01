@@ -271,7 +271,8 @@
       <!-- Honeypot — hidden from real users, filled by bots -->
       <input type="text" id="division-honeypot" style="display:none;" tabindex="-1" autocomplete="off">
       <div class="form-group">
-        <input type="text" id="division-name-input" class="input-field" placeholder="e.g. Foothills School Division No. 38" maxlength="120">
+        <input type="text" id="division-name-input" class="input-field" placeholder="e.g. Foothills School Division No. 38" maxlength="120" list="division-suggestions" autocomplete="off">
+        <datalist id="division-suggestions"></datalist>
       </div>
       <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:1.25rem;">
         <input type="checkbox" id="tos-checkbox" style="margin-top:0.2rem; flex-shrink:0;" onchange="document.getElementById('btn-continue').disabled = !this.checked;">

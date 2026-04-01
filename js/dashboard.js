@@ -905,6 +905,24 @@ async function checkFirstLogin() {
 
   if (!profile || !profile.division_name) {
     document.getElementById('first-login-modal').classList.remove('hidden');
+    populateDivisionSuggestions();
+  }
+}
+
+async function populateDivisionSuggestions() {
+  try {
+    const { data: divisions } = await supabaseClient
+      .from('divisions')
+      .select('name')
+      .order('name');
+    const datalist = document.getElementById('division-suggestions');
+    if (datalist && divisions) {
+      datalist.innerHTML = divisions
+        .map(d => `<option value="${escapeHtml(d.name)}">`)
+        .join('');
+    }
+  } catch {
+    // Non-critical — freeform input still works if this fails
   }
 }
 
