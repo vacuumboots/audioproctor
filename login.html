@@ -37,36 +37,23 @@
       window.location.href = dest;
     }
 
-    (async () => {
-      const params = new URLSearchParams(window.location.search);
-
-      // PKCE callback — exchange the code for a session explicitly
-      if (params.get('code')) {
-        const { data, error } = await supabaseClient.auth.exchangeCodeForSession(
-          params.get('code')
-        );
-        if (error) {
-          const el = document.getElementById('notice');
-          el.textContent = 'Sign-in failed. Please try again.';
-          el.classList.remove('hidden');
-          return;
-        }
-        await redirectByRole(data.session);
-        return;
+    // Handles both: OAuth callback (token in hash) and returning signed-in users.
+    // onAuthStateChange fires immediately if Supabase detects a token in the URL hash.
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Remove the token hash from the browser history before navigating away
+        history.replaceState(null, '', window.location.pathname);
+        await redirectByRole(session);
       }
+    });
 
-      // Error from OAuth provider
-      if (params.get('error')) {
-        const el = document.getElementById('notice');
-        el.textContent = 'Sign-in failed. Please try again.';
-        el.classList.remove('hidden');
-        return;
-      }
-
-      // Already signed in — go straight to the right page
-      const session = await getSession();
-      if (session) await redirectByRole(session);
-    })();
+    // Show error from URL param (e.g. if OAuth provider returns an error)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error')) {
+      const el = document.getElementById('notice');
+      el.textContent = 'Sign-in failed. Please try again.';
+      el.classList.remove('hidden');
+    }
   </script>
 </body>
 </html>
