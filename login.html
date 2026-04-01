@@ -26,10 +26,21 @@
   <script src="/js/supabase-client.js"></script>
   <script src="/js/auth.js"></script>
   <script>
-    // Redirect to dashboard if already signed in
+    // Redirect to the correct page if already signed in
     (async () => {
       const session = await getSession();
-      if (session) window.location.href = '/dashboard.html';
+      if (!session) return;
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      const dest = {
+        platform_admin: '/admin.html',
+        division_admin: '/division-admin.html',
+        school_admin:   '/school-admin.html',
+      }[profile?.role] || '/dashboard.html';
+      window.location.href = dest;
     })();
 
     // Catch the OAuth / magic-link callback and route by role
