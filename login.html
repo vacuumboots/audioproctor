@@ -32,10 +32,20 @@
       if (session) window.location.href = '/dashboard.html';
     })();
 
-    // Also catch the OAuth callback redirect
-    supabaseClient.auth.onAuthStateChange((event, session) => {
+    // Catch the OAuth / magic-link callback and route by role
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        window.location.href = '/dashboard.html';
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        const dest = {
+          platform_admin:  '/admin.html',
+          division_admin:  '/division-admin.html',
+          school_admin:    '/school-admin.html',
+        }[profile?.role] || '/dashboard.html';
+        window.location.href = dest;
       }
     });
 

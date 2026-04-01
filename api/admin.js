@@ -153,11 +153,9 @@ module.exports = async (req, res) => {
       const { data: targetProfile } = await supabase
         .from('profiles').select('role, display_name').eq('id', targetId).maybeSingle();
 
-      const roleRedirect = {
-        division_admin: 'https://app.audioproctor.com/division-admin.html',
-        school_admin:   'https://app.audioproctor.com/school-admin.html',
-      };
-      const redirectTo = roleRedirect[targetProfile?.role] || 'https://app.audioproctor.com/dashboard.html';
+      // Always redirect to login.html — it's in the Supabase allowlist and
+      // routes to the correct page for each role after the session is established.
+      const redirectTo = 'https://app.audioproctor.com/login.html';
 
       const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
         type: 'magiclink',
