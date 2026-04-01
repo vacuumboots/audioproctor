@@ -178,6 +178,16 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    if (action === 'set-role') {
+      const { userId, role } = body;
+      const validRoles = ['teacher', 'school_admin', 'division_admin', 'platform_admin'];
+      if (!userId) return res.status(400).json({ error: 'userId required' });
+      if (!validRoles.includes(role)) return res.status(400).json({ error: 'Invalid role' });
+      const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ ok: true });
+    }
+
     if (action === 'attach-teacher') {
       const { userId, schoolId, divisionId } = body;
       if (!userId) return res.status(400).json({ error: 'userId required' });

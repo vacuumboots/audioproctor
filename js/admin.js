@@ -268,6 +268,11 @@ function renderTeachers(teachers) {
           </select>
         </td>
         <td>
+          <select class="tier-select" onchange="setRole('${t.id}',this.value)">
+            ${roleOptions(t.role || 'teacher')}
+          </select>
+        </td>
+        <td>
           <span class="label" style="text-transform:none; letter-spacing:0;">
             ${t.country_code || '?'}
           </span>
@@ -288,6 +293,7 @@ function renderTeachers(teachers) {
           <th>Email</th>
           <th>School / Division</th>
           <th>Tier Override</th>
+          <th>Role</th>
           <th>Country</th>
           <th>Notes / Flags</th>
         </tr>
@@ -339,6 +345,15 @@ async function setTier(entityType, entityId, tier) {
   }
 }
 
+async function setRole(userId, role) {
+  try {
+    await adminApi('set-role', 'POST', { userId, role });
+  } catch (err) {
+    alert('Could not update role: ' + err.message);
+    loadTeachers(); // restore previous value
+  }
+}
+
 async function setNotes(entityType, entityId, notes) {
   try {
     await adminApi('set-notes', 'POST', { entityType, entityId, notes });
@@ -367,6 +382,18 @@ function toggleCreateForm(id) {
 function tierOptions(current) {
   return ['free','premium','school','division'].map(t =>
     `<option value="${t}" ${t === current ? 'selected' : ''}>${capitalize(t)}</option>`
+  ).join('');
+}
+
+function roleOptions(current) {
+  const roles = [
+    ['teacher',        'Teacher'],
+    ['school_admin',   'School Admin'],
+    ['division_admin', 'Division Admin'],
+    ['platform_admin', 'Platform Admin'],
+  ];
+  return roles.map(([val, label]) =>
+    `<option value="${val}" ${val === current ? 'selected' : ''}>${label}</option>`
   ).join('');
 }
 
