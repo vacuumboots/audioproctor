@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
   // ─── Access code lookup ───────────────────────────────────────
   const { data: upload, error } = await supabase
     .from('uploads')
-    .select('id, filename, storage_path, exit_word_hash, expires_at')
+    .select('id, filename, storage_path, exit_word_hash, expires_at, teacher_id')
     .eq('access_code', code.toUpperCase().trim())
     .single();
 
@@ -68,6 +68,17 @@ module.exports = async (req, res) => {
   if (new Date(upload.expires_at) < new Date()) {
     await supabase.from('rate_limit_log').insert({ ip: clientIp });
     return res.status(410).json({ error: 'This assessment has expired' });
+  }
+
+  // Check that the teacher account is not deactivated
+  const { data: teacher } = await supabase
+    .from('profiles')
+    .select('is_deactivated')
+    .eq('id', upload.teacher_id)
+    .maybeSingle();
+
+  if (teacher?.is_deactivated) {
+    return res.status(403).json({ error: 'This assessment is no longer available' });
   }
 
   // Generate a signed URL valid for 1 hour

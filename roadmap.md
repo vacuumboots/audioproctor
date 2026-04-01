@@ -298,12 +298,24 @@ systematizes what was learned from those early conversations.*
 
 ### Account Lifecycle (deferred from Stage 4)
 
-- [ ] **Account deactivation** — platform admin can deactivate any division, school,
-  or teacher account. Deactivated accounts lose access immediately; data is preserved
-  for 30 days before permanent deletion. Reactivation possible within the grace period.
-- [ ] **Account deletion** — permanent deletion of a division, school, or teacher
-  account and all associated data (uploads, storage files, session events, profiles row,
-  auth record). Irreversible. Requires explicit confirmation in the admin dashboard.
+Deactivation and deletion are distinct operations with different consequences:
+
+**Deactivation** (reversible, data preserved):
+- `profiles.is_deactivated = true` — column exists since migration 009
+- `api/session.js` already blocks code lookups for deactivated teachers
+- Teacher retains all uploads, session events, and profile data
+- Can be reactivated by platform admin (flip flag back)
+- Use case: teacher leaves a school mid-year; codes may still be needed for IEP documentation
+- [ ] **Admin UI toggle** — platform admin can deactivate/reactivate any teacher, school,
+  or division account from the admin dashboard
+
+**Deletion** (irreversible, all data removed):
+- Teacher self-service delete exists (`api/account?action=delete-account`)
+- Settings page informs teachers to request deactivation instead if leaving a school
+- [ ] **Admin-initiated deletion** — platform admin can permanently delete a division,
+  school, or teacher account and all associated data from the admin dashboard.
+  Requires explicit confirmation. Irreversible.
+
 - [ ] **Reassign teacher / school** — move a teacher to a different school, or a
   school to a different division, without losing upload history.
 
