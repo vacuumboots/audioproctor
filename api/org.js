@@ -128,9 +128,7 @@ module.exports = async (req, res) => {
         .eq('school_id', schoolId);
       if (error) return res.status(500).json({ error: error.message });
 
-      const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-      const emailMap = {};
-      (authUsers?.users || []).forEach(u => { emailMap[u.id] = u.email; });
+      const emailMap = await getAllUserEmails(supabase);
 
       const teacherIds = (teachers || []).map(t => t.id);
       const { uploadCountMap, sessionCountMap, lastActiveMap } = await getTeacherSessionStats(teacherIds);
@@ -209,9 +207,7 @@ module.exports = async (req, res) => {
       const { data: teachers } = await supabase
         .from('profiles').select('id, role, tier, tier_override').eq('school_id', schoolId);
 
-      const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-      const emailMap = {};
-      (authUsers?.users || []).forEach(u => { emailMap[u.id] = u.email; });
+      const emailMap = await getAllUserEmails(supabase);
 
       const teacherIds = (teachers || []).map(t => t.id);
       const { uploadCountMap, sessionCountMap, lastActiveMap } = await getTeacherSessionStats(teacherIds);
@@ -476,9 +472,7 @@ module.exports = async (req, res) => {
 
       // Notify all affected teachers — fire-and-forget
       if (affectedIds.length) {
-        const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-        const emailMap = {};
-        (authUsers?.users || []).forEach(u => { emailMap[u.id] = u.email; });
+        const emailMap = await getAllUserEmails(supabase);
         affectedIds.forEach(tid => {
           const email = emailMap[tid];
           if (email) {
@@ -512,6 +506,26 @@ module.exports = async (req, res) => {
 
   return res.status(405).json({ error: 'Method not allowed' });
 };
+
+// ─── Paginated user email fetch ───────────────────────────────────────────
+// Supabase admin.listUsers has a maximum perPage of 1000. This function
+// paginates through all pages and returns a map of { userId: email }.
+
+async function getAllUserEmails(supabase) {
+  const emailMap = {};
+  let page = 1;
+  const perPage = 1000;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error || !data?.users?.length) break;
+    data.users.forEach(u => { emailMap[u.id] = u.email; });
+    if (data.users.length < perPage) break;
+    page++;
+  }
+
+  return emailMap;
+}
 
 // ─── Email helper ──────────────────────────────────────────────────────────
 // Notifies a teacher that their plan tier has changed due to detachment.

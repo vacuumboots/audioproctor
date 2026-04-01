@@ -117,10 +117,8 @@ module.exports = async (req, res) => {
         .order('id', { ascending: true });
       if (error) return res.status(500).json({ error: error.message });
 
-      // Merge auth.users email — requires a separate call with service role
-      const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-      const emailMap = {};
-      (authUsers?.users || []).forEach(u => { emailMap[u.id] = u.email; });
+      // Merge auth.users email — paginated to handle >1000 users
+      const emailMap = await getAllUserEmails(supabase);
 
       const teachers = (data || []).map(p => ({
         ...p,
@@ -231,3 +229,24 @@ module.exports = async (req, res) => {
 
   return res.status(405).json({ error: 'Method not allowed' });
 };
+
+// ─── Paginated user email fetch ───────────────────────────────────────────
+// Supabase admin.listUsers has a maximum perPage of 1000. This function
+// paginates through all pages and returns a map of { userId: email }.
+
+async function getAllUserEmails(supabase) {
+  const emailMap = {};
+  let page = 1;
+  const perPage = 1000;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error || !data?.users?.length) break;
+    data.users.forEach(u => { emailMap[u.id] = u.email; });
+    if (data.users.length < perPage) break; // last page
+    page++;
+  }
+
+  return emailMap;
+}
+
