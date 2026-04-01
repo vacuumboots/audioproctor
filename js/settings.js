@@ -25,18 +25,25 @@ async function initSettings(user) {
     document.getElementById('display-name-input').value = profile.display_name;
   }
 
-  // Org affiliation
+  // Org affiliation — resolve school name and, if the school is part of a
+  // division, the division name too (even though profile.division_id is null).
   let orgText = 'No school or division assigned';
+  let schoolDivisionId = null; // division that the teacher's school belongs to
   if (profile?.school_id || profile?.division_id) {
     const parts = [];
     if (profile.school_id) {
       const { data: school } = await supabaseClient
-        .from('schools').select('name').eq('id', profile.school_id).maybeSingle();
-      if (school) parts.push(school.name);
+        .from('schools').select('name, division_id').eq('id', profile.school_id).maybeSingle();
+      if (school) {
+        parts.push(school.name);
+        schoolDivisionId = school.division_id || null;
+      }
     }
-    if (profile.division_id) {
+    // Show division name whether the teacher is linked directly or via school.
+    const divisionId = profile.division_id || schoolDivisionId;
+    if (divisionId) {
       const { data: division } = await supabaseClient
-        .from('divisions').select('name').eq('id', profile.division_id).maybeSingle();
+        .from('divisions').select('name').eq('id', divisionId).maybeSingle();
       if (division) parts.push(division.name);
     }
     if (parts.length) orgText = parts.join(' · ');
@@ -45,10 +52,10 @@ async function initSettings(user) {
 
   // Subscription block
   const tier = await getEffectiveTier(user.id);
-  renderSubscription(tier, profile);
+  renderSubscription(tier, profile, schoolDivisionId);
 }
 
-function renderSubscription(tier, profile) {
+function renderSubscription(tier, profile, schoolDivisionId = null) {
   const block = document.getElementById('subscription-block');
   if (!block) return;
 
@@ -70,11 +77,13 @@ function renderSubscription(tier, profile) {
       <p style="margin-top:0.5rem; color:var(--muted);">Unlimited uploads · Full analytics · All features included.</p>
     `;
   } else if (profile?.school_id) {
-    // Check if school is on division plan or school plan
-    const label = tier === 'division' ? 'Division Plan (via your school)' : 'School Plan';
+    // Teacher linked via school; school may itself be on a Division Plan.
+    const onDivisionPlan = tier === 'division' || !!schoolDivisionId;
+    const label = onDivisionPlan ? 'Division Plan' : 'School Plan';
+    const via   = onDivisionPlan ? ' (through your school\'s division)' : '';
     block.innerHTML = `
       <p><strong>Your school is on a ${label}.</strong></p>
-      <p style="margin-top:0.5rem; color:var(--muted);">Unlimited uploads · Full analytics · All features included.</p>
+      <p style="margin-top:0.5rem; color:var(--muted);">Unlimited uploads · Full analytics · All features included${via}.</p>
     `;
   } else if (tier === 'premium') {
     block.innerHTML = `
