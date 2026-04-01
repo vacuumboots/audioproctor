@@ -15,6 +15,7 @@
 //   POST ?action=attach-teacher    — body: { userId, schoolId?, divisionId? }
 
 const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin',  'https://app.audioproctor.com');
@@ -142,6 +143,38 @@ module.exports = async (req, res) => {
       return res.status(200).json(data);
     }
 
+    if (action === 'login-link') {
+      const { userId: targetId } = req.query;
+      if (!targetId) return res.status(400).json({ error: 'userId required' });
+
+      const { data: { user: targetUser }, error: userErr } = await supabase.auth.admin.getUserById(targetId);
+      if (userErr || !targetUser) return res.status(404).json({ error: 'User not found' });
+
+      const { data: targetProfile } = await supabase
+        .from('profiles').select('role, display_name').eq('id', targetId).maybeSingle();
+
+      const roleRedirect = {
+        division_admin: 'https://app.audioproctor.com/division-admin.html',
+        school_admin:   'https://app.audioproctor.com/school-admin.html',
+      };
+      const redirectTo = roleRedirect[targetProfile?.role] || 'https://app.audioproctor.com/dashboard.html';
+
+      const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email: targetUser.email,
+        options: { redirectTo },
+      });
+      if (linkErr) return res.status(500).json({ error: linkErr.message });
+
+      return res.status(200).json({
+        link:       linkData.properties.action_link,
+        email:      targetUser.email,
+        name:       targetProfile?.display_name || targetUser.email,
+        role:       targetProfile?.role || 'teacher',
+        redirectTo,
+      });
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   }
 
@@ -243,11 +276,271 @@ module.exports = async (req, res) => {
       return res.status(200).json(data);
     }
 
+    if (action === 'seed-demo') {
+      try {
+        const result = await seedDemoData(supabase);
+        return res.status(200).json({ ok: true, ...result });
+      } catch (err) {
+        console.error('seed-demo failed:', err);
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
 };
+
+// ─── Demo data helpers ────────────────────────────────────────────────────
+
+const DEMO_PERSONAS = [
+  { key: 'marcus',  email: 'm.vance@apsd.net',                    name: 'Marcus Vance',    role: 'division_admin', orgKey: 'div' },
+  { key: 'elena',   email: 'e.rodriguez@silverwood.apsd.net',      name: 'Elena Rodriguez', role: 'school_admin',   orgKey: 'sil' },
+  { key: 'julian',  email: 'j.thorne@silverwood.apsd.net',         name: 'Julian Thorne',   role: 'teacher',        orgKey: 'sil' },
+  { key: 'sarah',   email: 's.jenkins@silverwood.apsd.net',        name: 'Sarah Jenkins',   role: 'teacher',        orgKey: 'sil' },
+  { key: 'david',   email: 'd.wu@silverwood.apsd.net',             name: 'David Wu',        role: 'teacher',        orgKey: 'sil' },
+  { key: 'chloe',   email: 'c.simmons@horizoncharter.org',         name: 'Chloe Simmons',   role: 'school_admin',   orgKey: 'hor' },
+  { key: 'robert',  email: 'r.finch@horizoncharter.org',           name: 'Robert Finch',    role: 'teacher',        orgKey: 'hor' },
+  { key: 'linda',   email: 'l.grewal@horizoncharter.org',          name: 'Linda Grewal',    role: 'teacher',        orgKey: 'hor' },
+  { key: 'thomas',  email: 't.beck@horizoncharter.org',            name: 'Thomas Beck',     role: 'teacher',        orgKey: 'hor' },
+];
+
+const DEMO_UPLOAD_SPECS = [
+  // Julian Thorne — active user, 12 weeks of history
+  { teacher: 'julian', code: 'THO-001', label: 'ELA 20-1 Oral Reading Component',    exit: 'submit',   fileMb: 8.2,  students: 24, completion: 0.88, replay: 0.15, weeksAgo: 12  },
+  { teacher: 'julian', code: 'THO-002', label: 'Biology 20 Audio Supplement',         exit: 'done',     fileMb: 5.4,  students: 22, completion: 0.73, replay: 0.25, weeksAgo: 10  },
+  { teacher: 'julian', code: 'THO-003', label: 'Science 10 Listening Assessment',     exit: 'finished', fileMb: 6.1,  students: 27, completion: 0.92, replay: 0.10, weeksAgo: 8   },
+  { teacher: 'julian', code: 'THO-004', label: 'Math 20-1 Word Problems Audio',       exit: 'complete', fileMb: 11.3, students: 25, completion: 0.64, replay: 0.38, weeksAgo: 7   },
+  { teacher: 'julian', code: 'THO-005', label: 'Social Studies 10-1 Audio Guide',     exit: 'exit',     fileMb: 7.8,  students: 23, completion: 0.83, replay: 0.12, weeksAgo: 5   },
+  { teacher: 'julian', code: 'THO-006', label: 'Chemistry 20 Lab Instructions',       exit: 'submit',   fileMb: 9.5,  students: 20, completion: 0.90, replay: 0.20, weeksAgo: 3   },
+  { teacher: 'julian', code: 'THO-007', label: 'ELA 30-1 Listening Component',        exit: 'done',     fileMb: 4.9,  students: 19, completion: 0.79, replay: 0.16, weeksAgo: 2   },
+  { teacher: 'julian', code: 'THO-008', label: 'Physics 20 Audio Assessment',         exit: 'finished', fileMb: 6.7,  students: 21, completion: 0.86, replay: 0.14, weeksAgo: 1   },
+  // Sarah Jenkins — 9 weeks of history
+  { teacher: 'sarah',  code: 'JEN-001', label: 'English 10-1 Reading Passage',        exit: 'submit',   fileMb: 5.2,  students: 28, completion: 0.86, replay: 0.11, weeksAgo: 9   },
+  { teacher: 'sarah',  code: 'JEN-002', label: 'English 20-1 Oral Assessment',        exit: 'done',     fileMb: 7.1,  students: 26, completion: 0.77, replay: 0.19, weeksAgo: 7   },
+  { teacher: 'sarah',  code: 'JEN-003', label: 'Drama 10 Audio Script',               exit: 'exit',     fileMb: 3.8,  students: 18, completion: 0.94, replay: 0.08, weeksAgo: 5   },
+  { teacher: 'sarah',  code: 'JEN-004', label: 'English 30-1 Comprehension',          exit: 'complete', fileMb: 8.6,  students: 24, completion: 0.71, replay: 0.27, weeksAgo: 3   },
+  { teacher: 'sarah',  code: 'JEN-005', label: 'English 10-2 Listening Assessment',   exit: 'submit',   fileMb: 6.3,  students: 30, completion: 0.83, replay: 0.13, weeksAgo: 1   },
+  // David Wu — 6 weeks of history
+  { teacher: 'david',  code: 'WUU-001', label: 'Computer Science 20 Lab Audio',       exit: 'done',     fileMb: 4.1,  students: 22, completion: 0.91, replay: 0.09, weeksAgo: 6   },
+  { teacher: 'david',  code: 'WUU-002', label: 'Math 30-1 Applications Audio',        exit: 'submit',   fileMb: 12.4, students: 19, completion: 0.68, replay: 0.32, weeksAgo: 4   },
+  { teacher: 'david',  code: 'WUU-003', label: 'Pre-Calculus 20 Word Problems',       exit: 'finished', fileMb: 10.2, students: 25, completion: 0.60, replay: 0.40, weeksAgo: 2   },
+  { teacher: 'david',  code: 'WUU-004', label: 'Math 20-3 Data Analysis Audio',       exit: 'exit',     fileMb: 5.8,  students: 20, completion: 0.80, replay: 0.20, weeksAgo: 0.5 },
+  // Robert Finch — 5 weeks
+  { teacher: 'robert', code: 'FIN-001', label: 'Social Studies 30-1 Audio Guide',     exit: 'submit',   fileMb: 9.3,  students: 20, completion: 0.85, replay: 0.15, weeksAgo: 5   },
+  { teacher: 'robert', code: 'FIN-002', label: 'History 20 Audio Documentary',        exit: 'done',     fileMb: 15.7, students: 22, completion: 0.77, replay: 0.23, weeksAgo: 4   },
+  { teacher: 'robert', code: 'FIN-003', label: 'Geography 20 Audio Assessment',       exit: 'complete', fileMb: 7.2,  students: 18, completion: 0.89, replay: 0.11, weeksAgo: 3   },
+  { teacher: 'robert', code: 'FIN-004', label: 'Social Studies 10-2 Oral',            exit: 'exit',     fileMb: 6.4,  students: 24, completion: 0.75, replay: 0.20, weeksAgo: 2   },
+  { teacher: 'robert', code: 'FIN-005', label: 'Indigenous Studies 10 Audio',         exit: 'submit',   fileMb: 8.1,  students: 21, completion: 0.90, replay: 0.10, weeksAgo: 1   },
+  // Linda Grewal — 4 weeks
+  { teacher: 'linda',  code: 'GRE-001', label: 'Biology 30 Lab Audio Instructions',   exit: 'done',     fileMb: 11.2, students: 16, completion: 0.88, replay: 0.19, weeksAgo: 4   },
+  { teacher: 'linda',  code: 'GRE-002', label: 'Earth Science 20 Audio Notes',        exit: 'finished', fileMb: 8.5,  students: 20, completion: 0.80, replay: 0.25, weeksAgo: 2   },
+  { teacher: 'linda',  code: 'GRE-003', label: 'Science 20 Listening Assessment',     exit: 'submit',   fileMb: 6.9,  students: 18, completion: 0.72, replay: 0.22, weeksAgo: 1   },
+  // Thomas Beck — 2 weeks
+  { teacher: 'thomas', code: 'BEC-001', label: 'Physical Education 10 Audio',         exit: 'done',     fileMb: 3.2,  students: 28, completion: 0.96, replay: 0.04, weeksAgo: 2   },
+  { teacher: 'thomas', code: 'BEC-002', label: 'Health 20 Audio Assessment',          exit: 'submit',   fileMb: 5.5,  students: 25, completion: 0.88, replay: 0.12, weeksAgo: 1   },
+];
+
+// SHA-256 hex of str (lowercased + trimmed) — same algo as browser Web Crypto
+function sha256Hex(str) {
+  return crypto.createHash('sha256').update(str.toLowerCase().trim()).digest('hex');
+}
+
+// Returns a random ISO timestamp during Alberta school hours (9am–2pm MDT)
+// on a weekday approximately weeksAgo weeks in the past (±2 days jitter).
+function schoolTime(weeksAgo) {
+  const jitter = (Math.random() - 0.5) * 4 * 24 * 60 * 60 * 1000;
+  let d = new Date(Date.now() - weeksAgo * 7 * 24 * 60 * 60 * 1000 + jitter);
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) {
+    d = new Date(d.getTime() + 24 * 60 * 60 * 1000);
+  }
+  // 9am–2pm MDT = UTC−6 → 15:00–20:00 UTC
+  d.setUTCHours(15 + Math.floor(Math.random() * 5), Math.floor(Math.random() * 60), 0, 0);
+  return d.toISOString();
+}
+
+async function seedDemoData(supabase) {
+  const report = { usersCreated: 0, usersFound: 0, uploads: 0, events: 0 };
+
+  // 1. Resolve or create all auth users
+  const emailMap = await getAllUserEmails(supabase);
+  const byEmail = {};
+  Object.entries(emailMap).forEach(([id, email]) => { byEmail[email] = id; });
+
+  const userId = {}; // personaKey → uuid
+  for (const p of DEMO_PERSONAS) {
+    if (byEmail[p.email]) {
+      userId[p.key] = byEmail[p.email];
+      report.usersFound++;
+    } else {
+      const { data: created, error } = await supabase.auth.admin.createUser({
+        email: p.email,
+        email_confirm: true,
+        user_metadata: { full_name: p.name },
+      });
+      if (error) throw new Error(`createUser ${p.email}: ${error.message}`);
+      userId[p.key] = created.user.id;
+      report.usersCreated++;
+    }
+  }
+
+  // 2. Find or create division
+  let divisionId;
+  const { data: existingDiv } = await supabase
+    .from('divisions').select('id').eq('name', 'Aspen Peaks School Division').maybeSingle();
+  if (existingDiv) {
+    divisionId = existingDiv.id;
+  } else {
+    const { data: newDiv, error } = await supabase
+      .from('divisions')
+      .insert({ name: 'Aspen Peaks School Division', tier: 'division', admin_email: 'm.vance@apsd.net', enrolment_band: 'medium' })
+      .select('id').single();
+    if (error) throw new Error('create division: ' + error.message);
+    divisionId = newDiv.id;
+  }
+
+  // 3. Find or create schools
+  let silverwoodId, horizonId;
+  const { data: existingSil } = await supabase
+    .from('schools').select('id').eq('name', 'Silverwood High').maybeSingle();
+  if (existingSil) {
+    silverwoodId = existingSil.id;
+  } else {
+    const { data: newSil, error } = await supabase
+      .from('schools')
+      .insert({ name: 'Silverwood High', division_id: divisionId, tier: 'division', admin_email: 'e.rodriguez@silverwood.apsd.net' })
+      .select('id').single();
+    if (error) throw new Error('create Silverwood High: ' + error.message);
+    silverwoodId = newSil.id;
+  }
+  const { data: existingHor } = await supabase
+    .from('schools').select('id').eq('name', 'Horizon Charter Academy').maybeSingle();
+  if (existingHor) {
+    horizonId = existingHor.id;
+  } else {
+    const { data: newHor, error } = await supabase
+      .from('schools')
+      .insert({ name: 'Horizon Charter Academy', tier: 'school', admin_email: 'c.simmons@horizoncharter.org' })
+      .select('id').single();
+    if (error) throw new Error('create Horizon Charter: ' + error.message);
+    horizonId = newHor.id;
+  }
+
+  const schoolIds = { sil: silverwoodId, hor: horizonId };
+
+  // 4. Upsert profiles
+  const profileRows = DEMO_PERSONAS.map(p => ({
+    id:              userId[p.key],
+    display_name:    p.name,
+    role:            p.role,
+    school_id:       p.orgKey === 'div' ? null : schoolIds[p.orgKey],
+    division_id:     p.orgKey === 'div' ? divisionId : null,
+    tier:            'free',
+    country_code:    'CA',
+    storage_used_mb: 0,
+  }));
+  const { error: profileErr } = await supabase.from('profiles').upsert(profileRows, { onConflict: 'id' });
+  if (profileErr) throw new Error('upsert profiles: ' + profileErr.message);
+
+  // 5. Remove existing demo uploads and their events (idempotent)
+  const demoCodes = DEMO_UPLOAD_SPECS.map(s => s.code);
+  const { data: oldUploads } = await supabase.from('uploads').select('id').in('access_code', demoCodes);
+  if (oldUploads?.length) {
+    const oldIds = oldUploads.map(u => u.id);
+    await supabase.from('session_events').delete().in('upload_id', oldIds);
+    await supabase.from('uploads').delete().in('id', oldIds);
+  }
+
+  // 6. Insert uploads
+  const expiresAt = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+  const uploadRows = DEMO_UPLOAD_SPECS.map(spec => ({
+    teacher_id:      userId[spec.teacher],
+    filename:        spec.code.replace('-', '').toLowerCase() + '.mp3',
+    label:           spec.label,
+    storage_path:    `demo/${spec.code.replace('-', '').toLowerCase()}.mp3`,
+    access_code:     spec.code,
+    exit_word:       spec.exit,
+    exit_word_hash:  sha256Hex(spec.exit),
+    expires_at:      expiresAt,
+    file_size_mb:    spec.fileMb,
+    created_at:      schoolTime(spec.weeksAgo + 0.5),
+  }));
+  const { data: insertedUploads, error: uploadErr } = await supabase
+    .from('uploads').insert(uploadRows).select('id, access_code');
+  if (uploadErr) throw new Error('insert uploads: ' + uploadErr.message);
+  report.uploads = insertedUploads.length;
+
+  const uploadIdByCode = {};
+  insertedUploads.forEach(u => { uploadIdByCode[u.access_code] = u.id; });
+
+  // Update storage_used_mb on each teacher's profile
+  const storageMb = {};
+  DEMO_UPLOAD_SPECS.forEach(s => { storageMb[s.teacher] = (storageMb[s.teacher] || 0) + s.fileMb; });
+  for (const [key, mb] of Object.entries(storageMb)) {
+    await supabase.from('profiles').update({ storage_used_mb: Math.round(mb * 10) / 10 }).eq('id', userId[key]);
+  }
+
+  // 7. Generate session events
+  const allEvents = [];
+  for (const spec of DEMO_UPLOAD_SPECS) {
+    const uploadId = uploadIdByCode[spec.code];
+    const audioSecs = Math.round(spec.fileMb * 55); // ~1MB/min at 128kbps
+
+    for (let i = 0; i < spec.students; i++) {
+      const base = new Date(schoolTime(spec.weeksAgo - Math.random() * 0.4));
+
+      allEvents.push({ upload_id: uploadId, event_type: 'code_entered', occurred_at: base.toISOString() });
+
+      const playDelay = 15 + Math.random() * 20;
+      const playMs = base.getTime() + playDelay * 1000;
+      allEvents.push({ upload_id: uploadId, event_type: 'playback_started',
+        occurred_at: new Date(playMs).toISOString(), metadata: { position_seconds: 0 } });
+
+      // Maybe pause/resume (28% of students)
+      if (Math.random() < 0.28) {
+        const pausePos = Math.floor(audioSecs * (0.25 + Math.random() * 0.5));
+        allEvents.push({ upload_id: uploadId, event_type: 'playback_paused',
+          occurred_at: new Date(playMs + pausePos * 1000).toISOString(),
+          metadata: { position_seconds: pausePos } });
+        allEvents.push({ upload_id: uploadId, event_type: 'playback_resumed',
+          occurred_at: new Date(playMs + pausePos * 1000 + (12 + Math.random() * 20) * 1000).toISOString(),
+          metadata: { position_seconds: pausePos } });
+      }
+
+      // Maybe replay
+      if (Math.random() < spec.replay) {
+        const replayPos = Math.floor(audioSecs * (0.45 + Math.random() * 0.35));
+        allEvents.push({ upload_id: uploadId, event_type: 'replay_triggered',
+          occurred_at: new Date(playMs + replayPos * 1000).toISOString(),
+          metadata: { position_seconds: replayPos } });
+      }
+
+      // Completion
+      if (Math.random() < spec.completion) {
+        allEvents.push({ upload_id: uploadId, event_type: 'playback_completed',
+          occurred_at: new Date(playMs + audioSecs * 1000).toISOString(),
+          metadata: { position_seconds: audioSecs } });
+        allEvents.push({ upload_id: uploadId, event_type: 'exit_word_used',
+          occurred_at: new Date(playMs + audioSecs * 1000 + (8 + Math.random() * 45) * 1000).toISOString() });
+      }
+    }
+  }
+
+  // Bulk-insert in chunks of 500
+  for (let i = 0; i < allEvents.length; i += 500) {
+    const { error: evErr } = await supabase.from('session_events').insert(allEvents.slice(i, i + 500));
+    if (evErr) throw new Error(`session_events chunk ${i}: ${evErr.message}`);
+  }
+  report.events = allEvents.length;
+
+  // 8. Refresh materialized view immediately (requires migration 010)
+  await supabase.rpc('refresh_upload_summaries').catch(e => {
+    console.warn('refresh_upload_summaries rpc failed (run REFRESH MATERIALIZED VIEW upload_summaries manually):', e.message);
+  });
+
+  return report;
+}
 
 // ─── Audit log helper ─────────────────────────────────────────────────────
 // Fire-and-forget — never fails the request that triggered it.

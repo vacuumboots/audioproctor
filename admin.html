@@ -132,6 +132,16 @@
       justify-content: space-between;
       margin-bottom: 1rem;
     }
+
+    .notice {
+      padding: 0.6rem 0.9rem;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      border: var(--border);
+    }
+    .notice--success { background: #f0f8f0; border-color: #4a7c59; color: #2d5a3d; }
+    .notice--error   { background: var(--light-accent); border-color: var(--accent); color: var(--accent); }
+    .notice.hidden   { display: none; }
   </style>
 </head>
 <body>
@@ -174,6 +184,7 @@
       <button class="admin-tab" onclick="switchTab('schools', this)">Schools</button>
       <button class="admin-tab" onclick="switchTab('teachers', this)">Teachers</button>
       <button class="admin-tab" id="anomaly-tab" onclick="switchTab('anomalies', this)">Anomalies</button>
+      <button class="admin-tab" onclick="switchTab('demo', this)">Demo</button>
     </div>
 
     <!-- Divisions panel -->
@@ -260,6 +271,27 @@
     <div id="panel-anomalies" class="admin-panel">
       <p class="label" style="margin-bottom:1rem;">Accounts flagged for review</p>
       <div id="anomalies-container">
+        <div class="empty-state"><p class="label">Loading…</p></div>
+      </div>
+    </div>
+
+    <!-- Demo panel -->
+    <div id="panel-demo" class="admin-panel">
+      <div class="section-toolbar" style="margin-bottom:1.5rem;">
+        <div>
+          <p class="label" style="margin-bottom:0.25rem;">Demo Accounts</p>
+          <p style="font-size:0.8rem; color:var(--muted);">
+            Realistic demo data for Aspen Peaks School Division and Horizon Charter Academy.
+            Demo uploads display accurate analytics but have no audio files — playback will not work.
+          </p>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+          <button class="btn btn--ghost btn--small" onclick="seedDemoData(this)">Seed / Refresh Demo Data</button>
+          <div id="seed-notice" class="notice hidden" style="max-width:400px; font-size:0.8rem;"></div>
+        </div>
+      </div>
+
+      <div id="demo-personas">
         <div class="empty-state"><p class="label">Loading…</p></div>
       </div>
     </div>
