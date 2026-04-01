@@ -925,7 +925,7 @@ async function submitDivisionSetup() {
 
   await supabaseClient
     .from('profiles')
-    .update({ division_name: divisionName })
+    .update({ division_name: divisionName, tos_accepted_at: new Date().toISOString() })
     .eq('id', session.user.id);
 
   document.getElementById('first-login-modal').classList.add('hidden');

@@ -1,10 +1,14 @@
 -- ─── Migration 006: Analytics Functions & Profile Enhancements ───────────
 -- Run in Supabase SQL editor AFTER migrations 004 and 005.
 
--- ─── display_name on profiles ─────────────────────────────────────────────
--- Allows teachers to set a display name distinct from their Google account name.
+-- ─── display_name and tos_accepted_at on profiles ────────────────────────
+-- display_name: allows teachers to set a name distinct from their Google account.
+-- tos_accepted_at: records when the teacher accepted the Terms of Service.
+--   Null = accepted before this column existed (existing accounts, pre-ToS gate).
+--   Non-null = timestamp of explicit acceptance via the first-login modal.
 
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS display_name text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS display_name    text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS tos_accepted_at timestamptz;
 
 -- ─── get_my_upload_summaries() ────────────────────────────────────────────
 -- Returns upload_summaries rows for the currently authenticated teacher only.
