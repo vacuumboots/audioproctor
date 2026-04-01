@@ -26,47 +26,47 @@
   <script src="/js/supabase-client.js"></script>
   <script src="/js/auth.js"></script>
   <script>
-    // Redirect to the correct page if already signed in
-    (async () => {
-      const session = await getSession();
-      if (!session) return;
+    async function redirectByRole(session) {
       const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .maybeSingle();
+        .from('profiles').select('role').eq('id', session.user.id).maybeSingle();
       const dest = {
         platform_admin: '/admin.html',
         division_admin: '/division-admin.html',
         school_admin:   '/school-admin.html',
       }[profile?.role] || '/dashboard.html';
       window.location.href = dest;
-    })();
-
-    // Catch the OAuth / magic-link callback and route by role
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        const { data: profile } = await supabaseClient
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .maybeSingle();
-        const dest = {
-          platform_admin:  '/admin.html',
-          division_admin:  '/division-admin.html',
-          school_admin:    '/school-admin.html',
-        }[profile?.role] || '/dashboard.html';
-        window.location.href = dest;
-      }
-    });
-
-    // Show error from URL param (e.g. if auth fails)
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('error')) {
-      const el = document.getElementById('notice');
-      el.textContent = 'Sign-in failed. Please try again.';
-      el.classList.remove('hidden');
     }
+
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+
+      // PKCE callback — exchange the code for a session explicitly
+      if (params.get('code')) {
+        const { data, error } = await supabaseClient.auth.exchangeCodeForSession(
+          params.get('code')
+        );
+        if (error) {
+          const el = document.getElementById('notice');
+          el.textContent = 'Sign-in failed. Please try again.';
+          el.classList.remove('hidden');
+          return;
+        }
+        await redirectByRole(data.session);
+        return;
+      }
+
+      // Error from OAuth provider
+      if (params.get('error')) {
+        const el = document.getElementById('notice');
+        el.textContent = 'Sign-in failed. Please try again.';
+        el.classList.remove('hidden');
+        return;
+      }
+
+      // Already signed in — go straight to the right page
+      const session = await getSession();
+      if (session) await redirectByRole(session);
+    })();
   </script>
 </body>
 </html>
