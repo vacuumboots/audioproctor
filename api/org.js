@@ -431,11 +431,14 @@ module.exports = async (req, res) => {
       const { data: authUser } = await supabase.auth.admin.getUserById(userId);
       const teacherEmail = authUser?.user?.email;
 
+      const { data: prevProfile } = await supabase.from('profiles').select('school_id').eq('id', userId).single();
       const { error } = await supabase
         .from('profiles')
         .update({ school_id: null, role: 'teacher' })
         .eq('id', userId);
       if (error) return res.status(500).json({ error: error.message });
+      audit(supabase, user.id, 'detach_teacher', 'teacher', userId,
+        { school_id: prevProfile?.school_id }, { school_id: null });
 
       // Notify the teacher — fire-and-forget, don't fail the request if email fails
       if (teacherEmail) {
@@ -469,6 +472,8 @@ module.exports = async (req, res) => {
       const { error } = await supabase
         .from('schools').update({ division_id: null }).eq('id', schoolId);
       if (error) return res.status(500).json({ error: error.message });
+      audit(supabase, user.id, 'detach_school', 'school', schoolId,
+        { division_id: profile.division_id }, { division_id: null });
 
       // Notify all affected teachers — fire-and-forget
       if (affectedIds.length) {
@@ -506,6 +511,21 @@ module.exports = async (req, res) => {
 
   return res.status(405).json({ error: 'Method not allowed' });
 };
+
+// ─── Audit log helper ─────────────────────────────────────────────────────
+
+function audit(supabase, actorId, action, targetType, targetId, before, after) {
+  supabase.from('admin_audit_log').insert({
+    actor_id:     actorId,
+    action,
+    target_type:  targetType,
+    target_id:    targetId,
+    before_value: before ?? null,
+    after_value:  after  ?? null,
+  }).then(({ error }) => {
+    if (error) console.error('audit log insert failed:', error.message);
+  });
+}
 
 // ─── Paginated user email fetch ───────────────────────────────────────────
 // Supabase admin.listUsers has a maximum perPage of 1000. This function

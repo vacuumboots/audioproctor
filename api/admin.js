@@ -130,6 +130,18 @@ module.exports = async (req, res) => {
       return res.status(200).json(teachers);
     }
 
+    if (action === 'audit-log') {
+      const limit  = Math.min(parseInt(req.query.limit  || '100', 10), 500);
+      const offset = parseInt(req.query.offset || '0',   10);
+      const { data, error } = await supabase
+        .from('admin_audit_log')
+        .select('*')
+        .order('occurred_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json(data);
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   }
 
@@ -155,6 +167,7 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Invalid entityType' });
       }
       if (error) return res.status(500).json({ error: error.message });
+      audit(supabase, user.id, 'set_tier', entityType, entityId, null, { tier });
       return res.status(200).json({ ok: true });
     }
 
@@ -181,14 +194,17 @@ module.exports = async (req, res) => {
       const validRoles = ['teacher', 'school_admin', 'division_admin', 'platform_admin'];
       if (!userId) return res.status(400).json({ error: 'userId required' });
       if (!validRoles.includes(role)) return res.status(400).json({ error: 'Invalid role' });
+      const { data: prevProfile } = await supabase.from('profiles').select('role').eq('id', userId).single();
       const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
       if (error) return res.status(500).json({ error: error.message });
+      audit(supabase, user.id, 'set_role', 'teacher', userId, { role: prevProfile?.role }, { role });
       return res.status(200).json({ ok: true });
     }
 
     if (action === 'attach-teacher') {
       const { userId, schoolId, divisionId } = body;
       if (!userId) return res.status(400).json({ error: 'userId required' });
+      const { data: prevProfile } = await supabase.from('profiles').select('school_id, division_id').eq('id', userId).single();
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -197,6 +213,9 @@ module.exports = async (req, res) => {
         })
         .eq('id', userId);
       if (error) return res.status(500).json({ error: error.message });
+      audit(supabase, user.id, 'attach_teacher', 'teacher', userId,
+        { school_id: prevProfile?.school_id, division_id: prevProfile?.division_id },
+        { school_id: schoolId || null, division_id: divisionId || null });
       return res.status(200).json({ ok: true });
     }
 
@@ -229,6 +248,22 @@ module.exports = async (req, res) => {
 
   return res.status(405).json({ error: 'Method not allowed' });
 };
+
+// ─── Audit log helper ─────────────────────────────────────────────────────
+// Fire-and-forget — never fails the request that triggered it.
+
+function audit(supabase, actorId, action, targetType, targetId, before, after) {
+  supabase.from('admin_audit_log').insert({
+    actor_id:    actorId,
+    action,
+    target_type: targetType,
+    target_id:   targetId,
+    before_value: before ?? null,
+    after_value:  after  ?? null,
+  }).then(({ error }) => {
+    if (error) console.error('audit log insert failed:', error.message);
+  });
+}
 
 // ─── Paginated user email fetch ───────────────────────────────────────────
 // Supabase admin.listUsers has a maximum perPage of 1000. This function
