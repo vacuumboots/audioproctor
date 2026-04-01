@@ -168,9 +168,11 @@ recorded. All events are anonymous by design.
 
 ### Privacy Policy Update
 
-- [ ] Update Privacy Policy to document session event collection: what is recorded,
+- [x] Update Privacy Policy to document session event collection: what is recorded,
   what is not, how long it is retained, and that no student identity is captured
-  at any level.
+  at any level. Updated March 31, 2026 — covers anonymous session analytics,
+  FOIPPA/ATIA positioning, division admin data access scope, and data retention
+  on deletion.
 
 ---
 
