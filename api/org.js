@@ -15,6 +15,7 @@
 //   POST ?action=remove-school-admin      — body: { userId } — revert school_admin role to teacher
 
 const { createClient } = require('@supabase/supabase-js');
+const { Resend }       = require('resend');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin',  'https://app.audioproctor.com');
@@ -430,11 +431,23 @@ module.exports = async (req, res) => {
         }
       }
 
+      // Fetch teacher's email before detaching so we can notify them
+      const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+      const teacherEmail = authUser?.user?.email;
+
       const { error } = await supabase
         .from('profiles')
         .update({ school_id: null, role: 'teacher' })
         .eq('id', userId);
       if (error) return res.status(500).json({ error: error.message });
+
+      // Notify the teacher — fire-and-forget, don't fail the request if email fails
+      if (teacherEmail) {
+        sendTierChangeEmail(teacherEmail, 'school').catch(err =>
+          console.error('tier-change email failed:', err.message)
+        );
+      }
+
       return res.status(200).json({ ok: true });
     }
 
@@ -452,9 +465,30 @@ module.exports = async (req, res) => {
         }
       }
 
+      // Collect teacher emails for all teachers in this school before detaching
+      const { data: affectedTeachers } = await supabase
+        .from('profiles').select('id').eq('school_id', schoolId);
+      const affectedIds = (affectedTeachers || []).map(t => t.id);
+
       const { error } = await supabase
         .from('schools').update({ division_id: null }).eq('id', schoolId);
       if (error) return res.status(500).json({ error: error.message });
+
+      // Notify all affected teachers — fire-and-forget
+      if (affectedIds.length) {
+        const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        const emailMap = {};
+        (authUsers?.users || []).forEach(u => { emailMap[u.id] = u.email; });
+        affectedIds.forEach(tid => {
+          const email = emailMap[tid];
+          if (email) {
+            sendTierChangeEmail(email, 'division').catch(err =>
+              console.error('tier-change email failed:', err.message)
+            );
+          }
+        });
+      }
+
       return res.status(200).json({ ok: true });
     }
 
@@ -478,3 +512,34 @@ module.exports = async (req, res) => {
 
   return res.status(405).json({ error: 'Method not allowed' });
 };
+
+// ─── Email helper ──────────────────────────────────────────────────────────
+// Notifies a teacher that their plan tier has changed due to detachment.
+// 'detachedFrom' is 'school' or 'division' — describes what they were removed from.
+// Called fire-and-forget; errors are logged but not surfaced to the caller.
+
+async function sendTierChangeEmail(teacherEmail, detachedFrom) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const orgLabel = detachedFrom === 'division' ? 'division' : 'school';
+
+  await resend.emails.send({
+    from:    'AudioProctor <hello@audioproctor.com>',
+    to:      teacherEmail,
+    subject: 'Your AudioProctor plan has changed',
+    text: [
+      `Hi,`,
+      ``,
+      `Your account has been removed from your ${orgLabel} on AudioProctor.`,
+      ``,
+      `Your account and all of your uploaded assessments are still intact, but your plan has`,
+      `reverted to the Free tier. This means you are now limited to 3 uploads per calendar`,
+      `month and 50 MB of storage. Existing access codes will continue to work until they expire.`,
+      ``,
+      `If you believe this was done in error, please contact your ${orgLabel} administrator`,
+      `or reply to this email.`,
+      ``,
+      `— AudioProctor`,
+    ].join('\n'),
+  });
+}
+
