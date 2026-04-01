@@ -219,7 +219,10 @@
     <div id="insights-card" class="card mt-4 hidden">
       <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
         <p class="label">Insights</p>
-        <button id="btn-export-csv" class="btn btn--ghost btn--small" onclick="exportCsv()">Export CSV</button>
+        <div style="display:flex; align-items:center; gap:1rem;">
+          <span class="label text-muted" style="text-transform:none; letter-spacing:0; font-size:0.72rem;">Data refreshes every 15 min</span>
+          <button id="btn-export-csv" class="btn btn--ghost btn--small" onclick="exportCsv()">Export CSV</button>
+        </div>
       </div>
       <div id="insights-container">
         <div class="empty-state"><p class="label">Loading…</p></div>

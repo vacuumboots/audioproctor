@@ -80,3 +80,8 @@ SELECT cron.schedule(
   '*/15 * * * *',                      -- every 15 minutes
   $$REFRESH MATERIALIZED VIEW CONCURRENTLY upload_summaries$$
 );
+
+-- Seed the view immediately so data is available before the first cron run.
+-- Without this, the Insights card shows zeroes for up to 15 minutes after
+-- the migration is applied, even if session_events already has rows.
+REFRESH MATERIALIZED VIEW upload_summaries;
