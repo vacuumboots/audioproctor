@@ -535,9 +535,8 @@ async function seedDemoData(supabase) {
   report.events = allEvents.length;
 
   // 8. Refresh materialized view immediately (requires migration 010)
-  await supabase.rpc('refresh_upload_summaries').catch(e => {
-    console.warn('refresh_upload_summaries rpc failed (run REFRESH MATERIALIZED VIEW upload_summaries manually):', e.message);
-  });
+  const { error: refreshErr } = await supabase.rpc('refresh_upload_summaries');
+  if (refreshErr) console.warn('refresh_upload_summaries rpc failed:', refreshErr.message);
 
   return report;
 }
