@@ -62,7 +62,7 @@ audio.play().then(() => { ... }).catch(err => { ... });
 - Added on-screen diagnostic showing `readyState`, `networkState`, `duration`, `currentTime`, `paused` after load and after play click.
 - **Result diagnostic (before play):** `ready=4 net=1 dur=272.143673 err=none`
 - **Result diagnostic (after play):** `time=0.2 paused=false ready=4`
-- **Conclusion:** Audio element loads, decodes, and "plays" correctly. `currentTime` advances. But **no sound output whatsoever.**
+- **Conclusion:** Audio element loads, decodes. But **no sound output whatsoever.**
 
 ### 6. Web Audio API — AudioContext + createMediaElementSource (on page load)
 ```js
@@ -72,7 +72,7 @@ source.connect(audioCtx.destination);
 ```
 - Created during page load (no user gesture) → AudioContext starts in `suspended` state
 - `createMediaElementSource` takes exclusive control of audio output
-- **Result:** Made things worse — audio stopped advancing entirely. The suspended AudioContext blocked all playback through the element.
+- **Result:** Did not work. The suspended AudioContext blocked all playback through the element.
 
 ### 7. Web Audio API — AudioContext created on first play click (user gesture)
 ```js
