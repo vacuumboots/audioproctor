@@ -41,7 +41,6 @@ window.addEventListener('beforeunload', e => {
 document.addEventListener('contextmenu', e => e.preventDefault());
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Tab')        { e.preventDefault(); return; }
   if (e.key === 'Escape')     { e.preventDefault(); enforceFullscreen(); return; }
   if (/^F\d+$/.test(e.key))  { e.preventDefault(); return; }
   if (e.ctrlKey || e.altKey || e.metaKey) { e.preventDefault(); return; }
@@ -94,11 +93,30 @@ chrome.storage.session.get('sessionData', ({ sessionData }) => {
         document.getElementById('btn-play').innerHTML = '&#9654;';
         logEvent('playback_completed');
         break;
+      case 'playing':
+        audioPaused = false;
+        document.getElementById('btn-play').innerHTML = '&#9646;&#9646;';
+        { const pos = Math.round(audioCurrentTime || 0);
+          logEvent(pos < 2 ? 'playback_started' : 'playback_resumed', { position_seconds: pos }); }
+        break;
+      case 'pause':
+        // The 'pause' event also fires after 'ended'; only log if we weren't already paused.
+        if (!audioPaused) {
+          audioPaused = true;
+          document.getElementById('btn-play').innerHTML = '&#9654;';
+          logEvent('playback_paused', { position_seconds: Math.round(audioCurrentTime || 0) });
+        }
+        break;
+      case 'play_error':
+        audioPaused = true;
+        document.getElementById('btn-play').innerHTML = '&#9654;';
+        showError('Playback blocked: ' + msg.message + '. Try clicking Play again.');
+        break;
       case 'error':
         audioPaused = true;
         document.getElementById('btn-play').innerHTML = '&#9654;';
         showError('Audio failed: ' + msg.message + '. Ask your teacher to restart.');
-        logEvent('session_expired');
+        logEvent('audio_error', { message: msg.message });
         break;
     }
   });
@@ -109,37 +127,28 @@ chrome.storage.session.get('sessionData', ({ sessionData }) => {
   document.getElementById('speed-select').addEventListener('change', function () {
     changeSpeed(this.value);
   });
-  document.getElementById('btn-exit').addEventListener('click', () => attemptExit('exit-input', 'exit-error'));
   document.getElementById('progress-bar').addEventListener('input', function () {
     sendOffscreen({ action: 'seek', time: parseFloat(this.value) });
   });
-  document.getElementById('exit-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') attemptExit('exit-input', 'exit-error');
-  });
 
-  // Error-state retry and exit
+  // Error-state retry
   document.getElementById('btn-retry').addEventListener('click', retryLoad);
-  document.getElementById('btn-exit-error').addEventListener('click', () => attemptExit('exit-input-error', 'exit-error-error'));
-  document.getElementById('exit-input-error').addEventListener('keydown', e => {
-    if (e.key === 'Enter') attemptExit('exit-input-error', 'exit-error-error');
-  });
+});
+
+// ─── Exit Section (always visible, wired outside session callback) ───
+
+document.getElementById('btn-exit').addEventListener('click', () => attemptExit('exit-input', 'exit-error'));
+document.getElementById('exit-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') attemptExit('exit-input', 'exit-error');
 });
 
 // ─── Audio Controls ──────────────────────────────────────────────
 
 function togglePlay() {
-  const btn = document.getElementById('btn-play');
   if (audioPaused) {
     sendOffscreen({ action: 'play' });
-    btn.innerHTML = '&#9646;&#9646;';
-    audioPaused = false;
-    const pos = Math.round(audioCurrentTime || 0);
-    logEvent(pos < 2 ? 'playback_started' : 'playback_resumed', { position_seconds: pos });
   } else {
     sendOffscreen({ action: 'pause' });
-    btn.innerHTML = '&#9654;';
-    audioPaused = true;
-    logEvent('playback_paused', { position_seconds: Math.round(audioCurrentTime || 0) });
   }
 }
 
@@ -197,7 +206,7 @@ async function attemptExit(inputId, errorId) {
 }
 
 async function hashWord(word) {
-  const data = new TextEncoder().encode(word.toLowerCase().trim());
+  const data = new TextEncoder().encode(word);
   const buf  = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(buf))
     .map(b => b.toString(16).padStart(2, '0'))

@@ -22,6 +22,7 @@ const ALLOWED_EVENTS = new Set([
   'replay_triggered',
   'exit_word_used',
   'session_expired',
+  'audio_error',
 ]);
 
 module.exports = async (req, res) => {
