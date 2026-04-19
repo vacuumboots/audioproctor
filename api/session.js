@@ -26,6 +26,11 @@ module.exports = async (req, res) => {
   const { code } = req.query;
   if (!code) return res.status(400).json({ error: 'Missing code parameter' });
 
+  // Validate code format — reject obviously invalid input before hitting the DB
+  if (typeof code !== 'string' || code.length > 20 || !/^[A-Za-z0-9 -]{2,20}$/.test(code)) {
+    return res.status(400).json({ error: 'Invalid code format' });
+  }
+
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY

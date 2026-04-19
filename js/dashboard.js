@@ -365,7 +365,11 @@ async function loadUploads() {
     .order('created_at', { ascending: false });
 
   if (error) {
-    container.innerHTML = `<p class="label text-accent">Could not load uploads: ${error.message}</p>`;
+    container.textContent = '';
+    const p = document.createElement('p');
+    p.className = 'label text-accent';
+    p.textContent = 'Could not load uploads. Please refresh and try again.';
+    container.appendChild(p);
     return;
   }
 
@@ -675,6 +679,10 @@ async function saveExpiryDate() {
   if (!val || !editTargetId) return;
 
   const newExpiry = new Date(val);
+  if (isNaN(newExpiry.getTime())) {
+    alert('Please enter a valid date and time.');
+    return;
+  }
   if (newExpiry <= new Date()) {
     alert('Please choose a date and time in the future.');
     return;

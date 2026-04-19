@@ -44,13 +44,19 @@ module.exports = async (req, res) => {
     if (typeof displayName !== 'string') {
       return res.status(400).json({ error: 'displayName must be a string' });
     }
+    if (displayName.length > 120) {
+      return res.status(400).json({ error: 'displayName must be 120 characters or fewer' });
+    }
 
     const { error } = await supabase
       .from('profiles')
       .update({ display_name: displayName.trim() || null })
       .eq('id', user.id);
 
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) {
+      console.error('update-profile failed:', error.message);
+      return res.status(500).json({ error: 'Could not update profile' });
+    }
     return res.status(200).json({ ok: true });
   }
 
@@ -83,15 +89,36 @@ module.exports = async (req, res) => {
     }
 
     // Delete upload rows (session_events cascade via ON DELETE CASCADE)
-    await supabase.from('uploads').delete().eq('teacher_id', user.id);
+    const { error: uploadsErr } = await supabase.from('uploads').delete().eq('teacher_id', user.id);
+    if (uploadsErr) {
+      console.error('delete-account: uploads delete failed:', uploadsErr.message);
+      return res.status(500).json({ error: 'Could not delete account data. Please try again.' });
+    }
 
     // Delete profile row
-    await supabase.from('profiles').delete().eq('id', user.id);
+    const { error: profileErr } = await supabase.from('profiles').delete().eq('id', user.id);
+    if (profileErr) {
+      console.error('delete-account: profile delete failed:', profileErr.message);
+      return res.status(500).json({ error: 'Could not delete account data. Please try again.' });
+    }
+
+    // Audit log — fire-and-forget (the profile row is gone, but we record the event)
+    supabase.from('admin_audit_log').insert({
+      actor_id:    user.id,
+      action:      'delete_own_account',
+      target_type: 'teacher',
+      target_id:   user.id,
+      before_value: { email: user.email, role: profile?.role || 'teacher', storage_files: uniquePaths.length },
+      after_value:  null,
+    }).then(({ error: auditErr }) => {
+      if (auditErr) console.error('delete-account audit log failed:', auditErr.message);
+    });
 
     // Delete auth.users record
     const { error: deleteErr } = await supabase.auth.admin.deleteUser(user.id);
     if (deleteErr) {
-      return res.status(500).json({ error: 'Failed to delete auth account: ' + deleteErr.message });
+      console.error('delete-account: auth delete failed:', deleteErr.message);
+      return res.status(500).json({ error: 'Could not complete account deletion. Please contact support.' });
     }
 
     return res.status(200).json({ ok: true });
