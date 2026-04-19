@@ -3,20 +3,34 @@
 ## Environment
 - **Device:** Managed Chromebook (K-12 school)
 - **Chrome OS build:** 14541.0.0
-- **Chrome version:** 114.0.0.0
+- **Chrome version:** 146.0.0.0
 - **Extension:** Manifest V3, loaded unpacked
 - **Audio file:** MP3, ~272 seconds (4:32), uploaded via dashboard, stored in Supabase Storage
 
-## What works
-- Extension popup: code entry, validation, API call to `/api/session` — all working
-- Signed URL generation: Supabase returns 200 for both the POST (create signed URL) and GET (download audio) — confirmed in Supabase logs
-- Player UI: opens in fullscreen popup window, all controls render correctly
-- Lockdown: keyboard blocking (Tab, Escape, F-keys, Ctrl/Alt/Meta), fullscreen re-entry on resize, Alt+Tab focus reclaim via background service worker, right-click disabled, beforeunload warning
-- Exit word: hashing, verification, and window close all work
-- Rewind/speed buttons: functional after fixing inline handlers
+---
 
-## The core problem
-**Chrome OS does not produce any audio output from extension pages (`chrome-extension://` origin).** This applies to both `<audio>` elements and the Web Audio API (oscillator test). The audio element reports that it IS playing (readyState=4, paused=false, currentTime advances to 0.2) but no sound reaches the speakers. This is a Chrome OS platform restriction, not a code bug.
+## ✅ RESOLVED — 2026-04-18
+
+**Final working architecture:** `chrome.offscreen` document with `AUDIO_PLAYBACK` reason.
+
+The audio element lives in `extension/offscreen.html`, managed by `extension/offscreen.js`. The player window sends commands (`load`, `play`, `pause`, `seek`, `rewind`, `speed`) via `chrome.runtime.sendMessage({ target: 'offscreen', ... })`. Events (`loadedmetadata`, `timeupdate`, `ended`, `error`) come back the same way with `{ target: 'player', ... }`.
+
+A critical additional fix was required: the popup must await background confirmation that the offscreen document is fully initialized before opening the player window, otherwise `player.js` sends the `load` message before anyone is listening and audio never starts. This was solved by having popup.js send a `prepare_session` message and waiting for the background to respond after `ensureOffscreen()` completes.
+
+**Verified on Chrome OS 146 (build 14541.0.0):**
+- Audio plays from a private Supabase Storage signed URL
+- Play/pause, rewind 10s, and speed controls all work
+- Escape, F-keys, Ctrl/Alt/Meta combos, Tab — all blocked
+- System close button (Chrome OS title bar X) reopens the player window automatically
+- Cannot navigate away or open another window while session is active
+- Exit word (SHA-256 verified) is the only way out
+- Audio does not pause, restart, or glitch during lockdown attempts
+
+---
+
+## The core problem (historical)
+
+**Chrome OS does not produce any audio output from extension pages (`chrome-extension://` origin).** This applies to both `<audio>` elements and the Web Audio API. The audio element reports that it IS playing (`readyState=4`, `paused=false`, `currentTime` advances) but no sound reaches the speakers. This is a Chrome OS platform restriction, not a code bug.
 
 ## Attempts (chronological)
 
@@ -33,102 +47,58 @@ audio.src = sessionData.signedUrl;
 
 ### 3. Fetch as blob + forced MIME type
 ```js
-const res = await fetch(sessionData.signedUrl);  // uses host_permissions for *.supabase.co
+const res = await fetch(sessionData.signedUrl);
 const raw = await res.arrayBuffer();
 const blob = new Blob([raw], { type: 'audio/mpeg' });
 audio.src = URL.createObjectURL(blob);
 audio.load();
 ```
 - Added `*://*.supabase.co/*` to `host_permissions` in manifest.json
-- **Result:** Audio loaded successfully (readyState=4, duration=272.14, no errors). Still no sound.
+- **Result:** Audio loaded successfully (`readyState=4`, `duration=272.14`, no errors). Still no sound.
 
 ### 4. `async togglePlay` with `await audio.play()`
-```js
-async function togglePlay() {
-  try {
-    await audio.play();
-    btn.innerHTML = '&#9646;&#9646;';
-  } catch (err) {
-    showError('Audio could not play: ' + err.message);
-  }
-}
-```
-- **Result:** Button stopped toggling entirely. The `await` likely caused the play() promise to hang or lose the user gesture context. Reverted to non-async `.then()/.catch()` pattern.
+- **Result:** Button stopped toggling entirely. Reverted to `.then()/.catch()` pattern.
 
 ### 5. Non-async togglePlay with diagnostics
-```js
-audio.play().then(() => { ... }).catch(err => { ... });
-```
-- Added on-screen diagnostic showing `readyState`, `networkState`, `duration`, `currentTime`, `paused` after load and after play click.
-- **Result diagnostic (before play):** `ready=4 net=1 dur=272.143673 err=none`
-- **Result diagnostic (after play):** `time=0.2 paused=false ready=4`
-- **Conclusion:** Audio element loads, decodes. But **no sound output whatsoever.**
+- Added on-screen diagnostic showing `readyState`, `networkState`, `duration`, `currentTime`, `paused`
+- **Result:** `ready=4 net=1 dur=272.14 time=0.2 paused=false` — loads and "plays" with no sound
+- **Conclusion:** Chrome OS blocks audio output at the platform level for extension pages.
 
-### 6. Web Audio API — AudioContext + createMediaElementSource (on page load)
-```js
-audioCtx = new AudioContext();
-const source = audioCtx.createMediaElementSource(audio);
-source.connect(audioCtx.destination);
-```
-- Created during page load (no user gesture) → AudioContext starts in `suspended` state
-- `createMediaElementSource` takes exclusive control of audio output
-- **Result:** Did not work. The suspended AudioContext blocked all playback through the element.
+### 6–7. Web Audio API — AudioContext + createMediaElementSource
+- Tried both on page load and inside user gesture handler
+- **Result:** Still no sound.
 
-### 7. Web Audio API — AudioContext created on first play click (user gesture)
-```js
-// Inside togglePlay click handler:
-if (!audioCtx) {
-  audioCtx = new AudioContext();
-  audioCtx.createMediaElementSource(audio).connect(audioCtx.destination);
-}
-if (audioCtx.state === 'suspended') audioCtx.resume();
-```
-- **Result:** Still no sound, no progress.
-
-### 8. Web Audio API — Pure oscillator test (440Hz beep)
+### 8. Web Audio API — Pure oscillator test (440 Hz)
 ```js
 const ctx = new AudioContext();
 const osc = ctx.createOscillator();
-osc.frequency.value = 440;
 osc.connect(ctx.destination);
 osc.start();
-setTimeout(() => { osc.stop(); ctx.close(); }, 300);
 ```
 - Created inside click handler (valid user gesture)
-- **Result:** No beep heard. **This confirms Chrome OS blocks ALL audio from extension pages**, not just `<audio>` elements.
+- **Result:** No beep. **Confirmed Chrome OS blocks ALL audio from extension pages**, not just `<audio>` elements.
 
-### 9. Hidden iframe audio bridge (current approach)
-- Created `audio-bridge.html` at repo root (served from `audioproctor.com` by Vercel)
-- Extension player.html embeds `<iframe id="audio-frame" src="https://audioproctor.com/audio-bridge.html" hidden>`
-- All playback commands (play/pause/seek/rewind/speed) sent via `postMessage` to the iframe
-- Bridge page creates an `<audio>` element and relays events (timeupdate, loadedmetadata, ended, error) back
-- **Result:** Still no sound. Needs further investigation — the iframe may also be blocked since its parent is an extension page, or there may be a deployment/loading issue.
+### 9. Hidden iframe audio bridge
+- `audio-bridge.html` served from `audioproctor.com`, embedded as a hidden `<iframe>` in player.html
+- Commands sent via `postMessage`; events relayed back
+- **Result:** Still no sound. Chrome OS also blocks audio from iframes whose parent is an extension page.
 
-## Next steps to investigate
+### 10. `chrome.offscreen` document with `AUDIO_PLAYBACK` reason ✅
+- Created `extension/offscreen.html` + `extension/offscreen.js`
+- Background service worker manages the document lifecycle (`ensureOffscreen()` / `chrome.offscreen.closeDocument()`)
+- `<audio>` element lives in the offscreen document, which Chrome OS treats as a privileged background context with real audio output
+- Player window communicates via `chrome.runtime.sendMessage`
+- **Result:** Full audio playback on Chrome OS 146. This is the solution.
 
-1. **Verify the iframe loads:** Open Chrome DevTools on the Chromebook (if possible) and check the Network tab to see if `audio-bridge.html` loads successfully in the iframe. Also check the Console for any errors.
+**Race condition fix (additional):** `popup.js` sends `prepare_session` to the background and awaits confirmation before creating the player window. This guarantees the offscreen document's `onMessage` listener is registered before `player.js` sends the first `load` command.
 
-2. **Test iframe audio isolation:** It's possible Chrome OS also blocks audio from iframes embedded in extension pages (the iframe's audio may be associated with the parent extension page's audio context). If so, the iframe approach won't work.
+## Final file structure
 
-3. **Open player as a regular web page:** Instead of an extension page, navigate to `https://app.audioproctor.com/player.html?code=XXX`. The extension would:
-   - Popup validates code, gets session data
-   - Opens `https://app.audioproctor.com/player.html` as a regular tab/window
-   - Extension injects a content script for keyboard blocking / lockdown
-   - Background service worker enforces fullscreen and focus
-   - Audio plays from the regular web page (which definitely has audio output on Chrome OS)
-   
-   This is the most likely solution if the iframe approach also fails. It requires:
-   - A web-based player page with the same UI
-   - A content script (`content_scripts` in manifest.json) for lockdown
-   - Passing session data to the web page (via content script message, or having the page call `/api/session` itself)
-
-4. **Chrome Enterprise kiosk mode:** For the most locked-down experience, the school's IT admin could configure the extension to run in kiosk mode. This provides OS-level lockdown (blocks Alt+Tab, system shortcuts, shelf access) that JavaScript cannot achieve.
-
-## Key files
-- `extension/player.js` — main player logic, lockdown, bridge communication
-- `extension/player.html` — player UI (uses hidden iframe for audio)
-- `extension/popup.js` — code entry, API call, opens player window
-- `extension/background.js` — service worker for Alt+Tab focus enforcement
-- `extension/manifest.json` — permissions, service worker, host_permissions
-- `audio-bridge.html` — minimal audio proxy page (repo root, served by Vercel)
-- `api/session.js` — serverless function that validates code and returns signed URL
+| File | Role |
+|------|------|
+| `extension/popup.js` | Code entry, `/api/session` call, opens player window |
+| `extension/background.js` | Service worker: offscreen lifecycle, fullscreen enforcement, unauthorized-close recovery |
+| `extension/player.html` / `player.js` | Fullscreen lockdown UI, sends commands to offscreen |
+| `extension/offscreen.html` / `offscreen.js` | `<audio>` element lives here; relays events to player |
+| `extension/manifest.json` | `"offscreen"` permission + `AUDIO_PLAYBACK` reason |
+| `api/session.js` | Validates access code, returns 1-hour signed URL + exit word hash |
