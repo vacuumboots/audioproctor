@@ -126,7 +126,10 @@ module.exports = async (req, res) => {
         .from('profiles')
         .select('id, role, tier, tier_override')
         .eq('school_id', schoolId);
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('school-teachers query failed:', error.message);
+        return res.status(500).json({ error: 'Could not load teachers' });
+      }
 
       const emailMap = await getAllUserEmails(supabase);
 
@@ -235,7 +238,10 @@ module.exports = async (req, res) => {
         .select('id, name, tier, admin_email, created_at')
         .eq('division_id', divisionId)
         .order('name');
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('division-schools query failed:', error.message);
+        return res.status(500).json({ error: 'Could not load schools' });
+      }
 
       const schoolIds = (schools || []).map(s => s.id);
 
@@ -436,7 +442,10 @@ module.exports = async (req, res) => {
         .from('profiles')
         .update({ school_id: null, role: 'teacher' })
         .eq('id', userId);
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('detach-teacher failed:', error.message);
+        return res.status(500).json({ error: 'Could not detach teacher' });
+      }
       audit(supabase, user.id, 'detach_teacher', 'teacher', userId,
         { school_id: prevProfile?.school_id }, { school_id: null });
 
@@ -471,7 +480,10 @@ module.exports = async (req, res) => {
 
       const { error } = await supabase
         .from('schools').update({ division_id: null }).eq('id', schoolId);
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('detach-school failed:', error.message);
+        return res.status(500).json({ error: 'Could not detach school' });
+      }
       audit(supabase, user.id, 'detach_school', 'school', schoolId,
         { division_id: profile.division_id }, { division_id: null });
 
@@ -502,7 +514,10 @@ module.exports = async (req, res) => {
         .update({ role: 'teacher' })
         .eq('id', userId)
         .eq('role', 'school_admin');
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('remove-school-admin failed:', error.message);
+        return res.status(500).json({ error: 'Could not remove school admin role' });
+      }
       return res.status(200).json({ ok: true });
     }
 

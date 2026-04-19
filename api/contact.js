@@ -26,6 +26,14 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Name, email, and message are required.' });
   }
 
+  // Length limits to prevent abuse
+  if (name.length > 200 || email.length > 254 || message.length > 5000) {
+    return res.status(400).json({ error: 'One or more fields are too long.' });
+  }
+  if ((division && division.length > 200) || (role && role.length > 100)) {
+    return res.status(400).json({ error: 'One or more fields are too long.' });
+  }
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: 'Please enter a valid email address.' });

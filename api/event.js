@@ -39,12 +39,25 @@ module.exports = async (req, res) => {
   if (!code || typeof code !== 'string') {
     return res.status(400).json({ error: 'Missing code' });
   }
+  // Validate code format — same rules as api/session.js
+  if (code.length > 20 || !/^[A-Za-z0-9 -]{2,20}$/.test(code)) {
+    return res.status(400).json({ error: 'Invalid code format' });
+  }
   if (!eventType || !ALLOWED_EVENTS.has(eventType)) {
     return res.status(400).json({ error: 'Invalid or missing eventType' });
   }
-  // metadata is optional; if present must be a plain object
+  // metadata is optional; if present must be a plain object with capped size
   if (metadata !== undefined && (typeof metadata !== 'object' || Array.isArray(metadata))) {
     return res.status(400).json({ error: 'metadata must be a plain object' });
+  }
+  if (metadata !== undefined) {
+    try {
+      if (JSON.stringify(metadata).length > 2048) {
+        return res.status(400).json({ error: 'metadata too large' });
+      }
+    } catch {
+      return res.status(400).json({ error: 'metadata must be serializable' });
+    }
   }
 
   const supabase = createClient(

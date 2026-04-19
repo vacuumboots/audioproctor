@@ -94,8 +94,12 @@ module.exports = async (req, res) => {
       const { data, error } = await supabase
         .from('divisions')
         .select('id, name, enrolment_band, tier, admin_email, notes, expires_at, created_at')
-        .order('created_at', { ascending: false });
-      if (error) return res.status(500).json({ error: error.message });
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (error) {
+        console.error('admin divisions query failed:', error.message);
+        return res.status(500).json({ error: 'Could not load divisions' });
+      }
       return res.status(200).json(data);
     }
 
@@ -103,8 +107,12 @@ module.exports = async (req, res) => {
       const { data, error } = await supabase
         .from('schools')
         .select('id, name, tier, admin_email, notes, expires_at, created_at, divisions(name)')
-        .order('created_at', { ascending: false });
-      if (error) return res.status(500).json({ error: error.message });
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (error) {
+        console.error('admin schools query failed:', error.message);
+        return res.status(500).json({ error: 'Could not load schools' });
+      }
       return res.status(200).json(data);
     }
 
@@ -115,8 +123,12 @@ module.exports = async (req, res) => {
           id, role, tier, tier_override, country_code, division_name, notes, school_id, division_id,
           schools(name), divisions(name)
         `)
-        .order('id', { ascending: true });
-      if (error) return res.status(500).json({ error: error.message });
+        .order('id', { ascending: true })
+        .limit(1000);
+      if (error) {
+        console.error('admin teachers query failed:', error.message);
+        return res.status(500).json({ error: 'Could not load teachers' });
+      }
 
       // Merge auth.users email — paginated to handle >1000 users
       const emailMap = await getAllUserEmails(supabase);
@@ -162,7 +174,10 @@ module.exports = async (req, res) => {
         email: targetUser.email,
         options: { redirectTo },
       });
-      if (linkErr) return res.status(500).json({ error: linkErr.message });
+      if (linkErr) {
+        console.error('login-link generation failed:', linkErr.message);
+        return res.status(500).json({ error: 'Could not generate login link' });
+      }
 
       return res.status(200).json({
         link:       linkData.properties.action_link,
@@ -197,7 +212,10 @@ module.exports = async (req, res) => {
       } else {
         return res.status(400).json({ error: 'Invalid entityType' });
       }
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('set-tier failed:', error.message);
+        return res.status(500).json({ error: 'Could not update tier' });
+      }
       audit(supabase, user.id, 'set_tier', entityType, entityId, null, { tier });
       return res.status(200).json({ ok: true });
     }
@@ -216,7 +234,10 @@ module.exports = async (req, res) => {
       } else {
         return res.status(400).json({ error: 'Invalid entityType' });
       }
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('set-notes failed:', error.message);
+        return res.status(500).json({ error: 'Could not update notes' });
+      }
       return res.status(200).json({ ok: true });
     }
 
@@ -227,7 +248,10 @@ module.exports = async (req, res) => {
       if (!validRoles.includes(role)) return res.status(400).json({ error: 'Invalid role' });
       const { data: prevProfile } = await supabase.from('profiles').select('role').eq('id', userId).single();
       const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('set-role failed:', error.message);
+        return res.status(500).json({ error: 'Could not update role' });
+      }
       audit(supabase, user.id, 'set_role', 'teacher', userId, { role: prevProfile?.role }, { role });
       return res.status(200).json({ ok: true });
     }
@@ -243,7 +267,10 @@ module.exports = async (req, res) => {
           division_id: divisionId || null,
         })
         .eq('id', userId);
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('attach-teacher failed:', error.message);
+        return res.status(500).json({ error: 'Could not attach teacher' });
+      }
       audit(supabase, user.id, 'attach_teacher', 'teacher', userId,
         { school_id: prevProfile?.school_id, division_id: prevProfile?.division_id },
         { school_id: schoolId || null, division_id: divisionId || null });
@@ -258,7 +285,10 @@ module.exports = async (req, res) => {
         .insert({ name, enrolment_band: enrolmentBand || null, admin_email: adminEmail || null, tier: tier || 'free' })
         .select()
         .single();
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('create-division failed:', error.message);
+        return res.status(500).json({ error: 'Could not create division' });
+      }
       return res.status(200).json(data);
     }
 
@@ -270,7 +300,10 @@ module.exports = async (req, res) => {
         .insert({ name, division_id: divisionId || null, admin_email: adminEmail || null, tier: tier || 'free' })
         .select()
         .single();
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('create-school failed:', error.message);
+        return res.status(500).json({ error: 'Could not create school' });
+      }
       return res.status(200).json(data);
     }
 
