@@ -521,7 +521,7 @@ through the platform admin dashboard. Not advertised publicly.
 
 ## Marketing Site — Navigation
 
-- [ ] **Sign In link in top nav** — the marketing site (`audioproctor.com`) has no visible
+- [x] **Sign In link in top nav** — the marketing site (`audioproctor.com`) has no visible
   path to the app. Add a "Sign in" link in the site header pointing to
   `https://app.audioproctor.com/login.html`. Should appear on all marketing pages
   (index, use-cases, about, pricing, etc.) in the top-right beside the existing CTA.

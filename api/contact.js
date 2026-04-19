@@ -16,7 +16,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
 
-  const { name, email, division, role, message, website } = req.body;
+  const { name, email, division, enrolment, role, message, website } = req.body;
 
   // Honeypot — bots fill in the hidden `website` field; humans don't
   if (website) return res.status(200).json({ ok: true });
@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
   if (name.length > 200 || email.length > 254 || message.length > 5000) {
     return res.status(400).json({ error: 'One or more fields are too long.' });
   }
-  if ((division && division.length > 200) || (role && role.length > 100)) {
+  if ((division && division.length > 200) || (role && role.length > 100) || (enrolment && enrolment.length > 100)) {
     return res.status(400).json({ error: 'One or more fields are too long.' });
   }
 
@@ -50,6 +50,7 @@ module.exports = async (req, res) => {
       `Name: ${name}`,
       `Email: ${email}`,
       `Division: ${division || '(not provided)'}`,
+      `Enrolment: ${enrolment || '(not provided)'}`,
       `Role: ${role || '(not provided)'}`,
       ``,
       `Message:`,

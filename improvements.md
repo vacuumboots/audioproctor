@@ -58,21 +58,10 @@ friction before any pilot.
 
 ---
 
-## 3. Add a sign-in link to the marketing site
+## ~~3. Add a sign-in link to the marketing site~~ ✓ Done April 19, 2026
 
-**What's missing:** `audioproctor.com` has no visible path to the app. A teacher who
-finds the marketing site has no obvious way to sign up or sign in. The roadmap flags this
-explicitly; it hasn't shipped.
-
-**Why it matters:** This is a zero-cost conversion that's currently zero. Any teacher
-who arrives from word-of-mouth, a conference, or a Google search hits a dead end. It
-also makes the product look unfinished to the IT admins and division leads who will
-evaluate it.
-
-**What to build:**
-- "Sign in" link in the top-right of the site header on all marketing pages
-- Points to `https://app.audioproctor.com/login.html`
-- Add the Division Enrolment dropdown to the contact form for lead pre-qualification
+"Sign in" link added to `site/nav.js` — appears in desktop and mobile nav on all
+marketing pages, pointing to `https://app.audioproctor.com/login.html`.
 
 ---
 
@@ -124,10 +113,19 @@ costs ~10MB, not 10–150MB depending on source.
 |---|-------------|--------|--------|
 | 1 | Wire email delivery | Medium | Unblocks invitations, onboarding, renewals |
 | 2 | Chrome Web Store publication | Low | Removes biggest IT friction |
-| 3 | Marketing site sign-in link | Low | Removes zero-cost conversion blocker |
+| ~~3~~ | ~~Marketing site sign-in link~~ | ~~Low~~ | ✓ Done |
 | 4 | Teacher request/signup flow | Medium | Enables grassroots teacher adoption |
 | 5 | Audio normalization | High | Product reliability + storage predictability |
 
 Items 2 and 3 are quick wins that should ship before the first pilot conversation.
 Items 1 and 4 together define the self-serve distribution model. Item 5 is higher
 effort but becomes more urgent once free-tier teachers start hitting the storage cap.
+
+---
+
+## Bonus quick wins (April 19, 2026)
+
+- [x] Contact form enrolment dropdown — leads now self-segment by division size on arrival
+- [x] About page pricing philosophy paragraph — added before "Built by someone in the room"
+- [x] Use Cases pricing callouts updated — Provincial Assessment note removed (credibility focus); Small School updated to "Free tier covers it — no infrastructure required."
+- [x] roadmap.md — Sign In link in top nav marked done

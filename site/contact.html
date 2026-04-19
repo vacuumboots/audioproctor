@@ -50,6 +50,18 @@
           </div>
 
           <div class="site-form-group">
+            <label for="enrolment">Division Enrolment</label>
+            <select id="enrolment" name="enrolment">
+              <option value="">Select one&hellip;</option>
+              <option value="Individual teacher">Individual teacher</option>
+              <option value="Under 2,000 students">Under 2,000 students</option>
+              <option value="2,000–8,000 students">2,000–8,000 students</option>
+              <option value="8,000–25,000 students">8,000–25,000 students</option>
+              <option value="25,000+ students">25,000+ students</option>
+            </select>
+          </div>
+
+          <div class="site-form-group">
             <label for="role">Your Role</label>
             <select id="role" name="role">
               <option value="">Select one&hellip;</option>
@@ -105,12 +117,13 @@
     errEl.classList.add('hidden');
 
     const body = {
-      name:     document.getElementById('name').value.trim(),
-      email:    document.getElementById('email').value.trim(),
-      division: document.getElementById('division').value.trim(),
-      role:     document.getElementById('role').value,
-      message:  document.getElementById('message').value.trim(),
-      website:  document.getElementById('honeypot').value, // honeypot
+      name:      document.getElementById('name').value.trim(),
+      email:     document.getElementById('email').value.trim(),
+      division:  document.getElementById('division').value.trim(),
+      enrolment: document.getElementById('enrolment').value,
+      role:      document.getElementById('role').value,
+      message:   document.getElementById('message').value.trim(),
+      website:   document.getElementById('honeypot').value, // honeypot
     };
 
     try {
