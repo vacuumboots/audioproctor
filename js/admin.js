@@ -35,7 +35,7 @@ async function initAdmin(user) {
     return;
   }
 
-  await Promise.all([loadOverview(), loadDivisions(), loadSchools(), loadTeachers()]);
+  await Promise.all([loadOverview(), loadDivisions(), loadSchools(), loadTeachers(), loadRequests()]);
   loadDemoPanel();
 }
 
@@ -437,6 +437,104 @@ const DEMO_PANEL_DATA = [
     ],
   },
 ];
+
+// ─── Requests ─────────────────────────────────────────────────────
+
+async function loadRequests() {
+  const container = document.getElementById('requests-container');
+  if (!container) return;
+
+  try {
+    const requests = await adminApi('list-requests');
+
+    const pending = requests.filter(r => r.status === 'pending');
+
+    // Badge the tab with pending count
+    const tab = document.getElementById('requests-tab');
+    if (tab) tab.textContent = pending.length > 0 ? `Requests (${pending.length})` : 'Requests';
+
+    if (!requests.length) {
+      container.innerHTML = `<div class="empty-state"><p class="label">No requests yet</p></div>`;
+      return;
+    }
+
+    const rows = requests.map(r => {
+      const date = new Date(r.created_at).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
+      const statusBadge = r.status === 'pending'
+        ? `<span style="color:var(--ink); font-weight:500;">Pending</span>`
+        : r.status === 'approved'
+          ? `<span style="color:#4a7c59;">Approved</span>`
+          : `<span style="color:var(--muted);">Rejected</span>`;
+
+      const actions = r.status === 'pending' ? `
+        <button class="btn btn--ghost btn--small" onclick="approveRequest('${r.id}', '${escapeHtml(r.email)}')">Approve</button>
+        <button class="btn btn--small" style="margin-left:0.5rem; border:1px solid var(--warm-mid); background:transparent; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
+          onclick="rejectRequest('${r.id}')">Reject</button>
+      ` : '—';
+
+      return `
+        <tr>
+          <td><strong>${escapeHtml(r.name)}</strong><br><span style="color:var(--muted); font-size:0.8rem;">${escapeHtml(r.email)}</span></td>
+          <td style="font-size:0.85rem;">${escapeHtml(r.school || '—')}</td>
+          <td style="font-size:0.85rem;">${escapeHtml(r.division || '—')}</td>
+          <td style="font-size:0.8rem; color:var(--muted); max-width:200px; white-space:normal;">${escapeHtml(r.message || '—')}</td>
+          <td style="font-size:0.8rem; color:var(--muted);">${date}</td>
+          <td>${statusBadge}</td>
+          <td>${actions}</td>
+          <td id="invite-link-${r.id}"></td>
+        </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name / Email</th>
+            <th>School</th>
+            <th>Division</th>
+            <th>Message</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th>Actions</th>
+            <th>Invite Link</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch (err) {
+    container.innerHTML = `<p class="label" style="color:var(--accent);">Could not load requests: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function approveRequest(requestId, email) {
+  if (!confirm(`Approve access request from ${email}?`)) return;
+  try {
+    const data = await adminApi('approve-request', 'POST', { requestId });
+    // Show invite link inline
+    const cell = document.getElementById(`invite-link-${requestId}`);
+    if (cell) {
+      cell.innerHTML = `
+        <input type="text" value="${escapeHtml(data.inviteUrl)}" readonly
+          style="font-size:0.7rem; font-family:monospace; border:1px solid var(--warm-mid);
+                 padding:0.25rem 0.4rem; width:220px; background:var(--paper);"
+          onclick="this.select()">`;
+    }
+    await loadRequests();
+  } catch (err) {
+    alert('Could not approve request: ' + err.message);
+  }
+}
+
+async function rejectRequest(requestId) {
+  const notes = prompt('Reason for rejection (optional):');
+  if (notes === null) return; // cancelled
+  try {
+    await adminApi('reject-request', 'POST', { requestId, notes: notes || null });
+    await loadRequests();
+  } catch (err) {
+    alert('Could not reject request: ' + err.message);
+  }
+}
 
 async function loadDemoPanel() {
   // Build the persona list immediately (static); the "View as" buttons call the API

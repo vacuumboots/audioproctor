@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request Access — AudioProctor</title>
+  <meta name="description" content="Request a teacher account for AudioProctor. Free to start, no credit card required.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/site/site.css">
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<div class="site-section" style="border-top: var(--border);">
+  <div class="site-container">
+    <span class="section-label">Get Started</span>
+    <h1 class="section-headline">Request a teacher account.</h1>
+    <p class="section-intro">AudioProctor is free for individual teachers. Submit your details below and you'll hear back within one business day.</p>
+
+    <div class="contact-grid">
+
+      <div class="contact-form-col">
+
+        <div id="form-success" class="notice notice--success hidden" style="margin-bottom:1.5rem;">
+          Request received. You'll hear from us within one business day.
+        </div>
+        <div id="form-error" class="notice notice--error hidden" style="margin-bottom:1.5rem;"></div>
+
+        <form id="request-form" novalidate>
+
+          <!-- Honeypot -->
+          <div style="display:none;" aria-hidden="true">
+            <input type="text" name="website" id="honeypot" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="site-form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required autocomplete="name">
+          </div>
+
+          <div class="site-form-group">
+            <label for="email">School email</label>
+            <input type="email" id="email" name="email" required autocomplete="email"
+              placeholder="you@yourschool.ca">
+          </div>
+
+          <div class="site-form-group">
+            <label for="school">School name</label>
+            <input type="text" id="school" name="school" placeholder="e.g. Okotoks Junior High">
+          </div>
+
+          <div class="site-form-group">
+            <label for="division">School division</label>
+            <input type="text" id="division" name="division" placeholder="e.g. Foothills School Division No. 38">
+          </div>
+
+          <div class="site-form-group">
+            <label for="message">Anything else? <span style="color:var(--muted); font-weight:400;">(optional)</span></label>
+            <textarea id="message" name="message" placeholder="How you plan to use AudioProctor, which assessments, how many students — anything useful."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn--primary" id="btn-submit">Request Access</button>
+
+        </form>
+      </div>
+
+      <div class="contact-info-col">
+        <p class="label" style="margin-bottom:1rem;">Free tier includes</p>
+        <ul style="font-size:0.9rem; color:var(--muted); line-height:1.9; padding-left:1.25rem; margin-bottom:2rem;">
+          <li>3 uploads per calendar month</li>
+          <li>7-day access code expiry</li>
+          <li>Fullscreen locked player</li>
+          <li>No student accounts or data</li>
+        </ul>
+
+        <p class="label" style="margin-bottom:1rem;">Already have an account?</p>
+        <p style="font-size:0.9rem; color:var(--muted); margin-bottom:0.75rem;">
+          <a href="https://app.audioproctor.com/login.html" style="color:var(--ink); font-weight:500;">Sign in here.</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="site-footer"></div>
+<script src="/site/nav.js"></script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script>
+  document.getElementById('request-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const btn      = document.getElementById('btn-submit');
+    const errEl    = document.getElementById('form-error');
+    const successEl = document.getElementById('form-success');
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    errEl.classList.add('hidden');
+
+    const body = {
+      name:     document.getElementById('name').value.trim(),
+      email:    document.getElementById('email').value.trim(),
+      school:   document.getElementById('school').value.trim(),
+      division: document.getElementById('division').value.trim(),
+      message:  document.getElementById('message').value.trim(),
+      website:  document.getElementById('honeypot').value,
+    };
+
+    try {
+      const res  = await fetch('/api/request-access', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Something went wrong. Please email hello@audioproctor.com directly.';
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Request Access';
+        return;
+      }
+
+      document.getElementById('request-form').classList.add('hidden');
+      successEl.classList.remove('hidden');
+
+    } catch {
+      errEl.textContent = 'Network error. Please email hello@audioproctor.com directly.';
+      errEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Request Access';
+    }
+  });
+</script>
+</body>
+</html>

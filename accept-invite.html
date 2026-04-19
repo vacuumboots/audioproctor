@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accept Invitation — AudioProctor</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <a href="/" class="wordmark">Audio<span class="accent">Proctor</span></a>
+
+      <div id="state-loading">
+        <p style="color:var(--muted); font-size:0.9rem; margin-top:1.5rem;">Validating invitation…</p>
+      </div>
+
+      <div id="state-invite" style="display:none;">
+        <p class="tagline" id="invite-desc" style="margin-top:1rem;"></p>
+        <div id="notice-invite" class="notice notice--error hidden" style="margin-top:1rem;"></div>
+        <button id="btn-accept" class="btn btn--primary" style="margin-top:1.5rem; width:100%;" onclick="acceptInvite()">
+          Sign in with Google to accept
+        </button>
+        <p style="font-size:0.8rem; color:var(--muted); margin-top:1rem; line-height:1.5;">
+          You must sign in with the Google account for <strong id="invite-email"></strong>.
+        </p>
+      </div>
+
+      <div id="state-accepting" style="display:none;">
+        <p style="color:var(--muted); font-size:0.9rem; margin-top:1.5rem;">Accepting invitation…</p>
+      </div>
+
+      <div id="state-error" style="display:none;">
+        <div id="error-msg" class="notice notice--error" style="margin-top:1.5rem;"></div>
+        <a href="/login.html" class="btn btn--ghost" style="margin-top:1rem; display:block; text-align:center;">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script>
+    const PENDING_INVITE_KEY = 'ap_pending_invite_token';
+    const params = new URLSearchParams(window.location.search);
+    const token  = params.get('token');
+
+    function showState(id) {
+      ['state-loading','state-invite','state-accepting','state-error'].forEach(s => {
+        document.getElementById(s).style.display = s === id ? '' : 'none';
+      });
+    }
+
+    function showError(msg) {
+      document.getElementById('error-msg').textContent = msg;
+      showState('state-error');
+    }
+
+    async function loadInvite() {
+      if (!token) { showError('No invitation token found. Please use the link from your invitation email.'); return; }
+
+      try {
+        const res  = await fetch(`/api/accept-invite?token=${encodeURIComponent(token)}`);
+        const data = await res.json();
+
+        if (!res.ok) { showError(data.error || 'Invalid invitation.'); return; }
+
+        // Show invitation details
+        let desc = `You've been invited to join AudioProctor`;
+        if (data.divisionName) desc += ` as part of ${data.divisionName}`;
+        else if (data.schoolName) desc += ` as part of ${data.schoolName}`;
+        desc += '.';
+
+        document.getElementById('invite-desc').textContent  = desc;
+        document.getElementById('invite-email').textContent = data.email;
+        showState('state-invite');
+
+        // If already signed in with the right account, auto-accept
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session && session.user.email.toLowerCase() === data.email.toLowerCase()) {
+          await doAccept(session.access_token);
+        }
+      } catch {
+        showError('Could not load invitation. Please try again or contact hello@audioproctor.com.');
+      }
+    }
+
+    async function acceptInvite() {
+      // Store token so login.html can redirect back here after OAuth
+      localStorage.setItem(PENDING_INVITE_KEY, token);
+
+      document.getElementById('btn-accept').disabled = true;
+      document.getElementById('btn-accept').textContent = 'Redirecting…';
+      document.getElementById('notice-invite').classList.add('hidden');
+
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: 'https://app.audioproctor.com/login.html' },
+      });
+
+      if (error) {
+        document.getElementById('btn-accept').disabled = false;
+        document.getElementById('btn-accept').textContent = 'Sign in with Google to accept';
+        document.getElementById('notice-invite').textContent = 'Could not start sign-in. Please try again.';
+        document.getElementById('notice-invite').classList.remove('hidden');
+      }
+    }
+
+    async function doAccept(jwt) {
+      showState('state-accepting');
+      try {
+        const res  = await fetch('/api/accept-invite', {
+          method:  'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': `Bearer ${jwt}`,
+          },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) { showError(data.error || 'Could not accept invitation.'); return; }
+
+        localStorage.removeItem(PENDING_INVITE_KEY);
+
+        // Redirect to the right dashboard based on role
+        const dest = {
+          platform_admin: '/admin.html',
+          division_admin: '/division-admin.html',
+          school_admin:   '/school-admin.html',
+        }[data.role] || '/dashboard.html';
+
+        window.location.href = dest;
+      } catch {
+        showError('Network error. Please try again or contact hello@audioproctor.com.');
+      }
+    }
+
+    loadInvite();
+  </script>
+</body>
+</html>

@@ -1,9 +1,10 @@
 {
   "rewrites": [
-    { "source": "/use-cases", "destination": "/site/use-cases.html" },
-    { "source": "/about",     "destination": "/site/about.html" },
-    { "source": "/contact",   "destination": "/site/contact.html" },
-    { "source": "/privacy",   "destination": "/site/privacy.html" },
-    { "source": "/terms",     "destination": "/site/terms.html" }
+    { "source": "/use-cases",       "destination": "/site/use-cases.html" },
+    { "source": "/about",           "destination": "/site/about.html" },
+    { "source": "/contact",         "destination": "/site/contact.html" },
+    { "source": "/privacy",         "destination": "/site/privacy.html" },
+    { "source": "/terms",           "destination": "/site/terms.html" },
+    { "source": "/request-access",  "destination": "/site/request-access.html" }
   ]
 }

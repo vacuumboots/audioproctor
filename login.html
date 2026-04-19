@@ -19,6 +19,9 @@
       </button>
 
       <p class="login-footer">For teachers only. Students use the Chrome extension.</p>
+      <p class="login-footer" style="margin-top:0.5rem;">
+        New here? <a href="/request-access" style="color:var(--ink);">Request access.</a>
+      </p>
     </div>
   </div>
 
@@ -27,6 +30,13 @@
   <script src="/js/auth.js"></script>
   <script>
     async function redirectByRole(session) {
+      // If the user arrived via an invitation link, send them there to complete acceptance
+      const pendingToken = localStorage.getItem('ap_pending_invite_token');
+      if (pendingToken) {
+        window.location.href = `/accept-invite.html?token=${encodeURIComponent(pendingToken)}`;
+        return;
+      }
+
       const { data: profile } = await supabaseClient
         .from('profiles').select('role').eq('id', session.user.id).maybeSingle();
       const dest = {

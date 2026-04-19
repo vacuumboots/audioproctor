@@ -183,6 +183,7 @@
       <button class="admin-tab admin-tab--active" onclick="switchTab('divisions', this)">Divisions</button>
       <button class="admin-tab" onclick="switchTab('schools', this)">Schools</button>
       <button class="admin-tab" onclick="switchTab('teachers', this)">Teachers</button>
+      <button class="admin-tab" id="requests-tab" onclick="switchTab('requests', this)">Requests</button>
       <button class="admin-tab" id="anomaly-tab" onclick="switchTab('anomalies', this)">Anomalies</button>
       <button class="admin-tab" onclick="switchTab('demo', this)">Demo</button>
     </div>
@@ -263,6 +264,17 @@
         <input type="text" id="teacher-search" class="input-field" placeholder="Filter by email or division…" style="width:260px; font-size:0.875rem;" oninput="filterTeachers(this.value)">
       </div>
       <div id="teachers-container">
+        <div class="empty-state"><p class="label">Loading…</p></div>
+      </div>
+    </div>
+
+    <!-- Requests panel -->
+    <div id="panel-requests" class="admin-panel">
+      <div class="section-toolbar">
+        <p class="label">Teacher Access Requests</p>
+        <button class="btn btn--ghost btn--small" onclick="loadRequests()">Refresh</button>
+      </div>
+      <div id="requests-container">
         <div class="empty-state"><p class="label">Loading…</p></div>
       </div>
     </div>

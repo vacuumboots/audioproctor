@@ -188,6 +188,16 @@ module.exports = async (req, res) => {
       });
     }
 
+    if (action === 'list-requests') {
+      const { data, error } = await supabase
+        .from('teacher_requests')
+        .select('id, name, email, school, division, message, status, notes, created_at')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) return res.status(500).json({ error: 'Could not load requests' });
+      return res.status(200).json(data);
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   }
 
@@ -305,6 +315,57 @@ module.exports = async (req, res) => {
         return res.status(500).json({ error: 'Could not create school' });
       }
       return res.status(200).json(data);
+    }
+
+    if (action === 'approve-request') {
+      const { requestId, schoolId, divisionId } = body;
+      if (!requestId) return res.status(400).json({ error: 'requestId required' });
+
+      const { data: req, error: reqErr } = await supabase
+        .from('teacher_requests').select('email').eq('id', requestId).single();
+      if (reqErr || !req) return res.status(404).json({ error: 'Request not found' });
+
+      // Create invitation record
+      const { data: invite, error: invErr } = await supabase
+        .from('invitations')
+        .insert({
+          email:       req.email,
+          role:        'teacher',
+          school_id:   schoolId   || null,
+          division_id: divisionId || null,
+        })
+        .select('token')
+        .single();
+      if (invErr) return res.status(500).json({ error: 'Could not create invitation' });
+
+      // Mark request approved
+      await supabase.from('teacher_requests').update({
+        status:      'approved',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: user.id,
+      }).eq('id', requestId);
+
+      audit(supabase, user.id, 'approve_request', 'teacher_request', requestId, null, { email: req.email });
+
+      const inviteUrl = `https://app.audioproctor.com/accept-invite.html?token=${invite.token}`;
+      return res.status(200).json({ ok: true, inviteUrl, token: invite.token });
+    }
+
+    if (action === 'reject-request') {
+      const { requestId, notes } = body;
+      if (!requestId) return res.status(400).json({ error: 'requestId required' });
+
+      const { error } = await supabase.from('teacher_requests').update({
+        status:      'rejected',
+        notes:       notes || null,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: user.id,
+      }).eq('id', requestId);
+
+      if (error) return res.status(500).json({ error: 'Could not reject request' });
+
+      audit(supabase, user.id, 'reject_request', 'teacher_request', requestId, null, { notes: notes || null });
+      return res.status(200).json({ ok: true });
     }
 
     if (action === 'seed-demo') {
