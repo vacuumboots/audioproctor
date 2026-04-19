@@ -314,6 +314,9 @@ async function handleUpload() {
       throw new Error('Could not save upload record: ' + dbError.message);
     }
 
+    // Persist the teacher's preferred exit word mode for next time
+    await supabaseClient.from('profiles').update({ exit_word_mode: exitWordMode }).eq('id', userId);
+
     // Reset form
     hideProgress();
     fileInput.value = '';
@@ -787,6 +790,33 @@ async function duplicateUpload(id, btn) {
   }
 }
 
+// ─── Stripe upgrade ──────────────────────────────────────────────
+
+async function startUpgrade() {
+  const btn = document.getElementById('btn-upgrade');
+  if (btn) btn.textContent = 'Redirecting…';
+  const session = await getSession();
+  if (!session) { window.location = '/login.html'; return; }
+
+  const res = await fetch('/api/stripe-checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }
+  });
+  const { url, error } = await res.json();
+  if (error) { alert('Could not start checkout: ' + error); if (btn) btn.textContent = 'Upgrade to Premium →'; return; }
+  window.location = url;
+}
+
+// Check for successful return from Stripe
+if (new URLSearchParams(window.location.search).get('upgraded') === '1') {
+  history.replaceState(null, '', window.location.pathname);
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--ink);color:var(--paper);text-align:center;padding:0.6rem;font-size:0.85rem;z-index:999;';
+  banner.textContent = 'Welcome to Teacher Premium! Your account has been upgraded.';
+  document.body.prepend(banner);
+  setTimeout(() => banner.remove(), 6000);
+}
+
 // ─── Quota ───────────────────────────────────────────────────────
 
 async function loadQuota() {
@@ -800,9 +830,15 @@ async function loadQuota() {
   // Fetch profile for role and org affiliation
   const { data: profile } = await supabaseClient
     .from('profiles')
-    .select('role, school_id, division_id, tier, tier_override')
+    .select('role, school_id, division_id, tier, tier_override, exit_word_mode')
     .eq('id', userId)
     .maybeSingle();
+
+  // Pre-select the exit word mode dropdown to the saved preference
+  if (profile?.exit_word_mode) {
+    const modeEl = document.getElementById('exit-word-mode');
+    if (modeEl) modeEl.value = profile.exit_word_mode;
+  }
 
   currentRole = profile?.role || 'teacher';
 
@@ -834,8 +870,12 @@ async function loadQuota() {
   const ctaEl = document.getElementById('upgrade-cta');
   if (ctaEl) {
     if (currentTier === 'free') {
-      ctaEl.innerHTML = `Your school isn't on a plan yet. Analytics, CSV export, and unlimited uploads unlock at the School tier. <a href="/site/pricing.html" style="color:var(--ink); font-weight:500;">See pricing →</a>`;
+      ctaEl.innerHTML = `
+        <span>You're on the Free plan — 3 uploads/month, 50 MB storage.</span>
+        <button id="btn-upgrade" style="margin-left:1rem; padding:0.3rem 0.9rem; border:1px solid var(--ink); background:var(--ink); color:var(--paper); font-family:inherit; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">Upgrade to Premium →</button>
+      `;
       ctaEl.classList.remove('hidden');
+      document.getElementById('btn-upgrade')?.addEventListener('click', startUpgrade);
     } else if (profile?.school_id) {
       ctaEl.innerHTML = `Your school is on a plan. <a href="/settings.html" style="color:var(--ink);">View subscription details</a>`;
       ctaEl.classList.remove('hidden');

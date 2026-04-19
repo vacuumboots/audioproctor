@@ -25,7 +25,7 @@ Both are served from the same repo. `vercel.json` rewrites `/use-cases`, `/about
 
 **Supabase** (backend):
 - `uploads` — teacher uploads: `id`, `teacher_id`, `filename`, `label`, `storage_path`, `access_code`, `exit_word`, `exit_word_hash`, `expires_at`, `file_size_mb`
-- `profiles` — one row per teacher: `id`, `tier` (`'free'`|`'premium'`), `storage_used_mb`, `country_code`, `division_name`
+- `profiles` — one row per teacher: `id`, `tier` (`'free'`|`'premium'`), `storage_used_mb`, `country_code`, `division_name`, `stripe_customer_id`, `stripe_subscription_id`, `exit_word_mode` (persisted preference: `random_short`|`random_long`|`phrase`|`pin`|`custom`)
 - `rate_limit_log` — tracks failed `/api/session` lookups by IP for brute-force protection
 - Storage bucket `audio-files` (private) — files stored at `{teacher_id}/{access_code}.mp3`
 - RLS enforces: upload quota (3/month for free), 50MB storage cap, 10 uploads/hour rate limit — all at the DB layer via the uploads INSERT policy
@@ -33,6 +33,8 @@ Both are served from the same repo. `vercel.json` rewrites `/use-cases`, `/about
 **Serverless functions** (`api/`):
 - `api/session.js` — validates access code, returns `{ signedUrl, filename, exitWordHash }`; uses service role key; rate-limits failed lookups; never exposes `storage_path` or plain exit word
 - `api/contact.js` — contact form handler via Resend
+- `api/stripe-checkout.js` — POST; creates Stripe Checkout Session for Teacher Premium upgrade; requires Bearer token; returns `{ url }` for browser redirect
+- `api/stripe-webhook.js` — POST; validates Stripe signature; on `checkout.session.completed` sets `profiles.tier_override = 'premium'`; on `customer.subscription.deleted` resets it to null; requires raw body (bodyParser disabled)
 
 ## Key Flows
 
@@ -52,6 +54,11 @@ Required environment variables (in `.env.local` locally, and in Vercel project s
 - `SUPABASE_SERVICE_ROLE_KEY` — server-side only, never sent to browser
 - `RESEND_API_KEY`
 - `CONTACT_EMAIL`
+- `STRIPE_SECRET_KEY` — Stripe secret key (server-side only)
+- `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard → Webhooks → signing secret
+- `STRIPE_PRICE_ID` — the recurring Price ID for Teacher Premium (e.g. `price_xxx`)
+
+**Stripe setup:** Create a Product + recurring Price in the Stripe dashboard, copy the Price ID into `STRIPE_PRICE_ID`. Register `/api/stripe-webhook` as a webhook endpoint listening for `checkout.session.completed` and `customer.subscription.deleted`.
 
 ## Design System
 
