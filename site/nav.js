@@ -22,12 +22,14 @@
         <a href="/" class="wordmark">Audio<span class="accent">Proctor</span></a>
         <div class="site-nav__links">
           ${linkHtml}
+          <a href="https://app.audioproctor.com/login.html" class="site-nav__link">Sign in</a>
           <a href="/contact" class="btn btn--danger btn--small">Schedule a Demo</a>
         </div>
         <button class="site-nav__burger" id="nav-burger" aria-label="Open menu">&#9776;</button>
       </div>
       <div class="site-nav__mobile" id="nav-mobile">
         ${navLinks.map(({ href, label }) => `<a href="${href}" class="site-nav__mobile-link">${label}</a>`).join('')}
+        <a href="https://app.audioproctor.com/login.html" class="site-nav__mobile-link">Sign in</a>
         <a href="/contact" class="btn btn--danger btn--small" style="margin-top:0.5rem;">Schedule a Demo</a>
       </div>
     </nav>`;
