@@ -509,6 +509,27 @@ module.exports = async (req, res) => {
       const { userId } = body;
       if (!userId) return res.status(400).json({ error: 'userId required' });
 
+      // Division admin can only demote school admins within their own division
+      if (profile.role === 'division_admin') {
+        const { data: target } = await supabase
+          .from('profiles')
+          .select('school_id')
+          .eq('id', userId)
+          .eq('role', 'school_admin')
+          .single();
+        if (!target || !target.school_id) {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
+        const { data: school } = await supabase
+          .from('schools')
+          .select('division_id')
+          .eq('id', target.school_id)
+          .single();
+        if (!school || school.division_id !== profile.division_id) {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({ role: 'teacher' })
