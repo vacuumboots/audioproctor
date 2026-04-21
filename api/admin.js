@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
       ] = await Promise.all([
         supabase.from('divisions').select('id', { count: 'exact', head: true }),
         supabase.from('schools').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).or('role.eq.teacher,role.is.null'),
         // Anomaly: profiles where country_code is not CA (and not null/empty)
         supabase
           .from('profiles')
