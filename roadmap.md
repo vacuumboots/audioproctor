@@ -17,7 +17,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 
     Critical
 
-    1. Cross-division role change vulnerability
+    1. ~~Cross-division role change vulnerability~~ **[FIXED — PR #6]**
     - File: /mnt/c/Users/ElliottA/git/audioproctor/api/org.js:507
     - Problem: remove-school-admin lets any division admin demote any school_admin by userId, without verifying that the target belongs to the caller’s division.
     - Why it matters: this is an authz boundary break between divisions.
@@ -26,7 +26,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
       - then directly does:
         .update({ role: 'teacher' }).eq('id', userId).eq('role', 'school_admin')
 
-    2. Account deletion is non-atomic and can leave a broken user state
+    2. ~~Account deletion is non-atomic and can leave a broken user state~~ **[FIXED — PR #8]**
     - File: /mnt/c/Users/ElliottA/git/audioproctor/api/account.js:78-121
     - Problem: it deletes storage/uploads/profile first, then deletes auth.users last.
     - Why it matters: if auth deletion fails, the user may still be able to authenticate but no longer has profile/data.
@@ -34,31 +34,31 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 
     High / warning
 
-    3. Event API accepts audio_error, but DB schema rejects it
+    3. ~~Event API accepts audio_error, but DB schema rejects it~~ **[FIXED — PR #10]**
     - Files:
       - /mnt/c/Users/ElliottA/git/audioproctor/api/event.js:17-26
       - /mnt/c/Users/ElliottA/git/audioproctor/supabase/migrations/004_session_events.sql:13-22
     - Problem: api/event.js allows audio_error, but the session_events CHECK constraint does not.
     - Impact: those requests will 500 and analytics will silently miss audio failures.
 
-    4. Division-admin branch in school-teachers is unreachable
+    4. ~~Division-admin branch in school-teachers is unreachable~~ **[FIXED — PR #12]**
     - File: /mnt/c/Users/ElliottA/git/audioproctor/api/org.js:111-123
     - Problem: route requires isSchoolAdmin, but then contains a division_admin-specific path.
     - Impact: either dead code or a broken intended feature.
 
-    5. Self-delete only blocks school_admin, not higher-privilege roles
+    5. ~~Self-delete only blocks school_admin, not higher-privilege roles~~ **[FIXED — PR #14]**
     - File: /mnt/c/Users/ElliottA/git/audioproctor/api/account.js:65-76
     - Problem: division_admin and platform_admin can apparently delete themselves.
     - Impact: can orphan organizations or remove last privileged operator.
 
-    6. Stripe webhook handling is incomplete
+    6. **[OPEN]** Stripe webhook handling is incomplete
     - File: /mnt/c/Users/ElliottA/git/audioproctor/api/stripe-webhook.js:40-65
     - Problem: only handles checkout.session.completed and customer.subscription.deleted.
     - Impact: entitlement drift if subscription becomes past_due/unpaid/canceled-but-not-yet-deleted/etc.
 
     Medium / correctness / maintainability
 
-    7. Inconsistent exit_word_mode values between DB default/docs and UI
+    7. ~~Inconsistent exit_word_mode values between DB default/docs and UI~~ **[FIXED — PR #16]**
     - Files:
       - /mnt/c/Users/ElliottA/git/audioproctor/supabase/migrations/013_stripe.sql:7
       - /mnt/c/Users/ElliottA/git/audioproctor/dashboard.html:160-164
@@ -69,7 +69,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
       - UI uses random-short style
     - Impact: saved preference may not map cleanly to UI defaults, and the documented contract is inconsistent.
 
-    8. Audit log schema and usage are inconsistent
+    8. ~~Audit log schema and usage are inconsistent~~ **[FIXED — PR #18]**
     - Files:
       - /mnt/c/Users/ElliottA/git/audioproctor/supabase/migrations/008_admin_audit_log.sql:21
       - /mnt/c/Users/ElliottA/git/audioproctor/api/admin.js:348
@@ -80,7 +80,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
     - teacher is fine, teacher_request is not.
     - Impact: those inserts can fail silently in fire-and-forget paths.
 
-    9. Overview metric is mislabeled
+    9. ~~Overview metric is mislabeled~~ **[FIXED — PR #20]**
     - File: /mnt/c/Users/ElliottA/git/audioproctor/api/admin.js:72-90
     - Problem: teacherCount counts all profiles, not just teachers.
     - Impact: admin dashboard metric is misleading.
