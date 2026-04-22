@@ -71,7 +71,7 @@ If the extension does not appear:
 - Confirm the Chromebook is in the correct OU or group
 - Confirm the policy is set to force-install, not allow-install
 - Force a policy refresh and sign out/sign back in if needed
-- Re-check that the package uploaded to Admin Console is the latest pilot package from AudioProctor
+- Re-check that the extension is assigned by the correct Chrome Web Store ID (`fcphbkffopenkinliokmlopfnglbcfdj`)
 
 ## How to run a smoke test
 ### 5-minute smoke test
@@ -93,27 +93,26 @@ If any step fails, stop the broader rollout and keep the pilot limited until the
 Before expanding the pilot, run the full managed-device validation flow in [`docs/managed-chromebook-pilot-checklist.md`](managed-chromebook-pilot-checklist.md), especially the lock-down, focus-switch, close-button, sleep/wake, and Wi‑Fi interruption scenarios.
 
 ## Rollback / uninstall
-To remove AudioProctor from the pilot:
+To remove AudioProctor from rollout:
 
 1. Return to Google Admin Console.
 2. Open the same OU or pilot group where the extension was assigned.
-3. Remove the AudioProctor pilot package assignment or change the policy so it is no longer force-installed.
+3. Remove the AudioProctor extension assignment or change the policy so it is no longer force-installed.
 4. Save the policy.
 5. Sync policy on pilot Chromebooks or have users sign out and back in.
 6. Confirm the extension is no longer installed or available to launch after policy sync completes.
 
 Policy removal may not be immediate on every device. If the extension remains present temporarily, force a policy refresh or have the user sign out and back in before treating uninstall as failed.
 
-If the package is being replaced with a newer pilot build, remove or supersede the previous package assignment before validating the new build.
+If you are replacing the extension with a newer version, update the Store ID assignment policy and then revalidate on one managed Chromebook before broad rollout.
 
 ## Known limitations
-- Chrome Web Store publication is planned but is not the current deployment method.
-- Pilot updates are not yet distributed by Chrome Web Store ID, so IT should expect to replace or update the pilot package when AudioProctor provides a newer build.
-- This guide is for managed Chromebook pilot deployment. Local developer testing still uses `chrome://extensions` with the unpacked `extension/` folder.
+- Chrome Web Store deployment is the current deployment method; local unpacked testing still uses `chrome://extensions` with the `extension/` folder.
+- If you change the extension version, revalidate on one managed Chromebook before broad rollout.
 - Lockdown behavior should be validated on the actual Chromebook model and ChromeOS version used in the pilot.
 
 ## Support contact
-For pilot deployment help, package replacement, or smoke-test troubleshooting, contact:
+For rollout deployment help or smoke-test troubleshooting, contact:
 
 - `hello@audioproctor.com`
 
@@ -121,5 +120,5 @@ When contacting support, include:
 - school or division name
 - pilot OU or group name
 - Chromebook model and ChromeOS version
-- package version/date if known
+- the Chrome Web Store listing URL or Store ID
 - exact failure step and any screenshots
