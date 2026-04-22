@@ -44,7 +44,7 @@ previously used cassettes/CDs and a boombox. There is no good modern solution.
 
 ## Key technical constraints
 - Must work on managed ChromeOS devices (Google Workspace for Education)
-- Extension will be force-installed via Google Admin Console (not Chrome Web Store)
+- Extension will be force-installed via Google Admin Console via the Chrome Web Store listing/Store ID
 - Audio must play natively in a Chromebook browser — MP3 only for now
 - No student login — access is purely code-based
 - Exit password is per-upload, stored as a hash, checked client-side in the extension
