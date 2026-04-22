@@ -1,10 +1,23 @@
 {
   "rewrites": [
-    { "source": "/use-cases",       "destination": "/site/use-cases.html" },
-    { "source": "/about",           "destination": "/site/about.html" },
-    { "source": "/contact",         "destination": "/site/contact.html" },
-    { "source": "/privacy",         "destination": "/site/privacy.html" },
-    { "source": "/terms",           "destination": "/site/terms.html" },
-    { "source": "/request-access",  "destination": "/site/request-access.html" }
+    { "source": "/use-cases",         "destination": "/site/use-cases.html" },
+    { "source": "/about",             "destination": "/site/about.html" },
+    { "source": "/contact",           "destination": "/site/contact.html" },
+    { "source": "/privacy",           "destination": "/site/privacy.html" },
+    { "source": "/terms",             "destination": "/site/terms.html" },
+    { "source": "/request-access",    "destination": "/site/request-access.html" },
+
+    { "source": "/login.html",        "destination": "/app/login.html" },
+    { "source": "/dashboard.html",    "destination": "/app/dashboard.html" },
+    { "source": "/player.html",       "destination": "/app/player.html" },
+    { "source": "/admin.html",        "destination": "/app/admin.html" },
+    { "source": "/settings.html",     "destination": "/app/settings.html" },
+    { "source": "/accept-invite.html","destination": "/app/accept-invite.html" },
+    { "source": "/audio-bridge.html", "destination": "/app/audio-bridge.html" },
+    { "source": "/division-admin.html","destination": "/app/division-admin.html" },
+    { "source": "/school-admin.html", "destination": "/app/school-admin.html" },
+
+    { "source": "/css/:path*",        "destination": "/app/css/:path*" },
+    { "source": "/js/:path*",         "destination": "/app/js/:path*" }
   ]
 }
