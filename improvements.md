@@ -41,9 +41,9 @@ Start with invitations; onboarding sequences can follow once the delivery path i
 
 ## 2. Publish the extension to Chrome Web Store
 
-**What's missing:** The extension is deployed by uploading a `.crx` file to Google Admin
-Console. Publishing to Chrome Web Store (unlisted) lets IT admins reference a Store ID
-instead — standard practice, much lower friction, no manual `.crx` management.
+**What's changed:** The extension is already published on the Chrome Web Store. IT
+admins can deploy it by Store ID in Google Admin Console instead of managing a `.crx`
+file manually.
 
 **Why it matters:** IT admins in Alberta school divisions deal with hundreds of extension
 deployments. An unlisted Store ID slots into their existing workflow. A `.crx` upload
@@ -51,10 +51,10 @@ is a one-off exception that requires extra steps, extra trust, and someone to re
 to re-upload on every update. This is the single highest-leverage reduction in IT
 friction before any pilot.
 
-**What to build:**
-- Submit extension to Chrome Web Store (unlisted)
-- Update all deployment documentation to reference Store ID
-- Set up auto-publish workflow so extension updates don't require manual re-upload
+**What to build next:**
+- Keep deployment docs aligned to the live Store ID
+- Public listing, if and when you want broader discovery
+- Optional auto-publish workflow for future extension updates
 
 ---
 
@@ -112,12 +112,12 @@ costs ~10MB, not 10–150MB depending on source.
 | # | Improvement | Effort | Impact |
 |---|-------------|--------|--------|
 | 1 | Wire email delivery | Medium | Unblocks invitations, onboarding, renewals |
-| 2 | Chrome Web Store publication | Low | Removes biggest IT friction |
+| 2 | Chrome Web Store publication | Done | Removes biggest IT friction |
 | ~~3~~ | ~~Marketing site sign-in link~~ | ~~Low~~ | ✓ Done |
 | 4 | Teacher request/signup flow | Medium | Enables grassroots teacher adoption |
 | 5 | Audio normalization | High | Product reliability + storage predictability |
 
-Items 2 and 3 are quick wins that should ship before the first pilot conversation.
+Items 1 and 4 are still the main product gaps. Item 2 is complete; item 3 is already done.
 Items 1 and 4 together define the self-serve distribution model. Item 5 is higher
 effort but becomes more urgent once free-tier teachers start hitting the storage cap.
 

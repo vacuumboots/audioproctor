@@ -123,7 +123,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - [x] Better upload progress — show a real progress bar for large files
 - [x] Handle duplicate filenames gracefully in the dashboard
 - [x] Add a label/title field to uploads so teachers can name them ("Grade 4 Reading Assessment - May")
-- [ ] Test on an actual managed Chromebook end-to-end
+- [x] Test on an actual managed Chromebook end-to-end — completed on ChromeOS 146 with the Chrome Web Store deployment
 - [ ] **Audio normalization on upload** — transcode all uploaded files to 32kbps mono MP3
   via a Supabase Edge Function triggered on upload. Reduces file sizes 4–6x, ensures
   consistent playback quality, and protects against teachers uploading large high-bitrate
@@ -450,11 +450,10 @@ The `invitations` table and token generation shipped in Stage 4. This completes 
 
 ### Chrome Web Store
 
-- [ ] **Publish extension to Chrome Web Store** — unlisted initially (discoverable
-  only by direct link). This eliminates manual sideloading for IT admins — they
-  reference the Store ID in Google Admin Console policy instead of uploading a .crx
-  file. Unlisted means you control who finds it while still getting the deployment
-  benefits.
+- [x] **Publish extension to Chrome Web Store** — the listing is live at
+  `https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj`.
+  Managed Chromebooks can be deployed by Store ID in Google Admin Console instead of
+  uploading a .crx file.
 - [ ] **Public listing** — once the product is stable and FSD38 pilot is complete,
   make the listing public. Organic discovery from Alberta IT admins searching the
   Store is free marketing.
