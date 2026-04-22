@@ -133,7 +133,7 @@ STRIPE_PRICE_ID=
 `dashboard.js handleUpload()` — validates quota and storage cap client-side (enforced server-side via RLS), uploads file to Supabase Storage, inserts row to `uploads`, updates `storage_used_mb` on `profiles`.
 
 ### Student access (extension)
-`popup.js` → `GET /api/session?code=ABC-123` → stores `{ signedUrl, exitWordHash, filename }` in `chrome.storage.session` → opens `player.html` tab → `player.js` loads audio, locks fullscreen, verifies exit word by SHA-256 hash comparison.
+`popup.js` → `GET /api/session?code=ABC-123` → stores `{ signedUrl, exitWordHash, filename }` in `chrome.storage.session` → opens `player.html` in a fullscreen popup window → `player.js` loads audio, locks fullscreen, verifies exit word by SHA-256 hash comparison.
 
 ### Teacher access request
 Teacher submits `/request-access` form → stored in `teacher_requests` → admin notified by email → admin approves in `/admin.html` → invitation link generated → teacher clicks link → `accept-invite.html` attaches them to their org via `/api/accept-invite`.
@@ -161,9 +161,11 @@ Tiers cascade: `tier_override → division.tier → school.tier → profiles.tie
 
 ## Chrome extension deployment
 
-The extension is force-installed via **Google Admin Console** onto managed Chromebooks. IT admins reference the Chrome Web Store ID in their device policy — teachers and students never install anything manually.
+Current pilot deployment path: AudioProctor uses a founder-assisted pilot deployment process. AudioProctor supplies the pilot extension package and the exact Google Admin Console inputs needed for that rollout. Chrome Web Store publication is planned, but it is not the current standard deployment path.
 
 For local testing: load unpacked from `extension/` in `chrome://extensions`.
+
+For pilot prerequisites, validation, rollback, and the founder-assisted rollout checklist, see [`docs/it-pilot-deployment-guide.md`](docs/it-pilot-deployment-guide.md). Exact install values and package details are supplied separately for each pilot rollout.
 
 ---
 
