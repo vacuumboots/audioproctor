@@ -1,15 +1,18 @@
 # AudioProctor IT Pilot Deployment Guide
 
 ## Audience
-This guide is for Google Workspace / Chromebook administrators running a pre-Chrome-Web-Store AudioProctor pilot on managed Chromebooks.
+This guide is for Google Workspace / Chromebook administrators rolling out AudioProctor to managed Chromebooks.
 
 ## Scope of this guide
-This guide is a founder-assisted pilot rollout checklist. It covers prerequisites, managed-device validation, smoke testing, rollback, and what an IT admin should verify during a pilot. It does not attempt to standardize the exact extension artifact or every Google Admin Console field, because those rollout-specific install details are currently supplied separately for each pilot.
+This guide covers the current Chrome Web Store deployment path, pilot prerequisites, managed-device validation, smoke testing, rollback, and what an IT admin should verify during a rollout.
 
 ## Current deployment path
-Current pilot deployment path: AudioProctor uses a founder-assisted pilot deployment process. For each pilot rollout, AudioProctor supplies the exact extension package and the specific Google Admin Console inputs needed for that deployment. Chrome Web Store publication is planned, but it is not yet the standard deployment path.
+AudioProctor is published on the Chrome Web Store and should be deployed to managed Chromebooks through Google Admin Console by force-installing the extension by Store ID.
 
-Use this guide only for the current pilot path. Do not look for a Chrome Web Store ID as part of the live pilot rollout. Use only the package file and handoff notes supplied for the specific pilot rollout; do not substitute older packages or unofficial download links. This guide is intentionally high-level: it covers pilot prerequisites, validation, and rollback, while the exact artifact/package format remains rollout-specific until the longer-term deployment standard is finalized.
+- Chrome Web Store listing: `https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj`
+- Extension ID / Store ID: `fcphbkffopenkinliokmlopfnglbcfdj`
+
+Use the Chrome Web Store listing as the standard deployment path for managed Chromebook rollout.
 ## Prerequisites
 Before starting, make sure you have:
 
@@ -27,15 +30,14 @@ Before starting, make sure you have:
   - `https://*.supabase.co/*` for signed audio playback URLs
 
 ## Files IT needs
-For the current pilot rollout, IT should collect these items before deployment:
+For the current rollout, IT should collect these items before deployment:
 
-1. AudioProctor pilot extension package
-   - This is the extension package provided directly by AudioProctor for pilot deployment.
-   - Record the package date/version supplied with the pilot email or handoff notes.
-   - Confirm with AudioProctor which exact package file should be uploaded in Google Admin Console for this pilot.
-2. Pilot deployment notes
-   - Version/date of the package
-   - Intended pilot OU or pilot group
+1. Chrome Web Store details
+   - Extension ID / Store ID: `fcphbkffopenkinliokmlopfnglbcfdj`
+   - Listing URL: `https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj`
+2. Rollout scope notes
+   - Intended student OU or pilot group
+   - Any managed extension policy values used for the rollout
 3. Smoke-test credentials/materials
    - One valid test access code
    - The corresponding exit word
@@ -44,22 +46,22 @@ For the current pilot rollout, IT should collect these items before deployment:
 
 ## Install steps
 1. Sign in to Google Admin Console.
-2. Go to the Chrome management area for the users or devices included in the pilot (for example, Devices -> Chrome -> Apps & extensions -> Users & browsers, or the equivalent ChromeOS apps/extensions page used by your admin setup).
+2. Go to the Chrome management area for the users or devices included in the rollout (for example, Devices -> Chrome -> Apps & extensions -> Users & browsers, or the equivalent ChromeOS apps/extensions page used by your admin setup).
 3. Select the pilot OU or pilot group only. Do not start with broad district-wide scope.
-4. Use the package file and deployment notes supplied by AudioProctor for this rollout, including the exact Admin Console values required for that pilot.
-5. Apply the extension policy to force-install for the selected pilot scope.
+4. Add AudioProctor by Chrome Web Store ID: `fcphbkffopenkinliokmlopfnglbcfdj`.
+5. Apply the extension policy to force-install for the selected rollout scope.
 6. Save the policy.
-7. On a pilot Chromebook, sign in with a managed account in the targeted scope and allow policy sync to complete.
+7. On a managed Chromebook in scope, sign in with a managed account and allow policy sync to complete.
 8. Confirm the AudioProctor extension appears without the student or teacher manually installing it.
-Recommended pilot practice:
+Recommended rollout practice:
 - Start with a small OU or test group first.
 - Validate on one Chromebook before expanding the assignment.
-- Record the package version/date used in the pilot.
+- Record the extension ID and rollout date used in the pilot.
 
 ## How to verify install succeeded
 Installation is successful when all of the following are true on a managed Chromebook in scope:
 
-- The uploaded pilot package matches the current rollout package and its recorded package date/version
+- The force-installed extension matches Chrome Web Store ID `fcphbkffopenkinliokmlopfnglbcfdj`
 - The AudioProctor extension appears automatically after policy sync
 - The user does not need to open `chrome://extensions` or load anything manually
 - Clicking the extension opens the code-entry popup

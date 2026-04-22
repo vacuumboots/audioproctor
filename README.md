@@ -161,11 +161,17 @@ Tiers cascade: `tier_override → division.tier → school.tier → profiles.tie
 
 ## Chrome extension deployment
 
-Current pilot deployment path: AudioProctor uses a founder-assisted pilot deployment process. AudioProctor supplies the pilot extension package and the exact Google Admin Console inputs needed for that rollout. Chrome Web Store publication is planned, but it is not the current standard deployment path.
+AudioProctor is available on the Chrome Web Store:
+- Listing: `https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj`
+- Extension ID: `fcphbkffopenkinliokmlopfnglbcfdj`
+
+Current deployment path: managed Chromebooks should receive AudioProctor through **Google Admin Console** by force-installing the Chrome Web Store listing by Store ID. Teachers and students do not install it manually.
+
+Verified smoke-test status: the core 5-minute managed Chromebook smoke test has been completed successfully on ChromeOS 146.
 
 For local testing: load unpacked from `extension/` in `chrome://extensions`.
 
-For pilot prerequisites, validation, rollback, and the founder-assisted rollout checklist, see [`docs/it-pilot-deployment-guide.md`](docs/it-pilot-deployment-guide.md). Exact install values and package details are supplied separately for each pilot rollout.
+For pilot prerequisites, validation, rollback, and rollout checks, see [`docs/it-pilot-deployment-guide.md`](docs/it-pilot-deployment-guide.md).
 
 ---
 
