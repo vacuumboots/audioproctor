@@ -513,11 +513,15 @@ async function approveRequest(requestId, email) {
     // Show invite link inline
     const cell = document.getElementById(`invite-link-${requestId}`);
     if (cell) {
-      cell.innerHTML = `
+      let html = `
         <input type="text" value="${escapeHtml(data.inviteUrl)}" readonly
           style="font-size:0.7rem; font-family:monospace; border:1px solid var(--warm-mid);
                  padding:0.25rem 0.4rem; width:220px; background:var(--paper);"
           onclick="this.select()">`;
+      if (data.emailOk === false) {
+        html += `<div style="font-size:0.7rem; color:var(--accent); margin-top:0.25rem;">Email failed: ${escapeHtml(data.emailError || 'Unknown error')}</div>`;
+      }
+      cell.innerHTML = html;
     }
     await loadRequests();
   } catch (err) {

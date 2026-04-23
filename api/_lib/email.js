@@ -12,7 +12,10 @@ async function sendEmail({ to, subject, text, html }) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const result = await resend.emails.send({ from: FROM, to, subject, text, html });
-    if (result.error) return { ok: false, error: result.error.message };
+    if (result.error) {
+      console.error('email send failed:', result.error.message);
+      return { ok: false, error: result.error.message };
+    }
     return { ok: true, id: result.data?.id };
   } catch (err) {
     console.error('email send failed:', err.message);

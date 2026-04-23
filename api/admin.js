@@ -16,6 +16,23 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
+const { sendEmail } = require('./_lib/email');
+
+function formatRole(role) {
+  return role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function buildInviteEmail({ role, inviteUrl, orgName }) {
+  const roleLabel = formatRole(role);
+  const subject = `You've been invited to join AudioProctor`;
+  let text = `You've been invited to join AudioProctor as a ${roleLabel}.`;
+  if (orgName) text += `\n\nas part of ${orgName}`;
+  text += `\n\nClick the link below to accept your invitation:\n${inviteUrl}\n\nThis invitation expires in 7 days.\nIf you did not expect this invitation, you can safely ignore it.`;
+  let html = `<p>You've been invited to join AudioProctor as a <strong>${roleLabel}</strong>.</p>`;
+  if (orgName) html += `<p>as part of <strong>${orgName}</strong></p>`;
+  html += `<p>Click the link below to accept your invitation:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This invitation expires in 7 days.<br>If you did not expect this invitation, you can safely ignore it.</p>`;
+  return { subject, text, html };
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin',  'https://app.audioproctor.com');
@@ -348,7 +365,61 @@ module.exports = async (req, res) => {
       audit(supabase, user.id, 'approve_request', 'teacher_request', requestId, null, { email: req.email });
 
       const inviteUrl = `https://app.audioproctor.com/accept-invite.html?token=${invite.token}`;
-      return res.status(200).json({ ok: true, inviteUrl, token: invite.token });
+
+      // Send invitation email
+      let emailOk = true;
+      let emailError = null;
+      try {
+        const { subject, text, html } = buildInviteEmail({ role: 'teacher', inviteUrl });
+        const emailResult = await sendEmail({ to: req.email, subject, text, html });
+        if (!emailResult.ok) {
+          emailOk = false;
+          emailError = emailResult.error;
+        }
+      } catch (err) {
+        emailOk = false;
+        emailError = err.message;
+      }
+
+      return res.status(200).json({ ok: true, inviteUrl, token: invite.token, emailOk, emailError });
+    }
+
+    if (action === 'invite') {
+      const { email, role, schoolId, divisionId } = body;
+      if (!email) return res.status(400).json({ error: 'email required' });
+      if (!role) return res.status(400).json({ error: 'role required' });
+
+      const { data: invite, error: invErr } = await supabase
+        .from('invitations')
+        .insert({
+          email,
+          role,
+          school_id:   schoolId   || null,
+          division_id: divisionId || null,
+        })
+        .select('token')
+        .single();
+      if (invErr) return res.status(500).json({ error: 'Could not create invitation' });
+
+      const inviteUrl = `https://app.audioproctor.com/accept-invite.html?token=${invite.token}`;
+
+      let emailOk = true;
+      let emailError = null;
+      try {
+        const { subject, text, html } = buildInviteEmail({ role, inviteUrl });
+        const emailResult = await sendEmail({ to: email, subject, text, html });
+        if (!emailResult.ok) {
+          emailOk = false;
+          emailError = emailResult.error;
+        }
+      } catch (err) {
+        emailOk = false;
+        emailError = err.message;
+      }
+
+      audit(supabase, user.id, 'invite', 'invitation', invite.token, null, { email, role, emailOk });
+
+      return res.status(200).json({ ok: true, inviteUrl, token: invite.token, emailOk, emailError });
     }
 
     if (action === 'reject-request') {
