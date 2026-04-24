@@ -6,18 +6,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AudioProctor is a SaaS tool for K-12 schools in Alberta. Teachers upload MP3 audio tracks for accessibility during assessments; students on managed Chromebooks use a Chrome extension to play audio in a locked-down fullscreen environment with no way to navigate away without a teacher-provided exit word.
 
+## Repository Layout
+
+```
+root/
+├── api/          Vercel serverless functions (must stay at root)
+├── app/          Teacher web app — HTML pages, css/, js/
+├── site/         Marketing pages (about, contact, privacy, terms, use-cases)
+├── extension/    Chrome extension (Manifest V3)
+├── supabase/     DB migrations
+├── docs/         IT/pilot guides and debug notes
+├── planning/     Roadmap, pitch, and internal planning artifacts
+├── index.html    Marketing homepage (stays at root)
+└── vercel.json   Rewrites for site pages, app pages, and /css + /js paths
+```
+
+`vercel.json` rewrites handle two things: (1) clean URLs for marketing pages (e.g. `/about` → `site/about.html`), and (2) backward-compatible URLs for app pages and assets (e.g. `/dashboard.html` → `app/dashboard.html`, `/css/*` → `app/css/*`). No host-based routing — it was tried and didn't work reliably on Vercel.
+
 ## Architecture
 
 **Two domains, one Vercel deployment:**
 - `audioproctor.com` — marketing site (root `index.html` + `site/` pages)
-- `app.audioproctor.com` — teacher app (`login.html`, `dashboard.html`, `player.html`)
+- `app.audioproctor.com` — teacher app (`app/login.html`, `app/dashboard.html`, `app/player.html`)
 
-Both are served from the same repo. `vercel.json` rewrites `/use-cases`, `/about`, `/contact`, `/privacy`, `/terms` to `site/*.html`. No host-based routing — it was tried and didn't work reliably on Vercel.
-
-**Web app** (Vercel, vanilla HTML/CSS/JS):
-- `login.html` — Google OAuth via Supabase Auth; redirects to `https://app.audioproctor.com/dashboard.html`
-- `dashboard.html` — upload form + uploads table; requires auth
-- `player.html` — student-facing audio player, no login required; reads `?code=` param
+**Web app** (Vercel, vanilla HTML/CSS/JS, lives in `app/`):
+- `app/login.html` — Google OAuth via Supabase Auth; redirects to `https://app.audioproctor.com/dashboard.html`
+- `app/dashboard.html` — upload form + uploads table; requires auth
+- `app/player.html` — student-facing audio player, no login required; reads `?code=` param
+- `app/css/styles.css` — shared app styles
+- `app/js/` — client-side JS modules
 
 **Chrome Extension** (Manifest V3, `extension/`):
 - `popup.js` — validates code format, calls `/api/session`, stores result in `chrome.storage.session`, opens `player.html` tab
@@ -38,11 +55,11 @@ Both are served from the same repo. `vercel.json` rewrites `/use-cases`, `/about
 
 ## Key Flows
 
-**Upload:** `handleUpload()` in `js/dashboard.js` — checks quota and storage cap UI-side (enforced server-side via RLS), uploads file to Supabase Storage, inserts row to `uploads`, updates `storage_used_mb` in `profiles`.
+**Upload:** `handleUpload()` in `app/js/dashboard.js` — checks quota and storage cap UI-side (enforced server-side via RLS), uploads file to Supabase Storage, inserts row to `uploads`, updates `storage_used_mb` in `profiles`.
 
 **Student access (extension):** popup enters code → `popup.js` calls `/api/session` → stores `{ signedUrl, exitWordHash, filename }` in `chrome.storage.session` → opens `extension/player.html` tab → `player.js` reads session, loads audio, verifies exit word by hashing input and comparing to stored hash.
 
-**Exit word verification:** Both `dashboard.js` and `extension/player.js` use identical `hashWord()` — SHA-256 via Web Crypto API, lowercased and trimmed before hashing.
+**Exit word verification:** Both `app/js/dashboard.js` and `extension/player.js` use identical `hashWord()` — SHA-256 via Web Crypto API, lowercased and trimmed before hashing.
 
 ## Development
 
@@ -74,4 +91,4 @@ Editorial print aesthetic — mid-century typeset, The Economist tone. Structure
 - No border-radius, no box-shadow, no icons except `—` list bullets
 - Dark sections invert ink/paper; no graphics needed
 
-App styles live in `css/styles.css`. Marketing-only styles (pricing grid, site nav, FAQ, etc.) live in `site/site.css`.
+App styles live in `app/css/styles.css`. Marketing-only styles (pricing grid, site nav, FAQ, etc.) live in `site/site.css`.
