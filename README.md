@@ -88,7 +88,7 @@ STRIPE_PRICE_ID=
 │   ├── stripe-webhook.js   # Handle Stripe subscription events
 │   └── contact.js          # Contact/demo request form handler
 │
-├── js/                     # Client-side JavaScript
+├── app/js/                   # Client-side JavaScript
 │   ├── auth.js             # Shared auth helpers (requireAuth, ensureProfile, getEffectiveTier)
 │   ├── dashboard.js        # Upload, quota, analytics, exit word generation
 │   ├── admin.js            # Platform admin UI
