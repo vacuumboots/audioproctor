@@ -88,10 +88,15 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Could not update your profile. Please contact hello@audioproctor.com.' });
     }
 
-    await supabase
+    const { error: acceptErr } = await supabase
       .from('invitations')
       .update({ accepted_at: new Date().toISOString() })
       .eq('id', invite.id);
+
+    if (acceptErr) {
+      console.error('accept-invite invitation update failed:', acceptErr.message);
+      return res.status(500).json({ error: 'Could not mark invitation accepted. Please contact hello@audioproctor.com.' });
+    }
 
     return res.status(200).json({ ok: true, role: invite.role });
   }
