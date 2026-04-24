@@ -532,9 +532,12 @@ async function loadInvitations() {
       const status = isExpired
         ? `<span style="color:var(--accent);">Expired ${expDate}</span>`
         : `<span style="color:#4a7c59;">Expires ${expDate}</span>`;
+      const emailWarning = inv.lastEmailOk === false
+        ? `<span style="display:inline-block; width:6px; height:6px; background:var(--accent); border-radius:50%; margin-left:0.4rem; vertical-align:middle;" title="Last email send failed"></span>`
+        : '';
       return `
         <tr>
-          <td><strong>${escapeHtml(inv.email)}</strong></td>
+          <td><strong>${escapeHtml(inv.email)}</strong>${emailWarning}</td>
           <td style="font-size:0.85rem;">${escapeHtml(inv.role.replace(/_/g, ' '))}</td>
           <td style="font-size:0.85rem;">${escapeHtml(org)}</td>
           <td style="font-size:0.8rem; color:var(--muted);">${date}</td>

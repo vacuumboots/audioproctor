@@ -216,7 +216,29 @@ module.exports = async (req, res) => {
         console.error('admin list-invitations failed:', error.message);
         return res.status(500).json({ error: 'Could not load invitations' });
       }
-      return res.status(200).json(data);
+
+      // Merge latest email send status per invitation
+      const invitationIds = (data || []).map(i => i.id);
+      let lastEmailMap = {};
+      if (invitationIds.length > 0) {
+        const { data: logs } = await supabase
+          .from('invite_email_log')
+          .select('invitation_id, email_ok, created_at')
+          .in('invitation_id', invitationIds)
+          .in('action', ['approve_request', 'invite', 'resend'])
+          .order('created_at', { ascending: false })
+          .limit(500);
+        logs?.forEach(l => {
+          if (!lastEmailMap[l.invitation_id]) lastEmailMap[l.invitation_id] = l;
+        });
+      }
+
+      const enriched = (data || []).map(inv => ({
+        ...inv,
+        lastEmailOk: lastEmailMap[inv.id]?.email_ok ?? null,
+      }));
+
+      return res.status(200).json(enriched);
     }
 
     if (action === 'list-requests') {
