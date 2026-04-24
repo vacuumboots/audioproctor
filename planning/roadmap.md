@@ -454,9 +454,8 @@ The `invitations` table and token generation shipped in Stage 4. This completes 
   `https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj`.
   Managed Chromebooks can be deployed by Store ID in Google Admin Console instead of
   uploading a .crx file.
-- [ ] **Public listing** — once the product is stable and FSD38 pilot is complete,
-  make the listing public. Organic discovery from Alberta IT admins searching the
-  Store is free marketing.
+- [x] **Public listing** — listing is public. Organic discovery from Alberta IT
+  admins searching the Store is free marketing.
 - [ ] **Store listing assets** — branded screenshots, a short demo video (screen
   recording of the teacher upload flow and student player), and a concise description
   written for IT admins, not teachers.
@@ -465,11 +464,9 @@ The `invitations` table and token generation shipped in Stage 4. This completes 
 
 ### Google Admin Deployment
 
-- [ ] **IT deployment guide (PDF)** — a short, step-by-step document for Google
-  Workspace admins covering: force-installing the extension by Store ID, scoping it
-  to student OUs, setting any managed extension policies. Written for someone who
-  administers Chromebooks but has never heard of AudioProctor. Offered as a download
-  on the marketing site and sent automatically on division signup.
+- [x] **IT deployment guide (PDF)** — step-by-step document for Google Workspace
+  admins covering force-install by Store ID, scoping to student OUs, and smoke
+  testing. Lives at `docs/it-pilot-deployment-guide.md` and can be rendered to PDF.
 - [ ] **Managed extension configuration** — define any policy schema the extension
   accepts (e.g. pre-configured division ID so the extension knows which division it
   belongs to without the teacher typing anything). Makes division-wide deployment
