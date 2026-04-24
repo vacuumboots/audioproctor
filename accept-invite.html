@@ -30,6 +30,14 @@
         <p style="color:var(--muted); font-size:0.9rem; margin-top:1.5rem;">Accepting invitation…</p>
       </div>
 
+      <div id="state-expired" style="display:none;">
+        <div class="notice notice--error" style="margin-top:1.5rem;">This invitation has expired.</div>
+        <p style="margin-top:1rem; color:var(--muted); font-size:0.9rem; line-height:1.5;">
+          If you still need access, you can request a new invitation.
+        </p>
+        <a href="/site/request-access.html" class="btn btn--primary" style="margin-top:1rem; display:block; text-align:center;">Request Access</a>
+      </div>
+
       <div id="state-error" style="display:none;">
         <div id="error-msg" class="notice notice--error" style="margin-top:1.5rem;"></div>
         <a href="/login.html" class="btn btn--ghost" style="margin-top:1rem; display:block; text-align:center;">Sign in</a>
@@ -45,7 +53,7 @@
     const token  = params.get('token');
 
     function showState(id) {
-      ['state-loading','state-invite','state-accepting','state-error'].forEach(s => {
+      ['state-loading','state-invite','state-accepting','state-expired','state-error'].forEach(s => {
         document.getElementById(s).style.display = s === id ? '' : 'none';
       });
     }
@@ -62,7 +70,14 @@
         const res  = await fetch(`/api/accept-invite?token=${encodeURIComponent(token)}`);
         const data = await res.json();
 
-        if (!res.ok) { showError(data.error || 'Invalid invitation.'); return; }
+        if (!res.ok) {
+          if (res.status === 410 && data.reason === 'expired') {
+            showState('state-expired');
+            return;
+          }
+          showError(data.error || 'Invalid invitation.');
+          return;
+        }
 
         // Show invitation details
         let desc = `You've been invited to join AudioProctor`;

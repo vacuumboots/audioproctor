@@ -28,8 +28,8 @@ module.exports = async (req, res) => {
       .maybeSingle();
 
     if (error || !invite) return res.status(404).json({ error: 'Invitation not found.' });
-    if (invite.accepted_at) return res.status(410).json({ error: 'This invitation has already been accepted.' });
-    if (new Date(invite.expires_at) < new Date()) return res.status(410).json({ error: 'This invitation has expired.' });
+    if (invite.accepted_at) return res.status(410).json({ error: 'This invitation has already been accepted.', reason: 'accepted' });
+    if (new Date(invite.expires_at) < new Date()) return res.status(410).json({ error: 'This invitation has expired.', reason: 'expired', expiredAt: invite.expires_at });
 
     return res.status(200).json({
       email:        invite.email,
@@ -65,8 +65,8 @@ module.exports = async (req, res) => {
       .maybeSingle();
 
     if (invErr || !invite) return res.status(404).json({ error: 'Invitation not found.' });
-    if (invite.accepted_at) return res.status(410).json({ error: 'This invitation has already been accepted.' });
-    if (new Date(invite.expires_at) < new Date()) return res.status(410).json({ error: 'This invitation has expired.' });
+    if (invite.accepted_at) return res.status(410).json({ error: 'This invitation has already been accepted.', reason: 'accepted' });
+    if (new Date(invite.expires_at) < new Date()) return res.status(410).json({ error: 'This invitation has expired.', reason: 'expired', expiredAt: invite.expires_at });
 
     if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
       return res.status(403).json({
