@@ -265,11 +265,14 @@ recorded. All events are anonymous by design.
   tier override, and notes; client-side filter by email/division
 - [x] **Tier management** — inline dropdown on every division, school, and teacher
   row; takes effect immediately via `get_effective_tier()`
-- [ ] **Account management** — deactivate or permanently delete accounts, reassign
-  teacher/school to a different division (attach-teacher endpoint exists; full
-  deactivate/delete flow not yet built)
-- [ ] **Invitation tool** — invitations table and token generation shipped; email
-  delivery not yet wired
+- [x] **Account management — reassign** — platform admin can reassign any teacher to
+  a different school and/or division via a modal in the admin dashboard. Takes effect
+  immediately. Teacher is notified by email.
+- [ ] **Account management — deactivate/delete** — deactivate or permanently delete
+  accounts. Deactivation flips `is_deactivated`; deletion removes all data.
+- [x] **Invitation tool** — platform admin creates invitations from `/admin.html`;
+  invitation email sent via Resend with a sign-in link. Token acceptance flow wired.
+  Resend status shown inline (success / failure with error detail).
 - [x] **Account flags** — notes field on every division, school, and teacher row;
   saved on blur
 - [x] **Anomaly review queue** — surfaces non-Canadian country_code accounts;
@@ -432,15 +435,15 @@ Deactivation and deletion are distinct operations with different consequences:
 
 ---
 
-### Invitation Email Delivery (deferred from Stage 4)
+### Invitation Email Delivery
 
-The `invitations` table and token generation shipped in Stage 4. This completes the flow:
+The `invitations` table and token generation shipped in Stage 4. Completed in Stage 3:
 
-- [ ] **Send invitation email via Resend** — when a platform admin or school/division
-  admin creates an invitation, send an email to the invitee with a sign-in link
-  containing the token. On click, the teacher signs in with Google and lands in the
-  dashboard already attached to the correct school/division.
-- [ ] **Invitation acceptance flow** — `api/accept-invite.js` validates the token,
+- [x] **Send invitation email via Resend** — when a platform admin creates an invitation
+  from `/admin.html`, an email is sent to the invitee with a sign-in link containing
+  the token. On click, the teacher signs in with Google and lands in the dashboard
+  already attached to the correct school/division.
+- [x] **Invitation acceptance flow** — `api/accept-invite.js` validates the token,
   confirms it hasn't expired or been accepted, attaches the teacher to the org, marks
   `accepted_at`, and redirects to the dashboard.
 - [ ] **Billing status in School Admin UI** — current tier, renewal date, and payment
@@ -479,10 +482,9 @@ The `invitations` table and token generation shipped in Stage 4. This completes 
 
 ### Self-Serve Signup & Access Control
 
-- [ ] **Teacher request flow** — instead of open signup, teachers submit a request
-  (name, email, school, division). Request lands in the platform admin dashboard and
-  triggers a notification email. You approve or assign them to an existing division.
-  Prevents random signups from outside Alberta.
+- [x] **Teacher request flow** — existing teachers submit in-app requests (premium trial,
+  school plan, division plan) from the dashboard. Requests land in the platform admin
+  dashboard with an approve/reject button. No email back-and-forth needed.
 - [ ] **Division admin approval flow** — once a division is on a paid plan, their
   Division Admin receives and approves teacher requests without your involvement.
   You only handle unattached requests.
@@ -512,10 +514,11 @@ The `invitations` table and token generation shipped in Stage 4. This completes 
 - [ ] **School tier billing** — credit card only via Stripe. School Admin enters card
   details, billed annually. If their division later signs a division contract, a
   prorated credit is applied automatically.
-- [ ] **Teacher Premium billing** — self-serve Stripe checkout, annual subscription.
-- [ ] **Free tier enforcement on lapse** — automated downgrade if a paid account
-  lapses. Teacher data and uploads are preserved for 30 days post-expiry before
-  deletion, giving time to resolve payment issues without losing work.
+- [x] **Teacher Premium billing** — self-serve Stripe checkout (annual subscription)
+  plus in-app request flow for platform-admin approval. Both paths supported.
+- [x] **Free tier enforcement on lapse** — automated downgrade when `profiles.expires_at`
+  passes. `get_effective_tier()` returns 'free' for expired trials. Teacher data and
+  uploads are preserved indefinitely; only new uploads are blocked by free-tier limits.
 
 ---
 

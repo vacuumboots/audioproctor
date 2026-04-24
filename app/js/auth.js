@@ -55,7 +55,13 @@ async function ensureProfile(userId) {
   if (!data) {
     const lang        = (navigator.languages?.[0] || navigator.language || '');
     const countryCode = lang.includes('-') ? lang.split('-').pop().toUpperCase() : null;
-    await supabaseClient.from('profiles').insert({ id: userId, country_code: countryCode });
+    const expiresAt   = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    await supabaseClient.from('profiles').insert({
+      id: userId,
+      country_code: countryCode,
+      tier: 'premium',
+      expires_at: expiresAt
+    });
   }
 }
 

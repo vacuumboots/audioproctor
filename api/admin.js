@@ -244,7 +244,7 @@ module.exports = async (req, res) => {
     if (action === 'list-requests') {
       const { data, error } = await supabase
         .from('teacher_requests')
-        .select('id, name, email, school, division, message, status, notes, created_at')
+        .select('id, name, email, school, division, message, status, notes, created_at, teacher_id, request_type')
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) return res.status(500).json({ error: 'Could not load requests' });
@@ -421,10 +421,43 @@ module.exports = async (req, res) => {
       if (!requestId) return res.status(400).json({ error: 'requestId required' });
 
       const { data: req, error: reqErr } = await supabase
-        .from('teacher_requests').select('email').eq('id', requestId).single();
+        .from('teacher_requests').select('email, teacher_id, request_type').eq('id', requestId).single();
       if (reqErr || !req) return res.status(404).json({ error: 'Request not found' });
 
-      // Create invitation record
+      // In-app request from an existing teacher — update profile directly
+      if (req.teacher_id) {
+        const updatePayload = {};
+        const newExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        if (req.request_type === 'premium_trial') {
+          updatePayload.tier = 'premium';
+          updatePayload.expires_at = newExpires;
+        } else if (req.request_type === 'school_plan') {
+          updatePayload.school_id = schoolId || null;
+        } else if (req.request_type === 'division_plan') {
+          updatePayload.division_id = divisionId || null;
+        }
+
+        const { error: updErr } = await supabase
+          .from('profiles').update(updatePayload).eq('id', req.teacher_id);
+        if (updErr) {
+          console.error('approve-request profile update failed:', updErr.message);
+          return res.status(500).json({ error: 'Could not update teacher profile' });
+        }
+
+        await supabase.from('teacher_requests').update({
+          status:      'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user.id,
+        }).eq('id', requestId);
+
+        audit(supabase, user.id, 'approve_request', 'teacher_request', requestId, null,
+          { email: req.email, teacher_id: req.teacher_id, request_type: req.request_type });
+
+        return res.status(200).json({ ok: true });
+      }
+
+      // External access request — create invitation (existing behaviour)
       const { data: invite, error: invErr } = await supabase
         .from('invitations')
         .insert({

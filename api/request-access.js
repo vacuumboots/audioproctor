@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
 
-  const { name, email, school, division, message, website } = req.body || {};
+  const { name, email, school, division, message, website, teacherId, requestType } = req.body || {};
 
   if (website) return res.status(200).json({ ok: true }); // honeypot
 
@@ -37,13 +37,21 @@ module.exports = async (req, res) => {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const { error: dbErr } = await supabase.from('teacher_requests').insert({
+  const insertData = {
     name:     name.trim(),
     email:    email.trim().toLowerCase(),
     school:   school?.trim()   || null,
     division: division?.trim() || null,
     message:  message?.trim()  || null,
-  });
+  };
+
+  // In-app request from an existing teacher
+  if (teacherId) {
+    insertData.teacher_id  = teacherId;
+    insertData.request_type = requestType || 'premium_trial';
+  }
+
+  const { error: dbErr } = await supabase.from('teacher_requests').insert(insertData);
 
   if (dbErr) {
     console.error('teacher_requests insert failed:', dbErr.message);

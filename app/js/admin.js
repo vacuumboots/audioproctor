@@ -544,6 +544,18 @@ async function loadRequests() {
           ? `<span style="color:#4a7c59;">Approved</span>`
           : `<span style="color:var(--muted);">Rejected</span>`;
 
+      const typeLabel = {
+        access:          'New Account',
+        premium_trial:   'Premium Trial',
+        school_plan:     'School Plan',
+        division_plan:   'Division Plan',
+      }[r.request_type] || r.request_type;
+
+      const isExisting = !!r.teacher_id;
+      const teacherTag = isExisting
+        ? `<span style="display:inline-block; padding:0.1rem 0.45rem; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:500; border:1px solid var(--ink); margin-left:0.4rem;">Existing Teacher</span>`
+        : '';
+
       const actions = r.status === 'pending' ? `
         <button class="btn btn--ghost btn--small" onclick="approveRequest('${r.id}', '${escapeHtml(r.email)}')">Approve</button>
         <button class="btn btn--small" style="margin-left:0.5rem; border:1px solid var(--warm-mid); background:transparent; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
@@ -552,7 +564,8 @@ async function loadRequests() {
 
       return `
         <tr>
-          <td><strong>${escapeHtml(r.name)}</strong><br><span style="color:var(--muted); font-size:0.8rem;">${escapeHtml(r.email)}</span></td>
+          <td><strong>${escapeHtml(r.name)}</strong>${teacherTag}<br><span style="color:var(--muted); font-size:0.8rem;">${escapeHtml(r.email)}</span></td>
+          <td style="font-size:0.85rem;">${typeLabel}</td>
           <td style="font-size:0.85rem;">${escapeHtml(r.school || '—')}</td>
           <td style="font-size:0.85rem;">${escapeHtml(r.division || '—')}</td>
           <td style="font-size:0.8rem; color:var(--muted); max-width:200px; white-space:normal;">${escapeHtml(r.message || '—')}</td>
@@ -568,6 +581,7 @@ async function loadRequests() {
         <thead>
           <tr>
             <th>Name / Email</th>
+            <th>Type</th>
             <th>School</th>
             <th>Division</th>
             <th>Message</th>
@@ -677,9 +691,9 @@ async function approveRequest(requestId, email) {
   if (!confirm(`Approve access request from ${email}?`)) return;
   try {
     const data = await adminApi('approve-request', 'POST', { requestId });
-    // Show invite link inline
+    // Show invite link inline (only for new-account requests)
     const cell = document.getElementById(`invite-link-${requestId}`);
-    if (cell) {
+    if (cell && data.inviteUrl) {
       let html = `
         <input type="text" value="${escapeHtml(data.inviteUrl)}" readonly
           style="font-size:0.7rem; font-family:monospace; border:1px solid var(--warm-mid);

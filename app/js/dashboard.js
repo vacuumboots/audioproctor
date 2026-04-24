@@ -830,7 +830,7 @@ async function loadQuota() {
   // Fetch profile for role and org affiliation
   const { data: profile } = await supabaseClient
     .from('profiles')
-    .select('role, school_id, division_id, tier, tier_override, exit_word_mode')
+    .select('role, school_id, division_id, tier, tier_override, expires_at, exit_word_mode')
     .eq('id', userId)
     .maybeSingle();
 
@@ -866,16 +866,37 @@ async function loadQuota() {
     advancedSection.classList.toggle('hidden', currentTier === 'free');
   }
 
-  // Upgrade CTA (free tier only)
+  // Upgrade CTA / trial status
   const ctaEl = document.getElementById('upgrade-cta');
   if (ctaEl) {
+    const expiresAt = profile?.expires_at ? new Date(profile.expires_at) : null;
+    const isTrial   = expiresAt && profile?.tier === 'premium' && !profile?.tier_override && !profile?.school_id && !profile?.division_id;
+    const trialExpired = isTrial && expiresAt < new Date();
+    const daysLeft = expiresAt ? Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+
     if (currentTier === 'free') {
+      if (trialExpired) {
+        ctaEl.innerHTML = `
+          <span>Your 30-day premium trial has expired.</span>
+          <button id="btn-request-premium" style="margin-left:1rem; padding:0.3rem 0.9rem; border:1px solid var(--ink); background:var(--paper); color:var(--ink); font-family:inherit; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">Request Premium Access</button>
+        `;
+        ctaEl.classList.remove('hidden');
+        document.getElementById('btn-request-premium')?.addEventListener('click', () => openRequestModal('premium_trial'));
+      } else {
+        ctaEl.innerHTML = `
+          <span>You're on the Free plan — 3 uploads/month, 50 MB storage.</span>
+          <button id="btn-upgrade" style="margin-left:1rem; padding:0.3rem 0.9rem; border:1px solid var(--ink); background:var(--ink); color:var(--paper); font-family:inherit; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">Upgrade to Premium →</button>
+        `;
+        ctaEl.classList.remove('hidden');
+        document.getElementById('btn-upgrade')?.addEventListener('click', startUpgrade);
+      }
+    } else if (isTrial && daysLeft !== null && daysLeft <= 7 && daysLeft > 0) {
       ctaEl.innerHTML = `
-        <span>You're on the Free plan — 3 uploads/month, 50 MB storage.</span>
-        <button id="btn-upgrade" style="margin-left:1rem; padding:0.3rem 0.9rem; border:1px solid var(--ink); background:var(--ink); color:var(--paper); font-family:inherit; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">Upgrade to Premium →</button>
+        <span>Premium trial expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}.</span>
+        <button id="btn-extend-trial" style="margin-left:1rem; padding:0.3rem 0.9rem; border:1px solid var(--ink); background:var(--paper); color:var(--ink); font-family:inherit; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">Request Extension</button>
       `;
       ctaEl.classList.remove('hidden');
-      document.getElementById('btn-upgrade')?.addEventListener('click', startUpgrade);
+      document.getElementById('btn-extend-trial')?.addEventListener('click', () => openRequestModal('premium_trial'));
     } else if (profile?.school_id) {
       ctaEl.innerHTML = `Your school is on a plan. <a href="/settings.html" style="color:var(--ink);">View subscription details</a>`;
       ctaEl.classList.remove('hidden');
@@ -1008,6 +1029,59 @@ function showUploadNotice(message, type) {
 
 function hideUploadNotice() {
   document.getElementById('upload-notice').classList.add('hidden');
+}
+
+// ─── In-App Request Flow ─────────────────────────────────────────
+
+function openRequestModal(defaultType) {
+  const modal = document.getElementById('request-modal');
+  const select = document.getElementById('request-type-select');
+  if (select && defaultType) select.value = defaultType;
+  updateRequestModalTitle();
+  document.getElementById('request-message').value = '';
+  modal.classList.remove('hidden');
+}
+
+function updateRequestModalTitle() {
+  const type = document.getElementById('request-type-select')?.value;
+  const titles = {
+    premium_trial: 'Request Premium Access',
+    school_plan:   'Request School Plan',
+    division_plan: 'Request Division Plan',
+  };
+  document.getElementById('request-modal-title').textContent = titles[type] || 'Request Access';
+}
+
+async function submitRequest() {
+  const type    = document.getElementById('request-type-select').value;
+  const message = document.getElementById('request-message').value.trim();
+
+  try {
+    const session = await getSession();
+    if (!session) { window.location.href = '/login.html'; return; }
+
+    const user = session.user;
+
+    const res = await fetch('/api/request-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name:      user.user_metadata?.full_name || user.email,
+        email:     user.email,
+        teacherId: user.id,
+        requestType: type,
+        message:   message,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+
+    document.getElementById('request-modal').classList.add('hidden');
+    showUploadNotice('Request submitted. You\'ll be notified by email when it\'s reviewed.', 'success');
+  } catch (err) {
+    showUploadNotice(err.message, 'error');
+  }
 }
 
 // ─── Util ────────────────────────────────────────────────────────
