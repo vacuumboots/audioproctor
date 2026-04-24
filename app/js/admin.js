@@ -6,6 +6,8 @@ const ADMIN_API = '/api/admin';
 
 let adminJwt      = null;   // Bearer token from current session
 let allTeachers   = [];     // cached for client-side filtering
+let allSchoolsList    = []; // cached for reassignment modal
+let allDivisionsList  = []; // cached for reassignment modal
 
 // ─── Init ─────────────────────────────────────────────────────────
 
@@ -86,6 +88,7 @@ async function loadDivisions() {
   const container = document.getElementById('divisions-container');
   try {
     const divisions = await adminApi('divisions');
+    allDivisionsList = divisions;
 
     if (!divisions.length) {
       container.innerHTML = `<div class="empty-state"><p class="label">No divisions yet</p></div>`;
@@ -159,6 +162,7 @@ async function loadSchools() {
   const container = document.getElementById('schools-container');
   try {
     const schools = await adminApi('schools');
+    allSchoolsList = schools;
 
     if (!schools.length) {
       container.innerHTML = `<div class="empty-state"><p class="label">No schools yet</p></div>`;
@@ -284,6 +288,9 @@ function renderTeachers(teachers) {
             onblur="setNotes('teacher','${t.id}',this.value)"
             onkeydown="if(event.key==='Enter')this.blur()">
         </td>
+        <td>
+          <button class="btn btn--ghost btn--small" onclick="openReassignModal('${t.id}', '${escapeHtml(t.email || '')}', '${t.school_id || ''}', '${t.division_id || ''}')">Reassign</button>
+        </td>
       </tr>`;
   }).join('');
 
@@ -297,10 +304,81 @@ function renderTeachers(teachers) {
           <th>Role</th>
           <th>Country</th>
           <th>Notes / Flags</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
+}
+
+// ─── Reassign Modal ───────────────────────────────────────────────
+
+function openReassignModal(userId, email, currentSchoolId, currentDivisionId) {
+  if (!allSchoolsList.length || !allDivisionsList.length) {
+    alert('Organizations still loading. Please try again in a moment.');
+    return;
+  }
+
+  const old = document.getElementById('reassign-modal');
+  if (old) old.remove();
+
+  const schoolOpts = allSchoolsList.map(s =>
+    `<option value="${s.id}" ${s.id === currentSchoolId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`
+  ).join('');
+
+  const divisionOpts = allDivisionsList.map(d =>
+    `<option value="${d.id}" ${d.id === currentDivisionId ? 'selected' : ''}>${escapeHtml(d.name)}</option>`
+  ).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'reassign-modal';
+  modal.style.cssText = `
+    position:fixed; inset:0; background:rgba(26,26,46,0.55); z-index:1000;
+    display:flex; align-items:center; justify-content:center; padding:1rem;
+  `;
+
+  modal.innerHTML = `
+    <div style="background:var(--paper); border:var(--border); max-width:420px; width:100%; padding:2rem;">
+      <p class="label" style="margin-bottom:1rem;">Reassign ${escapeHtml(email || userId)}</p>
+
+      <div style="margin-bottom:1rem;">
+        <label class="label" style="display:block; margin-bottom:0.4rem;">School</label>
+        <select id="reassign-school" class="input-field" style="font-size:0.875rem;">
+          <option value="">— None —</option>
+          ${schoolOpts}
+        </select>
+      </div>
+
+      <div style="margin-bottom:1.5rem;">
+        <label class="label" style="display:block; margin-bottom:0.4rem;">Division</label>
+        <select id="reassign-division" class="input-field" style="font-size:0.875rem;">
+          <option value="">— None —</option>
+          ${divisionOpts}
+        </select>
+      </div>
+
+      <div style="display:flex; gap:0.75rem;">
+        <button class="btn btn--primary btn--small" onclick="submitReassign('${userId}')">Reassign</button>
+        <button class="btn btn--ghost btn--small" onclick="document.getElementById('reassign-modal').remove()">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+async function submitReassign(userId) {
+  const schoolId   = document.getElementById('reassign-school').value || null;
+  const divisionId = document.getElementById('reassign-division').value || null;
+
+  try {
+    await adminApi('reassign-teacher', 'POST', { userId, schoolId, divisionId });
+    document.getElementById('reassign-modal').remove();
+    await loadTeachers();
+  } catch (err) {
+    alert('Could not reassign teacher: ' + err.message);
+  }
 }
 
 // ─── Anomalies ────────────────────────────────────────────────────

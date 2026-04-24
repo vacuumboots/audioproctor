@@ -340,6 +340,52 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    if (action === 'reassign-teacher') {
+      const { userId, schoolId, divisionId } = body;
+      if (!userId) return res.status(400).json({ error: 'userId required' });
+
+      const { data: prevProfile } = await supabase
+        .from('profiles').select('school_id, division_id').eq('id', userId).single();
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          school_id:   schoolId   === undefined ? prevProfile?.school_id   : (schoolId   || null),
+          division_id: divisionId === undefined ? prevProfile?.division_id : (divisionId || null),
+        })
+        .eq('id', userId);
+      if (error) {
+        console.error('reassign-teacher failed:', error.message);
+        return res.status(500).json({ error: 'Could not reassign teacher' });
+      }
+
+      // Fetch names for the notification email
+      let newSchoolName = null, newDivName = null;
+      if (schoolId) {
+        const { data: s } = await supabase.from('schools').select('name').eq('id', schoolId).single();
+        newSchoolName = s?.name || null;
+      }
+      if (divisionId) {
+        const { data: d } = await supabase.from('divisions').select('name').eq('id', divisionId).single();
+        newDivName = d?.name || null;
+      }
+
+      // Notify the teacher — fire-and-forget
+      const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+      const teacherEmail = authUser?.user?.email;
+      if (teacherEmail) {
+        sendReassignmentEmail(teacherEmail, newSchoolName, newDivName).catch(err =>
+          console.error('reassignment email failed:', err.message)
+        );
+      }
+
+      audit(supabase, user.id, 'reassign_teacher', 'teacher', userId,
+        { school_id: prevProfile?.school_id, division_id: prevProfile?.division_id },
+        { school_id: schoolId === undefined ? prevProfile?.school_id : (schoolId || null),
+          division_id: divisionId === undefined ? prevProfile?.division_id : (divisionId || null) });
+      return res.status(200).json({ ok: true });
+    }
+
     if (action === 'create-division') {
       const { name, enrolmentBand, adminEmail, tier } = body;
       if (!name) return res.status(400).json({ error: 'name required' });
@@ -814,6 +860,45 @@ function logInviteEmail(supabase, invitationId, action, emailOk, errorMessage) {
     error_message: errorMessage ?? null,
   }).then(({ error }) => {
     if (error) console.error('invite email log insert failed:', error.message);
+  });
+}
+
+// ─── Email helper: teacher reassignment ───────────────────────────────────
+// Notifies a teacher that they have been assigned to a new school/division.
+// Names the specific organization(s) to reduce confusion.
+
+async function sendReassignmentEmail(teacherEmail, schoolName, divisionName) {
+  const { Resend } = require('resend');
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  let orgText = '';
+  if (schoolName && divisionName) {
+    orgText = `${schoolName}, ${divisionName}`;
+  } else if (schoolName) {
+    orgText = schoolName;
+  } else if (divisionName) {
+    orgText = divisionName;
+  } else {
+    orgText = 'no organization (unattached)';
+  }
+
+  await resend.emails.send({
+    from:    'AudioProctor <hello@audioproctor.com>',
+    to:      teacherEmail,
+    subject: 'Your AudioProctor organization has changed',
+    text: [
+      `Hi,`,
+      ``,
+      `Your account has been reassigned to ${orgText} on AudioProctor.`,
+      ``,
+      `Your account and all of your uploaded assessments are still intact. Your plan tier`,
+      `may have changed based on the organization you are now part of.`,
+      ``,
+      `If you believe this was done in error, please contact your administrator`,
+      `or reply to this email.`,
+      ``,
+      `— AudioProctor`,
+    ].join('\n'),
   });
 }
 
