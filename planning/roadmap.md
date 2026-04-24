@@ -430,8 +430,7 @@ Deactivation and deletion are distinct operations with different consequences:
   school, or teacher account and all associated data from the admin dashboard.
   Requires explicit confirmation. Irreversible.
 
-- [ ] **Reassign teacher / school** — move a teacher to a different school, or a
-  school to a different division, without losing upload history.
+- [ ] **Reassign teacher** — move a teacher to a different school without losing upload history.
 
 ---
 

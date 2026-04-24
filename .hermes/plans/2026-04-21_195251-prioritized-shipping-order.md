@@ -168,15 +168,14 @@ This is the smallest high-leverage distribution unlock in the whole roadmap.
 **Ship items:**
 1. Teacher deactivate/reactivate in admin UI
 2. Teacher reassignment between schools
-3. School reassignment between divisions
-4. Clear detach fallback behavior in UI and backend
-5. Document the state matrix for:
+3. Clear detach fallback behavior in UI and backend
+4. Document the state matrix for:
    - active
    - detached
    - deactivated
    - deleted
    - lapsed billing
-6. If deletion is exposed to admin UI, make it a separate shipment only after deactivate flow is stable
+5. If deletion is exposed to admin UI, make it a separate shipment only after deactivate flow is stable
 
 **Acceptance criteria:**
 - Admin can deactivate and reactivate a teacher without direct DB edits

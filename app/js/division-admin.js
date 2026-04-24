@@ -5,8 +5,6 @@ const ORG_API = '/api/org';
 
 let orgJwt            = null;
 let allSchools        = [];
-let allDivisions      = [];
-let currentDivisionId = null;
 
 async function initDivisionAdmin(user) {
   const session = await getSession();
@@ -33,7 +31,6 @@ async function initDivisionAdmin(user) {
   }
 
   if (profile.division_id) {
-    currentDivisionId = profile.division_id;
     const { data: division } = await supabaseClient
       .from('divisions')
       .select('name')
@@ -151,7 +148,6 @@ function renderSchoolsTable(schools, container) {
       <td>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
           <button class="btn btn--ghost btn--small" onclick="openDrillDown('${s.id}', '${escapeHtml(s.name)}')">View Teachers</button>
-          <button class="btn btn--ghost btn--small" onclick="openReassignSchoolModal('${s.id}', '${escapeHtml(s.name)}')">Reassign Division</button>
           <button class="btn btn--ghost btn--small" onclick="detachSchool('${s.id}', '${escapeHtml(s.name)}', this)">Remove from Division</button>
         </div>
       </td>
@@ -262,77 +258,6 @@ async function removeSchoolAdmin(userId, email, btn) {
     alert('Could not remove admin role: ' + err.message);
     btn.disabled    = false;
     btn.textContent = 'Remove Admin Role';
-  }
-}
-
-// ─── Reassign school ──────────────────────────────────────────────────────
-
-async function loadAllDivisions() {
-  if (allDivisions.length) return;
-  const { data, error } = await supabaseClient
-    .from('divisions')
-    .select('id, name')
-    .order('name');
-  if (error) {
-    console.error('loadAllDivisions failed:', error.message);
-    return;
-  }
-  allDivisions = data || [];
-}
-
-async function openReassignSchoolModal(schoolId, schoolName) {
-  await loadAllDivisions();
-  if (!allDivisions.length) {
-    alert('Division list is not available. Please try again.');
-    return;
-  }
-
-  const old = document.getElementById('reassign-school-modal');
-  if (old) old.remove();
-
-  const divisionOpts = allDivisions.map(d =>
-    `<option value="${d.id}" ${d.id === currentDivisionId ? 'selected' : ''}>${escapeHtml(d.name)}</option>`
-  ).join('');
-
-  const modal = document.createElement('div');
-  modal.id = 'reassign-school-modal';
-  modal.style.cssText = `
-    position:fixed; inset:0; background:rgba(26,26,46,0.55); z-index:1000;
-    display:flex; align-items:center; justify-content:center; padding:1rem;
-  `;
-
-  modal.innerHTML = `
-    <div style="background:var(--paper); border:var(--border); max-width:420px; width:100%; padding:2rem;">
-      <p class="label" style="margin-bottom:1rem;">Reassign ${escapeHtml(schoolName)}</p>
-
-      <div style="margin-bottom:1.5rem;">
-        <label class="label" style="display:block; margin-bottom:0.4rem;">Division</label>
-        <select id="reassign-school-division" class="input-field" style="font-size:0.875rem;">
-          <option value="">— None (unattached) —</option>
-          ${divisionOpts}
-        </select>
-      </div>
-
-      <div style="display:flex; gap:0.75rem;">
-        <button class="btn btn--primary btn--small" onclick="submitReassignSchool('${schoolId}')">Reassign</button>
-        <button class="btn btn--ghost btn--small" onclick="document.getElementById('reassign-school-modal').remove()">Cancel</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
-}
-
-async function submitReassignSchool(schoolId) {
-  const divisionId = document.getElementById('reassign-school-division').value || null;
-
-  try {
-    await orgApi('reassign-school', 'POST', { schoolId, divisionId });
-    document.getElementById('reassign-school-modal').remove();
-    await Promise.all([loadSchools(), loadDivisionReport()]);
-  } catch (err) {
-    alert('Could not reassign school: ' + err.message);
   }
 }
 

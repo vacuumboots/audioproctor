@@ -14,13 +14,11 @@
 
 1. **Detach-teacher behavior** — clearing `division_id` on detach: **YES**. Both `school_id` and `division_id` are cleared. If a platform admin wants a teacher in a division with no school, they use `reassign-teacher` with `schoolId=null` and `divisionId` set.
 
-2. **Reassignment notifications** — who gets emailed when a school moves divisions: **School admins only** (not all teachers). Teachers don't need to know their division changed unless their admin tells them.
+2. **Reassignment UI** — inline selects vs modal: **Modal with two dropdowns** (school + division). Keeps the table clean. Opened via "Reassign" button per row.
 
-3. **Reassignment UI** — inline selects vs modal: **Modal with two dropdowns** (school + division). Keeps the table clean. Opened via "Reassign" button per row.
+3. **Reassignment email content** — generic vs specific: **Specific**. Names the new school and division: "You have been assigned to Silverwood Junior High, Aspen Peaks School Division." Takes one extra query, much less confusing.
 
-4. **Reassignment email content** — generic vs specific: **Specific**. Names the new school and division: "You have been assigned to Silverwood Junior High, Aspen Peaks School Division." Takes one extra query, much less confusing.
-
-5. **Self-service detach** — school/division admin capabilities: Division admins can detach teachers and reassign schools without detaching.
+4. **Self-service detach** — school/division admin capabilities: Division admins can detach teachers. School admins can only detach teachers from their school. No school-to-division reassignment — that is an edge case handled by platform admin via direct DB edit if ever needed.
 
 6. **Teacher Premium** — keep Stripe button or hide behind request form: **Keep the Stripe button**. The request flow is an alternative path, not a replacement.
 
@@ -66,7 +64,6 @@
 ## Deliverables — Deferred / Not Implemented
 
 - [ ] **Deactivate/reactivate toggle** (Task 1 from original plan) — `profiles.is_deactivated` exists and `api/session.js` already blocks deactivated teachers, but there is no admin UI or API action to toggle it.
-- [ ] **School reassignment between divisions** (Task 3 from original plan) — not explicitly built as a separate admin UI action. The `reassign-teacher` flow handles teacher moves; school-level division moves can be done via the existing `attach-teacher` action or by editing the school row directly in the DB. A dedicated `reassign-school` action and UI remain deferred.
 - [ ] **Account lifecycle state matrix document** (Task 5 from original plan) — `docs/account-lifecycle-states.md` not written. The state transitions are documented in code and in this plan's "Decisions" section.
 - [ ] **README.md cross-link** for state matrix — deferred until the document is written.
 
@@ -115,7 +112,6 @@ Retest the full lifecycle if any of these change:
 - **Trial backfill**: Existing teachers in the DB before migration 016 do NOT get a retroactive trial. This is intentional — there are currently no production teachers.
 - **Request approval for school/division plans**: The admin must manually select the target school/division when approving a `school_plan` or `division_plan` request. The UI does not yet pre-populate or validate this selection beyond basic existence checks.
 - **Email delivery**: Reassignment and approval emails are fire-and-forget. Failures are logged to console only. No retry queue.
-- **School reassignment deferred**: Moving a school from Division A to Division B requires either DB edit or detaching all teachers and reattaching them. This is acceptable for pilot scale but should be built before any large school moves divisions.
 
 ---
 
@@ -123,8 +119,7 @@ Retest the full lifecycle if any of these change:
 
 If continuing on this track:
 1. **Deactivate/reactivate toggle** — highest operational value. Blocks bad actors immediately.
-2. **School reassignment UI** — needed if any division reorganizes schools mid-year.
-3. **Account lifecycle state matrix document** — useful for onboarding future developers or support staff.
+2. **Account lifecycle state matrix document** — useful for onboarding future developers or support staff.
 
 If switching to monetization:
 4. **Stripe webhook expansion** — handle `past_due`, `unpaid`, `canceled` states beyond `checkout.session.completed` and `customer.subscription.deleted`.

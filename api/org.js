@@ -519,57 +519,6 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
-    // ── reassign-school ──────────────────────────────────────────────────
-    if (action === 'reassign-school') {
-      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
-      const { schoolId, divisionId } = body;
-      if (!schoolId) return res.status(400).json({ error: 'schoolId required' });
-
-      if (profile.role === 'division_admin') {
-        const { data: school } = await supabase
-          .from('schools').select('division_id').eq('id', schoolId).single();
-        if (!school || school.division_id !== profile.division_id) {
-          return res.status(403).json({ error: 'Forbidden' });
-        }
-      }
-
-      const { data: prevSchool } = await supabase
-        .from('schools').select('division_id, name').eq('id', schoolId).single();
-
-      const { error } = await supabase
-        .from('schools').update({ division_id: divisionId || null }).eq('id', schoolId);
-      if (error) {
-        console.error('reassign-school failed:', error.message);
-        return res.status(500).json({ error: 'Could not reassign school' });
-      }
-      audit(supabase, user.id, 'reassign_school', 'school', schoolId,
-        { division_id: prevSchool?.division_id }, { division_id: divisionId || null });
-
-      // Notify school admins only — fire-and-forget
-      const { data: schoolAdmins } = await supabase
-        .from('profiles').select('id').eq('school_id', schoolId).eq('role', 'school_admin');
-      if (schoolAdmins?.length) {
-        const emailMap = await getAllUserEmails(supabase);
-        let newDivName = null;
-        if (divisionId) {
-          const { data: div } = await supabase.from('divisions').select('name').eq('id', divisionId).single();
-          newDivName = div?.name || 'a new division';
-        } else {
-          newDivName = 'no division (unattached)';
-        }
-        schoolAdmins.forEach(a => {
-          const email = emailMap[a.id];
-          if (email) {
-            sendSchoolReassignmentEmail(email, prevSchool?.name || 'Your school', newDivName).catch(err =>
-              console.error('school-reassignment email failed:', err.message)
-            );
-          }
-        });
-      }
-
-      return res.status(200).json({ ok: true });
-    }
-
     // ── remove-school-admin ────────────────────────────────────────────
     if (action === 'remove-school-admin') {
       if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
@@ -673,33 +622,6 @@ async function sendTierChangeEmail(teacherEmail, detachedFrom) {
       `month and 50 MB of storage. Existing access codes will continue to work until they expire.`,
       ``,
       `If you believe this was done in error, please contact your ${orgLabel} administrator`,
-      `or reply to this email.`,
-      ``,
-      `— AudioProctor`,
-    ].join('\n'),
-  });
-}
-
-// ─── Email helper: school reassignment ────────────────────────────────────
-// Notifies school admins that their school has been moved to a new division.
-// 'newDivisionName' is the specific division name or 'no division (unattached)'.
-
-async function sendSchoolReassignmentEmail(adminEmail, schoolName, newDivisionName) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  await resend.emails.send({
-    from:    'AudioProctor <hello@audioproctor.com>',
-    to:      adminEmail,
-    subject: 'Your school has been reassigned on AudioProctor',
-    text: [
-      `Hi,`,
-      ``,
-      `${schoolName} has been reassigned to ${newDivisionName} on AudioProctor.`,
-      ``,
-      `All teacher accounts and uploaded assessments at your school are still intact.`,
-      `Your plan tier may have changed based on the new division's plan.`,
-      ``,
-      `If you believe this was done in error, please contact your administrator`,
       `or reply to this email.`,
       ``,
       `— AudioProctor`,
