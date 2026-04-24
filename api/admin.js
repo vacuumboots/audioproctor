@@ -365,7 +365,7 @@ module.exports = async (req, res) => {
           school_id:   schoolId   || null,
           division_id: divisionId || null,
         })
-        .select('token')
+        .select('id, token')
         .single();
       if (invErr) return res.status(500).json({ error: 'Could not create invitation' });
 
@@ -395,6 +395,8 @@ module.exports = async (req, res) => {
         emailError = err.message;
       }
 
+      logInviteEmail(supabase, invite.id, 'approve_request', emailOk, emailError);
+
       return res.status(200).json({ ok: true, inviteUrl, token: invite.token, emailOk, emailError });
     }
 
@@ -411,7 +413,7 @@ module.exports = async (req, res) => {
           school_id:   schoolId   || null,
           division_id: divisionId || null,
         })
-        .select('token')
+        .select('id, token')
         .single();
       if (invErr) return res.status(500).json({ error: 'Could not create invitation' });
 
@@ -430,6 +432,8 @@ module.exports = async (req, res) => {
         emailOk = false;
         emailError = err.message;
       }
+
+      logInviteEmail(supabase, invite.id, 'invite', emailOk, emailError);
 
       audit(supabase, user.id, 'invite', 'invitation', invite.token, null, { email, role, emailOk });
 
@@ -475,6 +479,8 @@ module.exports = async (req, res) => {
         emailOk = false;
         emailError = err.message;
       }
+
+      logInviteEmail(supabase, invite.id, 'resend', emailOk, emailError);
 
       audit(supabase, user.id, 'resend_invite', 'invitation', invite.token, null, { email: invite.email, role: invite.role, emailOk });
       return res.status(200).json({ ok: true, inviteUrl, emailOk, emailError });
@@ -775,6 +781,17 @@ function audit(supabase, actorId, action, targetType, targetId, before, after) {
     after_value:  after  ?? null,
   }).then(({ error }) => {
     if (error) console.error('audit log insert failed:', error.message);
+  });
+}
+
+function logInviteEmail(supabase, invitationId, action, emailOk, errorMessage) {
+  supabase.from('invite_email_log').insert({
+    invitation_id: invitationId ?? null,
+    action,
+    email_ok:      emailOk ?? null,
+    error_message: errorMessage ?? null,
+  }).then(({ error }) => {
+    if (error) console.error('invite email log insert failed:', error.message);
   });
 }
 

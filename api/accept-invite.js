@@ -28,8 +28,14 @@ module.exports = async (req, res) => {
       .maybeSingle();
 
     if (error || !invite) return res.status(404).json({ error: 'Invitation not found.' });
-    if (invite.accepted_at) return res.status(410).json({ error: 'This invitation has already been accepted.', reason: 'accepted' });
-    if (new Date(invite.expires_at) < new Date()) return res.status(410).json({ error: 'This invitation has expired.', reason: 'expired', expiredAt: invite.expires_at });
+    if (invite.accepted_at) {
+      logInviteEmail(supabase, invite.id, 'accept_already_accepted');
+      return res.status(410).json({ error: 'This invitation has already been accepted.', reason: 'accepted' });
+    }
+    if (new Date(invite.expires_at) < new Date()) {
+      logInviteEmail(supabase, invite.id, 'accept_expired');
+      return res.status(410).json({ error: 'This invitation has expired.', reason: 'expired', expiredAt: invite.expires_at });
+    }
 
     return res.status(200).json({
       email:        invite.email,
@@ -65,8 +71,14 @@ module.exports = async (req, res) => {
       .maybeSingle();
 
     if (invErr || !invite) return res.status(404).json({ error: 'Invitation not found.' });
-    if (invite.accepted_at) return res.status(410).json({ error: 'This invitation has already been accepted.', reason: 'accepted' });
-    if (new Date(invite.expires_at) < new Date()) return res.status(410).json({ error: 'This invitation has expired.', reason: 'expired', expiredAt: invite.expires_at });
+    if (invite.accepted_at) {
+      logInviteEmail(supabase, invite.id, 'accept_already_accepted');
+      return res.status(410).json({ error: 'This invitation has already been accepted.', reason: 'accepted' });
+    }
+    if (new Date(invite.expires_at) < new Date()) {
+      logInviteEmail(supabase, invite.id, 'accept_expired');
+      return res.status(410).json({ error: 'This invitation has expired.', reason: 'expired', expiredAt: invite.expires_at });
+    }
 
     if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
       return res.status(403).json({
@@ -103,3 +115,14 @@ module.exports = async (req, res) => {
 
   return res.status(405).json({ error: 'Method not allowed' });
 };
+
+function logInviteEmail(supabase, invitationId, action, emailOk, errorMessage) {
+  supabase.from('invite_email_log').insert({
+    invitation_id: invitationId ?? null,
+    action,
+    email_ok:      emailOk ?? null,
+    error_message: errorMessage ?? null,
+  }).then(({ error }) => {
+    if (error) console.error('invite email log insert failed:', error.message);
+  });
+}
