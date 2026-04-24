@@ -137,7 +137,7 @@ module.exports = async (req, res) => {
       const { data, error } = await supabase
         .from('profiles')
         .select(`
-          id, role, tier, tier_override, country_code, division_name, notes, school_id, division_id,
+          id, role, tier, tier_override, country_code, division_name, notes, school_id, division_id, is_deactivated,
           schools(name), divisions(name)
         `)
         .order('id', { ascending: true })

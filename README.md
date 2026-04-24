@@ -121,8 +121,9 @@ STRIPE_PRICE_ID=
         ├── 010             # demo data helpers
         ├── 011             # rate_limit_log RLS
         ├── 012             # security hardening
-        ├── 013             # Stripe columns on profiles
-        └── 014             # teacher_requests table
+        ├── 015             # invite email log
+        └── 016             # auto trial, teacher requests, enhanced get_effective_tier()
+        └── 017             # block uploads for deactivated teachers
 ```
 
 ---
@@ -156,6 +157,8 @@ Both `dashboard.js` and `extension/player.js` use identical `hashWord()` — SHA
 | Division | All teachers in a division | Division contract (from $800 CAD/yr) |
 
 Tiers cascade: `tier_override → division.tier → school.tier → profiles.tier → free`. Resolved server-side by `get_effective_tier(user_id)` Postgres function — called via RPC so the cascade is always current.
+
+See [`docs/account-lifecycle-states.md`](docs/account-lifecycle-states.md) for the complete state matrix: what happens when a teacher is detached, deactivated, lapsed, or deleted.
 
 ---
 

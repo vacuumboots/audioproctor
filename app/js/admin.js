@@ -263,9 +263,13 @@ function renderTeachers(teachers) {
 
     const effectiveTier = t.tier_override || t.tier || 'free';
 
+    const deactivatedBadge = t.is_deactivated
+      ? `<span style="color:var(--accent); font-size:0.75rem; margin-left:0.4rem;">(deactivated)</span>`
+      : '';
+
     return `
-      <tr>
-        <td style="font-size:0.85rem;">${escapeHtml(t.email || '—')}</td>
+      <tr style="${t.is_deactivated ? 'opacity:0.55;' : ''}">
+        <td style="font-size:0.85rem;">${escapeHtml(t.email || '—')}${deactivatedBadge}</td>
         <td style="font-size:0.82rem;">${org}</td>
         <td>
           <select class="tier-select" onchange="setTier('teacher','${t.id}',this.value)">
