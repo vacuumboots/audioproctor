@@ -205,6 +205,20 @@ module.exports = async (req, res) => {
       });
     }
 
+    if (action === 'list-invitations') {
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('id, email, role, school_id, division_id, token, expires_at, accepted_at, created_at, schools(name), divisions(name)')
+        .is('accepted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) {
+        console.error('admin list-invitations failed:', error.message);
+        return res.status(500).json({ error: 'Could not load invitations' });
+      }
+      return res.status(200).json(data);
+    }
+
     if (action === 'list-requests') {
       const { data, error } = await supabase
         .from('teacher_requests')
@@ -420,6 +434,50 @@ module.exports = async (req, res) => {
       audit(supabase, user.id, 'invite', 'invitation', invite.token, null, { email, role, emailOk });
 
       return res.status(200).json({ ok: true, inviteUrl, token: invite.token, emailOk, emailError });
+    }
+
+    if (action === 'resend-invite') {
+      const { invitationId } = body;
+      if (!invitationId) return res.status(400).json({ error: 'invitationId required' });
+
+      const { data: invite, error: fetchErr } = await supabase
+        .from('invitations')
+        .select('id, email, role, school_id, division_id, token, accepted_at, schools(name), divisions(name)')
+        .eq('id', invitationId)
+        .single();
+
+      if (fetchErr || !invite) return res.status(404).json({ error: 'Invitation not found' });
+      if (invite.accepted_at) return res.status(400).json({ error: 'Invitation already accepted' });
+
+      const newExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { error: updateErr } = await supabase
+        .from('invitations')
+        .update({ expires_at: newExpires })
+        .eq('id', invitationId);
+
+      if (updateErr) {
+        console.error('resend-invite update failed:', updateErr.message);
+        return res.status(500).json({ error: 'Could not update invitation' });
+      }
+
+      const inviteUrl = `https://app.audioproctor.com/accept-invite.html?token=${invite.token}`;
+      let emailOk = true;
+      let emailError = null;
+      try {
+        const orgName = invite.schools?.name || invite.divisions?.name || null;
+        const { subject, text, html } = buildInviteEmail({ role: invite.role, inviteUrl, orgName });
+        const emailResult = await sendEmail({ to: invite.email, subject, text, html });
+        if (!emailResult.ok) {
+          emailOk = false;
+          emailError = emailResult.error;
+        }
+      } catch (err) {
+        emailOk = false;
+        emailError = err.message;
+      }
+
+      audit(supabase, user.id, 'resend_invite', 'invitation', invite.token, null, { email: invite.email, role: invite.role, emailOk });
+      return res.status(200).json({ ok: true, inviteUrl, emailOk, emailError });
     }
 
     if (action === 'reject-request') {

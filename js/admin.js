@@ -35,7 +35,7 @@ async function initAdmin(user) {
     return;
   }
 
-  await Promise.all([loadOverview(), loadDivisions(), loadSchools(), loadTeachers(), loadRequests()]);
+  await Promise.all([loadOverview(), loadDivisions(), loadSchools(), loadTeachers(), loadRequests(), loadInvitations()]);
   loadDemoPanel();
 }
 
@@ -503,6 +503,92 @@ async function loadRequests() {
       </table>`;
   } catch (err) {
     container.innerHTML = `<p class="label" style="color:var(--accent);">Could not load requests: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function loadInvitations() {
+  const container = document.getElementById('invitations-container');
+  if (!container) return;
+
+  try {
+    const invitations = await adminApi('list-invitations');
+
+    const now = new Date();
+    const pending = invitations.filter(i => new Date(i.expires_at) > now);
+    const expired = invitations.filter(i => new Date(i.expires_at) <= now);
+
+    const tab = document.getElementById('invitations-tab');
+    if (tab) tab.textContent = pending.length > 0 ? `Invitations (${pending.length})` : 'Invitations';
+
+    if (!invitations.length) {
+      container.innerHTML = `<div class="empty-state"><p class="label">No pending invitations</p></div>`;
+      return;
+    }
+
+    const renderRows = (list, isExpired) => list.map(inv => {
+      const date = new Date(inv.created_at).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
+      const expDate = new Date(inv.expires_at).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
+      const org = inv.schools?.name || inv.divisions?.name || '—';
+      const status = isExpired
+        ? `<span style="color:var(--accent);">Expired ${expDate}</span>`
+        : `<span style="color:#4a7c59;">Expires ${expDate}</span>`;
+      return `
+        <tr>
+          <td><strong>${escapeHtml(inv.email)}</strong></td>
+          <td style="font-size:0.85rem;">${escapeHtml(inv.role.replace(/_/g, ' '))}</td>
+          <td style="font-size:0.85rem;">${escapeHtml(org)}</td>
+          <td style="font-size:0.8rem; color:var(--muted);">${date}</td>
+          <td>${status}</td>
+          <td>
+            <button class="btn btn--ghost btn--small" onclick="resendInvite('${inv.id}', '${escapeHtml(inv.email)}')">Resend</button>
+          </td>
+          <td id="resend-status-${inv.id}"></td>
+        </tr>`;
+    }).join('');
+
+    let html = '';
+    if (pending.length) {
+      html += `
+        <p class="label" style="margin-bottom:0.5rem;">Active</p>
+        <table class="admin-table">
+          <thead>
+            <tr><th>Email</th><th>Role</th><th>Org</th><th>Sent</th><th>Status</th><th>Actions</th><th></th></tr>
+          </thead>
+          <tbody>${renderRows(pending, false)}</tbody>
+        </table>`;
+    }
+    if (expired.length) {
+      html += `
+        <p class="label" style="margin:1.5rem 0 0.5rem;">Expired</p>
+        <table class="admin-table">
+          <thead>
+            <tr><th>Email</th><th>Role</th><th>Org</th><th>Sent</th><th>Status</th><th>Actions</th><th></th></tr>
+          </thead>
+          <tbody>${renderRows(expired, true)}</tbody>
+        </table>`;
+    }
+
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = `<p class="label" style="color:var(--accent);">Could not load invitations: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function resendInvite(invitationId, email) {
+  if (!confirm(`Resend invitation to ${email}?`)) return;
+  try {
+    const data = await adminApi('resend-invite', 'POST', { invitationId });
+    const cell = document.getElementById(`resend-status-${invitationId}`);
+    if (cell) {
+      if (data.emailOk === false) {
+        cell.innerHTML = `<span style="color:var(--accent); font-size:0.75rem;">Email failed: ${escapeHtml(data.emailError || 'Unknown')}</span>`;
+      } else {
+        cell.innerHTML = `<span style="color:#4a7c59; font-size:0.75rem;">Resent</span>`;
+      }
+    }
+    await loadInvitations();
+  } catch (err) {
+    alert('Could not resend invitation: ' + err.message);
   }
 }
 
