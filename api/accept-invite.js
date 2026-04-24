@@ -3,6 +3,7 @@
 // POST { token }      — Bearer JWT; attach signed-in user to the invited org
 
 const { createClient } = require('@supabase/supabase-js');
+const { sendEmail } = require('./_lib/email');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin',  'https://app.audioproctor.com');
@@ -108,6 +109,16 @@ module.exports = async (req, res) => {
     if (acceptErr) {
       console.error('accept-invite invitation update failed:', acceptErr.message);
       return res.status(500).json({ error: 'Could not mark invitation accepted. Please contact hello@audioproctor.com.' });
+    }
+
+    // Fire-and-forget welcome email — don't block the response
+    try {
+      const welcomeSubject = 'Welcome to AudioProctor';
+      const welcomeText = `Hi there,\n\nWelcome to AudioProctor! Your account is now active and you can start creating audio assessments for your students.\n\nIf you have any questions, reply to this email or contact us at hello@audioproctor.com.\n\n— The AudioProctor Team`;
+      const welcomeHtml = `<p>Hi there,</p><p>Welcome to AudioProctor! Your account is now active and you can start creating audio assessments for your students.</p><p>If you have any questions, reply to this email or contact us at <a href="mailto:hello@audioproctor.com">hello@audioproctor.com</a>.</p><p>— The AudioProctor Team</p>`;
+      sendEmail({ to: invite.email, subject: welcomeSubject, text: welcomeText, html: welcomeHtml }).catch(() => {});
+    } catch {
+      // ignore — welcome email is best-effort
     }
 
     return res.status(200).json({ ok: true, role: invite.role });
