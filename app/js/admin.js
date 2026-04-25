@@ -115,7 +115,10 @@ async function loadDivisions() {
               onblur="setNotes('division','${d.id}',this.value)"
               onkeydown="if(event.key==='Enter')this.blur()">
           </td>
-          <td><span class="label" style="font-family:monospace; text-transform:none; letter-spacing:0; font-size:0.7rem;">${d.id.slice(0,8)}…</span></td>
+          <td>
+            <button class="btn btn--small" style="border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
+              onclick="deleteDivision('${d.id}', '${escapeHtml(d.name)}')">Delete</button>
+          </td>
         </tr>`;
     }).join('');
 
@@ -128,7 +131,7 @@ async function loadDivisions() {
             <th>Tier</th>
             <th>Expires</th>
             <th>Notes / Flags</th>
-            <th>ID</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -186,7 +189,10 @@ async function loadSchools() {
               onblur="setNotes('school','${s.id}',this.value)"
               onkeydown="if(event.key==='Enter')this.blur()">
           </td>
-          <td><span class="label" style="font-family:monospace; text-transform:none; letter-spacing:0; font-size:0.7rem;">${s.id.slice(0,8)}…</span></td>
+          <td>
+            <button class="btn btn--small" style="border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
+              onclick="deleteSchool('${s.id}', '${escapeHtml(s.name)}')">Delete</button>
+          </td>
         </tr>`;
     }).join('');
 
@@ -198,7 +204,7 @@ async function loadSchools() {
             <th>Division</th>
             <th>Tier</th>
             <th>Notes / Flags</th>
-            <th>ID</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -294,6 +300,8 @@ function renderTeachers(teachers) {
         </td>
         <td>
           <button class="btn btn--ghost btn--small" onclick="openReassignModal('${t.id}', '${escapeHtml(t.email || '')}', '${t.school_id || ''}', '${t.division_id || ''}')">Reassign</button>
+          <button class="btn btn--small" style="margin-left:0.5rem; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
+            onclick="deleteTeacher('${t.id}', '${escapeHtml(t.email || '')}')">Delete</button>
         </td>
       </tr>`;
   }).join('');
@@ -382,6 +390,36 @@ async function submitReassign(userId) {
     await loadTeachers();
   } catch (err) {
     alert('Could not reassign teacher: ' + err.message);
+  }
+}
+
+async function deleteTeacher(userId, email) {
+  if (!confirm(`Permanently delete teacher ${email || userId} and all their uploads? This cannot be undone.`)) return;
+  try {
+    await adminApi('delete-teacher', 'POST', { userId });
+    await Promise.all([loadTeachers(), loadOverview()]);
+  } catch (err) {
+    alert('Could not delete teacher: ' + err.message);
+  }
+}
+
+async function deleteSchool(schoolId, name) {
+  if (!confirm(`Delete school "${name || schoolId}"? Teachers currently in this school will become unattached. This cannot be undone.`)) return;
+  try {
+    await adminApi('delete-school', 'POST', { schoolId });
+    await Promise.all([loadSchools(), loadDivisions(), loadTeachers(), loadOverview()]);
+  } catch (err) {
+    alert('Could not delete school: ' + err.message);
+  }
+}
+
+async function deleteDivision(divisionId, name) {
+  if (!confirm(`Delete division "${name || divisionId}"? Schools and teachers in this division will become unattached. This cannot be undone.`)) return;
+  try {
+    await adminApi('delete-division', 'POST', { divisionId });
+    await Promise.all([loadDivisions(), loadSchools(), loadTeachers(), loadOverview()]);
+  } catch (err) {
+    alert('Could not delete division: ' + err.message);
   }
 }
 

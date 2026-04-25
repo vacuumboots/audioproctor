@@ -152,9 +152,9 @@ Teachers are not notified when their account is suspended or restored. Acceptabl
 
 Teachers discover expiry via the dashboard banner. No proactive email is sent.
 
-### Gap 4: Admin-initiated deletion not built
+### Gap 4: Admin-initiated deletion
 
-Platform admin cannot delete a teacher account from the admin dashboard. Must be done manually via SQL or by asking the teacher to self-delete.
+Platform admin can delete teacher accounts, schools, and divisions from `/admin.html`. Teacher deletion removes uploads, session events, storage files, the profile row, and the auth user. School/division deletion detaches teachers via `ON DELETE SET NULL` and removes invitations via `ON DELETE CASCADE`.
 
 ---
 

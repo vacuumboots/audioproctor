@@ -614,6 +614,87 @@ module.exports = async (req, res) => {
       }
     }
 
+    if (action === 'delete-teacher') {
+      const { userId } = body;
+      if (!userId) return res.status(400).json({ error: 'userId required' });
+      if (userId === user.id) return res.status(400).json({ error: 'You cannot delete your own account' });
+
+      const { data: targetProfile } = await supabase.from('profiles').select('role, display_name').eq('id', userId).single();
+      if (!targetProfile) return res.status(404).json({ error: 'Teacher not found' });
+      if (targetProfile.role === 'platform_admin') return res.status(403).json({ error: 'Cannot delete platform admin accounts' });
+
+      const { data: uploads } = await supabase.from('uploads').select('storage_path').eq('teacher_id', userId);
+      const uniquePaths = [...new Set((uploads || []).map(u => u.storage_path))];
+
+      if (uniquePaths.length > 0) {
+        await supabase.storage.from('audio-files').remove(uniquePaths);
+      }
+
+      const { error: uploadsErr } = await supabase.from('uploads').delete().eq('teacher_id', userId);
+      if (uploadsErr) {
+        console.error('delete-teacher: uploads delete failed:', uploadsErr.message);
+        return res.status(500).json({ error: 'Could not delete teacher uploads' });
+      }
+
+      const { error: profileErr } = await supabase.from('profiles').delete().eq('id', userId);
+      if (profileErr) {
+        console.error('delete-teacher: profile delete failed:', profileErr.message);
+        return res.status(500).json({ error: 'Could not delete teacher profile' });
+      }
+
+      audit(supabase, user.id, 'delete_teacher', 'teacher', userId,
+        { role: targetProfile.role, display_name: targetProfile.display_name, storage_files: uniquePaths.length }, null);
+
+      const { error: authErr } = await supabase.auth.admin.deleteUser(userId);
+      if (authErr) {
+        console.error('delete-teacher: auth delete failed:', authErr.message);
+        return res.status(500).json({ error: 'Could not complete teacher deletion. Teacher data was removed but auth record remains.' });
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'delete-school') {
+      const { schoolId } = body;
+      if (!schoolId) return res.status(400).json({ error: 'schoolId required' });
+
+      const { data: school, error: schoolErr } = await supabase.from('schools').select('name').eq('id', schoolId).single();
+      if (schoolErr || !school) return res.status(404).json({ error: 'School not found' });
+
+      const { count: teacherCount } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('school_id', schoolId);
+
+      const { error } = await supabase.from('schools').delete().eq('id', schoolId);
+      if (error) {
+        console.error('delete-school failed:', error.message);
+        return res.status(500).json({ error: 'Could not delete school' });
+      }
+
+      audit(supabase, user.id, 'delete_school', 'school', schoolId,
+        { name: school.name, attached_teachers: teacherCount || 0 }, null);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'delete-division') {
+      const { divisionId } = body;
+      if (!divisionId) return res.status(400).json({ error: 'divisionId required' });
+
+      const { data: division, error: divErr } = await supabase.from('divisions').select('name').eq('id', divisionId).single();
+      if (divErr || !division) return res.status(404).json({ error: 'Division not found' });
+
+      const { count: schoolCount } = await supabase.from('schools').select('id', { count: 'exact', head: true }).eq('division_id', divisionId);
+      const { count: teacherCount } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('division_id', divisionId);
+
+      const { error } = await supabase.from('divisions').delete().eq('id', divisionId);
+      if (error) {
+        console.error('delete-division failed:', error.message);
+        return res.status(500).json({ error: 'Could not delete division' });
+      }
+
+      audit(supabase, user.id, 'delete_division', 'division', divisionId,
+        { name: division.name, attached_schools: schoolCount || 0, attached_teachers: teacherCount || 0 }, null);
+      return res.status(200).json({ ok: true });
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   }
 
