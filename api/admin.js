@@ -800,6 +800,27 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    if (action === 'toggle-deactivation') {
+      const { userId, deactivated } = body;
+      if (!userId) return res.status(400).json({ error: 'userId required' });
+      if (userId === user.id) return res.status(400).json({ error: 'You cannot deactivate your own account' });
+      if (typeof deactivated !== 'boolean') return res.status(400).json({ error: 'deactivated must be a boolean' });
+
+      const { data: targetProfile } = await supabase.from('profiles').select('role, is_deactivated, display_name').eq('id', userId).single();
+      if (!targetProfile) return res.status(404).json({ error: 'Teacher not found' });
+      if (targetProfile.role === 'platform_admin') return res.status(403).json({ error: 'Cannot modify platform admin accounts' });
+
+      const { error } = await supabase.from('profiles').update({ is_deactivated: deactivated }).eq('id', userId);
+      if (error) {
+        console.error('toggle-deactivation failed:', error.message);
+        return res.status(500).json({ error: 'Could not update deactivation status' });
+      }
+
+      audit(supabase, user.id, deactivated ? 'deactivate_teacher' : 'reactivate_teacher', 'teacher', userId,
+        { is_deactivated: targetProfile.is_deactivated }, { is_deactivated: deactivated });
+      return res.status(200).json({ ok: true, is_deactivated: deactivated });
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   }
 

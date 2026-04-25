@@ -363,6 +363,10 @@ function renderTeachers(teachers) {
       ? `<span style="color:var(--accent); font-size:0.75rem; margin-left:0.4rem;">(deactivated)</span>`
       : '';
 
+    const deactivateBtn = t.is_deactivated
+      ? `<button class="btn btn--ghost btn--small" onclick="toggleDeactivation('${escapeHtml(t.id)}', false, this)">Reactivate</button>`
+      : `<button class="btn btn--small" style="border:1px solid var(--warm-mid); background:transparent; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;" onclick="toggleDeactivation('${escapeHtml(t.id)}', true, this)">Deactivate</button>`;
+
     return `
       <tr style="${t.is_deactivated ? 'opacity:0.55;' : ''}">
         <td style="font-size:0.85rem;">${escapeHtml(t.email || '—')}${deactivatedBadge}</td>
@@ -389,6 +393,7 @@ function renderTeachers(teachers) {
             onkeydown="if(event.key==='Enter')this.blur()">
         </td>
         <td>
+          ${deactivateBtn}
           <button class="btn btn--ghost btn--small" onclick="openReassignModal('${t.id}', '${escapeHtml(t.email || '')}', '${t.school_id || ''}', '${t.division_id || ''}')">Reassign</button>
           <button class="btn btn--small" style="margin-left:0.5rem; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
             onclick="deleteTeacher('${t.id}', '${escapeHtml(t.email || '')}')">Delete</button>
@@ -573,7 +578,24 @@ async function setNotes(entityType, entityId, notes) {
   }
 }
 
-// ─── Tab switching ────────────────────────────────────────────────
+async function toggleDeactivation(userId, deactivate, btn) {
+  const actionLabel = deactivate ? 'Deactivate' : 'Reactivate';
+  if (!confirm(`${actionLabel} this teacher?`)) return;
+
+  btn.disabled    = true;
+  btn.textContent = `${actionLabel}…`;
+
+  try {
+    await adminApi('toggle-deactivation', 'POST', { userId, deactivated: deactivate });
+    await loadTeachers();
+  } catch (err) {
+    alert('Could not update status: ' + err.message);
+    btn.disabled    = false;
+    btn.textContent = actionLabel;
+  }
+}
+
+// ─── Tab switching ────────────────────────────────────────────────────────────────────
 
 function switchTab(name, btn) {
   document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('admin-panel--active'));
