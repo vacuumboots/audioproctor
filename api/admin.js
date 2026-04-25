@@ -251,6 +251,111 @@ module.exports = async (req, res) => {
       return res.status(200).json(data);
     }
 
+    if (action === 'platform-analytics') {
+      // 1. Platform totals from upload_summaries
+      const { data: allSums } = await supabase
+        .from('upload_summaries')
+        .select('total_sessions, completions, replays, avg_listen_seconds');
+
+      let totalSessions = 0, totalCompletions = 0, totalReplays = 0;
+      let avgListenSum = 0, avgListenCount = 0;
+      (allSums || []).forEach(s => {
+        totalSessions    += s.total_sessions || 0;
+        totalCompletions += s.completions    || 0;
+        totalReplays     += s.replays        || 0;
+        if (s.avg_listen_seconds) {
+          avgListenSum   += s.avg_listen_seconds;
+          avgListenCount += 1;
+        }
+      });
+
+      // 2. Per-division breakdown
+      const [{ data: divisions }, { data: allSchools }, { data: allProfiles }, { data: allUploads }] = await Promise.all([
+        supabase.from('divisions').select('id, name'),
+        supabase.from('schools').select('id, division_id'),
+        supabase.from('profiles').select('id, division_id, school_id'),
+        supabase.from('uploads').select('id, teacher_id'),
+      ]);
+
+      const schoolToDivision = {};
+      (allSchools || []).forEach(s => { schoolToDivision[s.id] = s.division_id; });
+
+      const teacherToDivision = {};
+      (allProfiles || []).forEach(p => {
+        teacherToDivision[p.id] = p.division_id || schoolToDivision[p.school_id] || null;
+      });
+
+      const uploadToTeacher = {};
+      (allUploads || []).forEach(u => { uploadToTeacher[u.id] = u.teacher_id; });
+
+      const divStats = {};
+      (divisions || []).forEach(d => {
+        divStats[d.id] = { id: d.id, name: d.name, sessions: 0, completions: 0, replays: 0, uploads: 0 };
+      });
+
+      // Count uploads per division
+      (allUploads || []).forEach(u => {
+        const did = teacherToDivision[u.teacher_id];
+        if (did && divStats[did]) divStats[did].uploads += 1;
+      });
+
+      // Aggregate summaries per division
+      (allSums || []).forEach(s => {
+        const tid = uploadToTeacher[s.upload_id];
+        const did = teacherToDivision[tid];
+        if (did && divStats[did]) {
+          divStats[did].sessions    += s.total_sessions || 0;
+          divStats[did].completions += s.completions    || 0;
+          divStats[did].replays     += s.replays        || 0;
+        }
+      });
+
+      // 3. Weekly activity (last 12 weeks)
+      const twelveWeeksAgo = new Date(Date.now() - 12 * 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: events } = await supabase
+        .from('session_events')
+        .select('event_type, occurred_at')
+        .in('event_type', ['code_entered', 'playback_completed'])
+        .gte('occurred_at', twelveWeeksAgo);
+
+      const weeklyData = {};
+      (events || []).forEach(e => {
+        const d   = new Date(e.occurred_at);
+        const day = d.getUTCDay();
+        const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+        const wkStart = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
+        const key = wkStart.toISOString().slice(0, 10);
+        if (!weeklyData[key]) weeklyData[key] = { week: key, sessions: 0, completions: 0 };
+        if (e.event_type === 'code_entered')       weeklyData[key].sessions++;
+        if (e.event_type === 'playback_completed') weeklyData[key].completions++;
+      });
+
+      const weeklyActivity = [];
+      for (let i = 11; i >= 0; i--) {
+        const base = new Date();
+        const day  = base.getUTCDay();
+        const diff = base.getUTCDate() - day + (day === 0 ? -6 : 1) - i * 7;
+        const wkStart = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), diff));
+        const key = wkStart.toISOString().slice(0, 10);
+        weeklyActivity.push(weeklyData[key] || { week: key, sessions: 0, completions: 0 });
+      }
+
+      return res.status(200).json({
+        totalSessions,
+        totalCompletions,
+        completionRate:   totalSessions > 0 ? Math.round(totalCompletions / totalSessions * 100) : null,
+        totalReplays,
+        avgListenSeconds: avgListenCount > 0 ? Math.round(avgListenSum / avgListenCount) : null,
+        divisions: Object.values(divStats)
+          .map(d => ({
+            ...d,
+            completionRate: d.sessions > 0 ? Math.round(d.completions / d.sessions * 100) : null,
+          }))
+          .sort((a, b) => b.sessions - a.sessions),
+        weeklyActivity,
+      });
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   }
 

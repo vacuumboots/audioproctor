@@ -145,6 +145,8 @@ function renderSchoolsTable(schools, container) {
       <td><strong>${escapeHtml(s.name)}</strong></td>
       <td style="text-align:center;">${s.teacher_count}</td>
       <td style="text-align:center;">${s.total_sessions}</td>
+      <td style="text-align:center;">${s.completion_rate != null ? s.completion_rate + '%' : '—'}</td>
+      <td style="text-align:center;">${s.replays}</td>
       <td>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
           <button class="btn btn--ghost btn--small" onclick="openDrillDown('${s.id}', '${escapeHtml(s.name)}')">View Teachers</button>
@@ -160,6 +162,8 @@ function renderSchoolsTable(schools, container) {
           <th>School</th>
           <th style="text-align:center;">Teachers</th>
           <th style="text-align:center;">Sessions</th>
+          <th style="text-align:center;">Completion</th>
+          <th style="text-align:center;">Replays</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -208,12 +212,19 @@ async function openDrillDown(schoolId, schoolName) {
       const roleTag = t.role === 'school_admin'
         ? `<span style="display:inline-block; padding:0.1rem 0.45rem; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:500; border:1px solid var(--ink);">Admin</span> `
         : '';
+      const listenTime = t.avg_listen_seconds != null
+        ? `${Math.floor(t.avg_listen_seconds / 60)}:${String(t.avg_listen_seconds % 60).padStart(2, '0')}`
+        : '—';
+      const completionRate = t.completion_rate != null ? `${t.completion_rate}%` : '—';
 
       return `
         <tr>
           <td>${roleTag}<span style="font-size:0.85rem;">${escapeHtml(t.email || '—')}</span></td>
           <td style="text-align:center;">${t.upload_count}</td>
           <td style="text-align:center;">${t.session_count}</td>
+          <td style="text-align:center;">${completionRate}</td>
+          <td style="text-align:center;">${t.replays}</td>
+          <td style="text-align:center;">${listenTime}</td>
           <td style="color:var(--muted); font-size:0.82rem;">${lastActive}</td>
           <td>
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
@@ -231,6 +242,9 @@ async function openDrillDown(schoolId, schoolName) {
             <th>Email</th>
             <th style="text-align:center;">Uploads</th>
             <th style="text-align:center;">Sessions</th>
+            <th style="text-align:center;">Completion</th>
+            <th style="text-align:center;">Replays</th>
+            <th style="text-align:center;">Avg Listen</th>
             <th>Last Active</th>
             <th>Actions</th>
           </tr>

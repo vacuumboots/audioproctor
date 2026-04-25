@@ -183,6 +183,7 @@
       <button class="admin-tab admin-tab--active" onclick="switchTab('divisions', this)">Divisions</button>
       <button class="admin-tab" onclick="switchTab('schools', this)">Schools</button>
       <button class="admin-tab" onclick="switchTab('teachers', this)">Teachers</button>
+      <button class="admin-tab" onclick="switchTab('analytics', this)">Analytics</button>
       <button class="admin-tab" id="requests-tab" onclick="switchTab('requests', this)">Requests</button>
       <button class="admin-tab" id="invitations-tab" onclick="switchTab('invitations', this)">Invitations</button>
       <button class="admin-tab" id="anomaly-tab" onclick="switchTab('anomalies', this)">Anomalies</button>
@@ -266,6 +267,50 @@
       </div>
       <div id="teachers-container">
         <div class="empty-state"><p class="label">Loading…</p></div>
+      </div>
+    </div>
+
+    <!-- Analytics panel -->
+    <div id="panel-analytics" class="admin-panel">
+      <div class="stats-row" style="grid-template-columns: repeat(5, 1fr);">
+        <div class="stat-box">
+          <div id="pa-sessions" class="stat-box__value">—</div>
+          <div class="label">Total Sessions</div>
+        </div>
+        <div class="stat-box">
+          <div id="pa-completions" class="stat-box__value">—</div>
+          <div class="label">Completions</div>
+        </div>
+        <div class="stat-box">
+          <div id="pa-rate" class="stat-box__value">—</div>
+          <div class="label">Completion Rate</div>
+        </div>
+        <div class="stat-box">
+          <div id="pa-replays" class="stat-box__value">—</div>
+          <div class="label">Replays</div>
+        </div>
+        <div class="stat-box">
+          <div id="pa-listen" class="stat-box__value">—</div>
+          <div class="label">Avg Listen</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card__header">
+          <p class="label">Platform Activity</p>
+        </div>
+        <div id="pa-activity-chart">
+          <div class="empty-state"><p class="label">Loading…</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__header">
+          <p class="label">Per-Division Breakdown</p>
+        </div>
+        <div id="pa-divisions-container">
+          <div class="empty-state"><p class="label">Loading…</p></div>
+        </div>
       </div>
     </div>
 

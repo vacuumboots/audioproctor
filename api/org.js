@@ -64,7 +64,10 @@ module.exports = async (req, res) => {
 
   // Build upload→teacher map and return summaries keyed by teacher_id
   async function getTeacherSessionStats(teacherIds) {
-    if (!teacherIds.length) return { uploadCountMap: {}, sessionCountMap: {}, lastActiveMap: {} };
+    if (!teacherIds.length) return {
+      uploadCountMap: {}, sessionCountMap: {}, completionCountMap: {},
+      replayCountMap: {}, avgListenMap: {}, lastActiveMap: {},
+    };
 
     const { data: tUploads } = await supabase
       .from('uploads')
@@ -81,26 +84,41 @@ module.exports = async (req, res) => {
       allUploadIds.push(u.id);
     });
 
-    const sessionCountMap = {};
-    const lastActiveMap   = {};
+    const sessionCountMap    = {};
+    const completionCountMap = {};
+    const replayCountMap     = {};
+    const avgListenAcc       = {};
+    const lastActiveMap      = {};
 
     if (allUploadIds.length) {
       const { data: sums } = await supabase
         .from('upload_summaries')
-        .select('upload_id, total_sessions, last_used_at')
+        .select('upload_id, total_sessions, completions, replays, avg_listen_seconds, last_used_at')
         .in('upload_id', allUploadIds);
 
       (sums || []).forEach(s => {
         const tid = uploadToTeacher[s.upload_id];
         if (!tid) return;
-        sessionCountMap[tid] = (sessionCountMap[tid] || 0) + (s.total_sessions || 0);
+        sessionCountMap[tid]    = (sessionCountMap[tid] || 0) + (s.total_sessions || 0);
+        completionCountMap[tid] = (completionCountMap[tid] || 0) + (s.completions || 0);
+        replayCountMap[tid]     = (replayCountMap[tid] || 0) + (s.replays || 0);
+        if (s.avg_listen_seconds) {
+          if (!avgListenAcc[tid]) avgListenAcc[tid] = { sum: 0, count: 0 };
+          avgListenAcc[tid].sum   += s.avg_listen_seconds;
+          avgListenAcc[tid].count += 1;
+        }
         if (!lastActiveMap[tid] || s.last_used_at > lastActiveMap[tid]) {
           lastActiveMap[tid] = s.last_used_at;
         }
       });
     }
 
-    return { uploadCountMap, sessionCountMap, lastActiveMap };
+    const avgListenMap = {};
+    Object.entries(avgListenAcc).forEach(([tid, acc]) => {
+      avgListenMap[tid] = acc.count > 0 ? Math.round(acc.sum / acc.count) : null;
+    });
+
+    return { uploadCountMap, sessionCountMap, completionCountMap, replayCountMap, avgListenMap, lastActiveMap };
   }
 
   // ─── GET routes ────────────────────────────────────────────────────────
@@ -134,15 +152,19 @@ module.exports = async (req, res) => {
       const emailMap = await getAllUserEmails(supabase);
 
       const teacherIds = (teachers || []).map(t => t.id);
-      const { uploadCountMap, sessionCountMap, lastActiveMap } = await getTeacherSessionStats(teacherIds);
+      const { uploadCountMap, sessionCountMap, completionCountMap, replayCountMap, avgListenMap, lastActiveMap } = await getTeacherSessionStats(teacherIds);
 
       return res.status(200).json(
         (teachers || []).map(t => ({
           ...t,
-          email:         emailMap[t.id] || null,
-          upload_count:  uploadCountMap[t.id]  || 0,
-          session_count: sessionCountMap[t.id] || 0,
-          last_active:   lastActiveMap[t.id]   || null,
+          email:            emailMap[t.id] || null,
+          upload_count:     uploadCountMap[t.id]  || 0,
+          session_count:    sessionCountMap[t.id] || 0,
+          completion_count: completionCountMap[t.id] || 0,
+          completion_rate:  (sessionCountMap[t.id] || 0) > 0 ? Math.round((completionCountMap[t.id] || 0) / sessionCountMap[t.id] * 100) : null,
+          replays:          replayCountMap[t.id] || 0,
+          avg_listen_seconds: avgListenMap[t.id] || null,
+          last_active:      lastActiveMap[t.id]   || null,
         }))
       );
     }
@@ -213,16 +235,20 @@ module.exports = async (req, res) => {
       const emailMap = await getAllUserEmails(supabase);
 
       const teacherIds = (teachers || []).map(t => t.id);
-      const { uploadCountMap, sessionCountMap, lastActiveMap } = await getTeacherSessionStats(teacherIds);
+      const { uploadCountMap, sessionCountMap, completionCountMap, replayCountMap, avgListenMap, lastActiveMap } = await getTeacherSessionStats(teacherIds);
 
       return res.status(200).json({
         school,
         teachers: (teachers || []).map(t => ({
           ...t,
-          email:         emailMap[t.id] || null,
-          upload_count:  uploadCountMap[t.id]  || 0,
-          session_count: sessionCountMap[t.id] || 0,
-          last_active:   lastActiveMap[t.id]   || null,
+          email:            emailMap[t.id] || null,
+          upload_count:     uploadCountMap[t.id]  || 0,
+          session_count:    sessionCountMap[t.id] || 0,
+          completion_count: completionCountMap[t.id] || 0,
+          completion_rate:  (sessionCountMap[t.id] || 0) > 0 ? Math.round((completionCountMap[t.id] || 0) / sessionCountMap[t.id] * 100) : null,
+          replays:          replayCountMap[t.id] || 0,
+          avg_listen_seconds: avgListenMap[t.id] || null,
+          last_active:      lastActiveMap[t.id]   || null,
         })),
       });
     }
@@ -269,21 +295,30 @@ module.exports = async (req, res) => {
       (allUploads || []).forEach(u => { uploadToTeacher[u.id] = u.teacher_id; allUploadIds.push(u.id); });
 
       const { data: sums } = allUploadIds.length
-        ? await supabase.from('upload_summaries').select('upload_id, total_sessions').in('upload_id', allUploadIds)
+        ? await supabase.from('upload_summaries').select('upload_id, total_sessions, completions, replays').in('upload_id', allUploadIds)
         : { data: [] };
 
       const sessionsBySchool = {};
+      const completionsBySchool = {};
+      const replaysBySchool = {};
       (sums || []).forEach(s => {
         const tid = uploadToTeacher[s.upload_id];
         const sid = teacherToSchool[tid];
-        if (sid) sessionsBySchool[sid] = (sessionsBySchool[sid] || 0) + (s.total_sessions || 0);
+        if (sid) {
+          sessionsBySchool[sid]    = (sessionsBySchool[sid] || 0) + (s.total_sessions || 0);
+          completionsBySchool[sid] = (completionsBySchool[sid] || 0) + (s.completions || 0);
+          replaysBySchool[sid]     = (replaysBySchool[sid] || 0) + (s.replays || 0);
+        }
       });
 
       return res.status(200).json(
         (schools || []).map(s => ({
           ...s,
-          teacher_count:  (teachersBySchool[s.id] || []).length,
-          total_sessions: sessionsBySchool[s.id] || 0,
+          teacher_count:    (teachersBySchool[s.id] || []).length,
+          total_sessions:   sessionsBySchool[s.id] || 0,
+          completions:      completionsBySchool[s.id] || 0,
+          completion_rate:  sessionsBySchool[s.id] > 0 ? Math.round((completionsBySchool[s.id] || 0) / sessionsBySchool[s.id] * 100) : null,
+          replays:          replaysBySchool[s.id] || 0,
         }))
       );
     }

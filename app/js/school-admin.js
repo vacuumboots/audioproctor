@@ -99,12 +99,19 @@ async function loadTeachers() {
       const roleTag = t.role === 'school_admin'
         ? `<span class="role-badge">Admin</span> `
         : '';
+      const listenTime = t.avg_listen_seconds != null
+        ? `${Math.floor(t.avg_listen_seconds / 60)}:${String(t.avg_listen_seconds % 60).padStart(2, '0')}`
+        : '—';
+      const completionRate = t.completion_rate != null ? `${t.completion_rate}%` : '—';
 
       return `
         <tr>
           <td>${roleTag}<span style="font-size:0.85rem;">${escapeHtml(t.email || '—')}</span></td>
           <td style="text-align:center;">${t.upload_count}</td>
           <td style="text-align:center;">${t.session_count}</td>
+          <td style="text-align:center;">${completionRate}</td>
+          <td style="text-align:center;">${t.replays}</td>
+          <td style="text-align:center;">${listenTime}</td>
           <td style="color:var(--muted); font-size:0.82rem;">${lastActive}</td>
           <td>
             <button class="btn btn--ghost btn--small" onclick="detachTeacher('${t.id}', '${escapeHtml(t.email || t.id)}', this)">Remove</button>
@@ -119,6 +126,9 @@ async function loadTeachers() {
             <th>Email</th>
             <th style="text-align:center;">Uploads</th>
             <th style="text-align:center;">Sessions</th>
+            <th style="text-align:center;">Completion</th>
+            <th style="text-align:center;">Replays</th>
+            <th style="text-align:center;">Avg Listen</th>
             <th>Last Active</th>
             <th>Actions</th>
           </tr>
