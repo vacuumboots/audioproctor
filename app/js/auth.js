@@ -72,6 +72,15 @@ async function getEffectiveTier(userId) {
   const { data, error } = await supabaseClient.rpc('get_effective_tier', { p_user_id: userId });
   if (error) {
     console.warn('get_effective_tier RPC failed, defaulting to free:', error.message);
+    // SAFETY NET: check raw profile before forcing free
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('tier, expires_at')
+      .eq('id', userId)
+      .maybeSingle();
+    if (profile?.tier === 'premium' && (!profile.expires_at || new Date(profile.expires_at) > new Date())) {
+      return 'premium';
+    }
     return 'free';
   }
   return data || 'free';
