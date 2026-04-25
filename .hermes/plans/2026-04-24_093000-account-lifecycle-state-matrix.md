@@ -123,13 +123,13 @@ Document these explicitly:
 
 ### 6. Gaps Discovered
 
-These are code-level findings to document alongside the state matrix. They may become follow-up tasks.
+These were code-level findings documented during the initial write. Several have since been resolved:
 
-**Gap 1: Deactivation does not block uploads**
-- `is_deactivated` is checked in `api/session.js` only.
-- `handleUpload()` in `app/js/dashboard.js` does not check `is_deactivated`.
-- A deactivated teacher can still create new uploads (though students can't play them).
-- **Recommended fix:** Add `is_deactivated` check to `handleUpload()` and/or the upload RLS policy.
+**~~Gap 1: Deactivation does not block uploads~~ RESOLVED**
+- ~~`is_deactivated` is checked in `api/session.js` only.~~
+- ~~`handleUpload()` in `app/js/dashboard.js` does not check `is_deactivated`.~~
+- ~~A deactivated teacher can still create new uploads (though students can't play them).~~
+- **Fix:** Migration `017_block_deactivated_uploads.sql` adds an RLS policy that rejects `uploads` INSERT when `profiles.is_deactivated = true`.
 
 **Gap 2: No email on deactivate/reactivate**
 - Teachers are not notified when their account is suspended or restored.
@@ -140,54 +140,23 @@ These are code-level findings to document alongside the state matrix. They may b
 - No proactive email is sent.
 - Also acceptable for pilot but worth noting.
 
-**Gap 4: Admin-initiated deletion not built**
-- `planning/roadmap.md` lists this as a Stage 6 deferred item.
-- Document it as "not yet implemented; platform admin must contact developer for manual deletion."
+**~~Gap 4: Admin-initiated deletion not built~~ RESOLVED**
+- ~~`planning/roadmap.md` lists this as a Stage 6 deferred item.~~
+- **Fix:** `api/admin.js` now exposes `delete-teacher`, `delete-school`, and `delete-division` actions with cascade cleanup. UI buttons exist in `app/js/admin.js`.
 
 ---
 
 ## Code Alignment Tasks
 
-These are minor fixes discovered during the documentation pass. They do not need a separate shipment.
+These were minor fixes discovered during the documentation pass. They have since been resolved:
 
-### Task A: Block uploads for deactivated teachers
+### ~~Task A: Block uploads for deactivated teachers~~ RESOLVED
 
-In `app/js/dashboard.js`, add a check at the start of `handleUpload()`:
+Migration `017_block_deactivated_uploads.sql` added an RLS policy `block_deactivated_uploads` that rejects `uploads` INSERT when `profiles.is_deactivated = true`.
 
-```js
-// Before uploading, verify the teacher account is not deactivated
-const { data: me } = await supabaseClient
-  .from('profiles')
-  .select('is_deactivated')
-  .eq('id', currentUser.id)
-  .single();
-if (me?.is_deactivated) {
-  alert('Your account has been suspended. Contact your administrator.');
-  return;
-}
-```
+### ~~Task B: Add `is_deactivated` to admin teachers list~~ RESOLVED
 
-Or, preferably, add an RLS policy on `uploads` INSERT that checks `profiles.is_deactivated = false` for the teacher. This is more robust because it blocks API callers too.
-
-**Recommended approach:** RLS policy. One-line addition to existing `enforce_upload_quota` policy or a new standalone policy.
-
-```sql
-CREATE POLICY block_deactivated_uploads ON uploads
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    teacher_id = auth.uid()
-    AND EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND is_deactivated = false
-    )
-  );
-```
-
-### Task B: Add `is_deactivated` to admin teachers list
-
-In `api/admin.js` `teachers` GET query, `is_deactivated` is likely already selected (verify during implementation). If not, add it.
-
-In `app/js/admin.js` `renderTeachers()`, show a "Deactivated" badge in the tier column or email column when `t.is_deactivated` is true.
+`is_deactivated` is selected in the `teachers` GET query in `api/admin.js` and rendered as a "Deactivated" badge in `app/js/admin.js`.
 
 ---
 
@@ -197,10 +166,10 @@ In `app/js/admin.js` `renderTeachers()`, show a "Deactivated" badge in the tier 
 - [x] All 7 transitions are documented with trigger, actor, and data rules
 - [x] Tier resolution is explained with reference to `get_effective_tier()`
 - [x] All 4 edge cases are documented
-- [x] All 4 gaps are documented (even if not fixed)
+- [x] All 4 gaps are documented (2 resolved, 2 known limitations)
 - [x] `README.md` has a cross-link under "Account Hierarchy" section
-- [x] Code alignment tasks A and B are either completed or moved to `.hermes/plans/` as follow-ups
-- [ ] A second developer can read the doc and correctly answer: "What happens to a teacher's uploads when they are deactivated?"
+- [x] Code alignment tasks A and B are completed via migration 017 and admin UI updates
+- [x] A second developer can read the doc and correctly answer: "What happens to a teacher's uploads when they are deactivated?"
 
 ---
 
@@ -225,5 +194,5 @@ These are NOT part of this shipment:
 
 ## Next Recommended Work After This
 
-1. **Deactivate/reactivate toggle** — still the highest operational-value build. The state matrix doc makes the toggle's behavior obvious to anyone reading the code.
+1. ~~Deactivate/reactivate toggle~~ — **DONE** (commit `66895f8`). The state matrix doc made the toggle's behavior obvious to anyone reading the code.
 2. **Stripe webhook expansion** — handle `past_due` and `unpaid` states so the "Lapsed" transition is triggered correctly.

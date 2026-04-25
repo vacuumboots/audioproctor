@@ -1,8 +1,9 @@
 # Shipment — Teacher Deactivate / Reactivate Toggle
 
-> **Status:** NOT STARTED  
+> **Status:** IMPLEMENTED  
 > **Priority:** High (highest deferred item from Shipment 3)  
-> **Estimated effort:** 1 hour
+> **Estimated effort:** 1 hour  
+> **Commit:** `66895f8` — "feat: admin deactivate/reactivate toggle for teachers"
 
 **Goal:** Platform admin can immediately suspend a teacher's access codes without deleting their data, and reactivate them later. School admin can detach teachers from their school; platform admin can deactivate any teacher account.
 
@@ -30,13 +31,15 @@
 
 ## Definition of Done
 
-- [ ] Platform admin clicks "Deactivate" → teacher's access codes immediately return 403
-- [ ] Platform admin clicks "Reactivate" → codes work again
-- [ ] Deactivated teachers are visually distinct (muted row, strikethrough, or badge)
-- [ ] Platform admin cannot deactivate themselves
-- [ ] Platform admin cannot deactivate another platform admin
-- [ ] Audit log entry written on every toggle
-- [ ] No changes needed for school/division admin dashboards (they use `detach`, not `deactivate`)
+- [x] Platform admin clicks "Deactivate" → teacher's access codes immediately return 403
+- [x] Platform admin clicks "Reactivate" → codes work again
+- [x] Deactivated teachers are visually distinct (muted row, strikethrough, or badge)
+- [x] Platform admin cannot deactivate themselves
+- [x] Platform admin cannot deactivate another platform admin
+- [x] Audit log entry written on every toggle
+- [x] No changes needed for school/division admin dashboards (they use `detach`, not `deactivate`)
+
+**Implementation note:** The toggle action was named `toggle-deactivation` (not `deactivate`) so a single endpoint handles both directions. The UI swaps the button label based on `is_deactivated`.
 
 ---
 

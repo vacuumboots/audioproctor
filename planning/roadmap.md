@@ -268,7 +268,7 @@ recorded. All events are anonymous by design.
 - [x] **Account management — reassign** — platform admin can reassign any teacher to
   a different school and/or division via a modal in the admin dashboard. Takes effect
   immediately. Teacher is notified by email.
-- [ ] **Account management — deactivate/delete** — deactivate or permanently delete
+- [x] **Account management — deactivate/delete** — deactivate or permanently delete
   accounts. Deactivation flips `is_deactivated`; deletion removes all data.
 - [x] **Invitation tool** — platform admin creates invitations from `/admin.html`;
   invitation email sent via Resend with a sign-in link. Token acceptance flow wired.
@@ -420,17 +420,17 @@ Deactivation and deletion are distinct operations with different consequences:
 - Teacher retains all uploads, session events, and profile data
 - Can be reactivated by platform admin (flip flag back)
 - Use case: teacher leaves a school mid-year; codes may still be needed for IEP documentation
-- [ ] **Admin UI toggle** — platform admin can deactivate/reactivate any teacher, school,
+- [x] **Admin UI toggle** — platform admin can deactivate/reactivate any teacher, school,
   or division account from the admin dashboard
 
 **Deletion** (irreversible, all data removed):
 - Teacher self-service delete exists (`api/account?action=delete-account`)
 - Settings page informs teachers to request deactivation instead if leaving a school
-- [ ] **Admin-initiated deletion** — platform admin can permanently delete a division,
+- [x] **Admin-initiated deletion** — platform admin can permanently delete a division,
   school, or teacher account and all associated data from the admin dashboard.
   Requires explicit confirmation. Irreversible.
 
-- [ ] **Reassign teacher** — move a teacher to a different school without losing upload history.
+- [x] **Reassign teacher** — move a teacher to a different school without losing upload history.
 
 ---
 

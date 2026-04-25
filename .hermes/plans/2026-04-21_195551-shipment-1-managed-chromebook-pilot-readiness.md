@@ -2,6 +2,11 @@
 
 > For Hermes: Use subagent-driven-development skill to implement this plan task-by-task.
 
+> **Status:** PARTIALLY IMPLEMENTED  
+> **Docs:** Complete (checklist, deployment guide, test log template, operational reference)  
+> **Code tasks:** Deferred (debug logging, full player hardening, real hardware test run)  
+> **Blocker finding:** Chrome Web Store publication completed — this changed the deployment path from unpacked to Store ID
+
 **Goal:** Prove that AudioProctor works reliably on an actual managed Chromebook and leave behind a documented, repeatable deployment/test process for future pilots.
 
 **Architecture:** This shipment is not primarily a feature build; it is an operational hardening pass around the existing Chrome extension + `/api/session` flow. The work should capture a real managed-Chromebook validation run, patch any blockers discovered in the extension/session path, and add a small amount of instrumentation and documentation so the deployment path is reproducible by IT admins and testable by future maintainers.
@@ -41,12 +46,17 @@ This plan does NOT include Chrome Web Store publication itself. That is Shipment
 
 ## Definition of done
 
-Shipment 1 is done only when all of these are true:
-- A tester can follow one written checklist and run the assessment flow on a managed Chromebook end-to-end
-- The extension behavior is verified for: startup, fullscreen lock, playback, replay, pause, exit-word close, session-expiry handling, network interruption, and unauthorized window close
-- Any blocker bugs found during test are either fixed or documented as known issues with workarounds
-- A future IT admin or founder can reproduce the pilot setup without relying on memory
-- Repo docs no longer contradict each other about the current pilot deployment approach
+Shipment 1 docs are complete. Remaining code tasks are tracked below:
+
+- [x] A tester can follow one written checklist and run the assessment flow on a managed Chromebook end-to-end
+- [x] The extension behavior is verified for: startup, fullscreen lock, playback, replay, pause, exit-word close, session-expiry handling, network interruption, and unauthorized window close — *historical validation on Chrome OS 146 is documented in `docs/AUDIO-DEBUG.md`; no fresh formal test run has been logged*
+- [ ] Any blocker bugs found during test are either fixed or documented as known issues with workarounds — *no structured test-run log exists yet*
+- [x] A future IT admin or founder can reproduce the pilot setup without relying on memory
+- [x] Repo docs no longer contradict each other about the current pilot deployment approach
+- [ ] Gated debug logging exists in extension files for future pilot diagnostics
+- [ ] Player load-error messages have been hardened per Task 6 spec
+
+**Note:** The Chrome Web Store went live during this shipment window, which changed the deployment path from unpacked extension to Store ID force-install. The IT deployment guide was updated to reflect this. A fresh managed-Chromebook validation run using the Store ID path has not yet been documented.
 
 ---
 
@@ -344,7 +354,9 @@ git commit -m "docs: add managed Chromebook test log template"
 
 ---
 
-## Task 5: Add lightweight startup instrumentation for pilot debugging
+## Task 5: Add lightweight startup instrumentation for pilot debugging (DEFERRED)
+
+**Status:** Not yet implemented. The `DEBUG` flag and `debugLog()` helper described below do not exist in the extension files. This is a low-risk addition that can be added when the next managed-Chromebook validation run is scheduled.
 
 **Objective:** Make future Chromebook failures diagnosable without guesswork.
 
@@ -395,7 +407,9 @@ git commit -m "chore: add gated extension debug logging for pilot testing"
 
 ---
 
-## Task 6: Harden load-error behavior in the extension player
+## Task 6: Harden load-error behavior in the extension player (PARTIALLY DONE)
+
+**Status:** Basic error states exist (loading, error, retry button, timeout). The remaining work is improving error message copy and adding specific deactivated-teacher mapping.
 
 **Objective:** Improve resilience for the real-world failure modes most likely on school devices and networks.
 
@@ -426,8 +440,8 @@ Check whether each message is understandable for a student/teacher in pilot cond
 **Step 3: Adjust wording and retry flow if needed**
 
 Improve any unclear copy, for example:
-- “Audio failed: unknown error” -> “The audio could not be loaded. Ask your teacher to try again.”
-- “Session expired or not found” -> mention re-entering code in the extension popup
+- "Audio failed: unknown error" -> "The audio could not be loaded. Ask your teacher to try again."
+- "Session expired or not found" -> mention re-entering code in the extension popup
 
 **Step 4: Consider adding one specific session API error mapping**
 
@@ -452,7 +466,9 @@ git commit -m "fix: harden extension load and playback error recovery"
 
 ---
 
-## Task 7: Run the real managed Chromebook validation pass and record outcomes
+## Task 7: Run the real managed Chromebook validation pass and record outcomes (NOT YET DONE)
+
+**Status:** No dated test-run file exists under `docs/test-runs/`. The historical Chrome OS 146 validation in `docs/AUDIO-DEBUG.md` predates the Chrome Web Store publication. A fresh validation run using the Store ID deployment path is still needed.
 
 **Objective:** Execute the plan on real hardware and capture a durable record.
 

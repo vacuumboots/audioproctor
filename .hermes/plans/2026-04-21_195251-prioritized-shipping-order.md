@@ -429,12 +429,12 @@ This should be implemented as a separate mini-project, not a checklist bullet.
 
 If you want the shortest realistic shipping queue, do it in this order:
 
-1. Shipment 0 — roadmap/status cleanup
-2. Shipment 1 — managed Chromebook pilot readiness
-3. Shipment 2 — invite delivery and minimum onboarding
-4. Shipment 3 — admin hardening for account lifecycle
+1. ~~Shipment 0 — roadmap/status cleanup~~ — Partially done; `roadmap.md` updated today
+2. ~~Shipment 1 — managed Chromebook pilot readiness~~ — Docs complete; fresh Store ID validation run still needed
+3. ~~Shipment 2 — invite delivery and minimum onboarding~~ — **DONE**
+4. ~~Shipment 3 — admin hardening for account lifecycle~~ — **DONE** (deactivate/reactivate + lifecycle matrix)
 5. Shipment 4 — compliance and operational trust pack
-6. Shipment 5 — Chrome Web Store + IT deployment guide
+6. ~~Shipment 5 — Chrome Web Store + IT deployment guide~~ — Store listing live; docs exist
 7. Shipment 6 — controlled teacher acquisition + domain policy
 8. Shipment 7 — school/division entitlement rules
 9. Shipment 8 — Teacher Premium hardening, then org billing design
@@ -445,33 +445,29 @@ If you want the shortest realistic shipping queue, do it in this order:
 
 ## The next 3 things to ship, specifically
 
-If the goal is “what do we build next, in order,” the answer is:
+If the goal is "what do we build next, in order," the answer is:
 
 ### Next ship 1
-Managed Chromebook end-to-end validation
-- because it proves the real deployment path
-- because it may expose extension blockers before you optimize anything else
+Compliance and operational trust pack (Shipment 4)
+- because Shipment 2 (invite) and Shipment 3 (lifecycle) are done
+- because schools need backups, retention policy, and privacy alignment before they say yes
 
 ### Next ship 2
-Invitation email delivery + resend + expired-invite recovery
-- because the data model and accept flow already exist
-- because it unlocks real org onboarding immediately
+Managed Chromebook validation run using Chrome Web Store ID (Shipment 1 gap)
+- because the Store ID is now the real deployment path
+- because a fresh test run on actual hardware is the only way to know the current extension build survives real policy
 
 ### Next ship 3
-Teacher/account lifecycle hardening in admin UI
-- because once people are invited, account state management becomes operationally critical
-
-If you want a revenue-oriented version of the same answer, then swap ship 3 and ship 5 only after ship 2:
-- managed Chromebook validation
-- invite email delivery
-- Chrome Web Store publication
+Stripe webhook expansion (Shipment 8 subset)
+- because Teacher Premium is already live
+- because `past_due` / `unpaid` gaps cause silent entitlement drift
 
 ---
 
 ## Suggested definitions of readiness
 
 ### Pilot-ready
-- Managed Chromebook deployment tested successfully
+- ~~Managed Chromebook deployment tested successfully~~ — Docs exist, Store ID live, fresh validation run still needed
 - Invite flow works end-to-end
 - Teacher deactivation works
 - Backups enabled
@@ -522,9 +518,10 @@ If you want a revenue-oriented version of the same answer, then swap ship 3 and 
 
 ## Recommended immediate action
 
-Turn Shipments 1–3 into implementation plans first. They are the highest-leverage sequence:
-- Shipment 1: managed Chromebook validation
-- Shipment 2: invitation email delivery
-- Shipment 3: admin lifecycle hardening
+Shipments 2 and 3 are complete. The next highest-leverage sequence is:
 
-That sequence gets AudioProctor from “feature-rich product” to “actually deployable product.”
+1. Shipment 4 — compliance and operational trust pack (backups, retention, privacy alignment)
+2. Shipment 1 gap — one fresh managed Chromebook validation run using the Store ID path
+3. Shipment 8 subset — Stripe webhook expansion for payment-failure handling
+
+That sequence gets AudioProctor from "feature-rich product" to "trustworthy product."
