@@ -63,9 +63,9 @@
 
 ## Deliverables — Deferred / Not Implemented
 
-- [ ] **Deactivate/reactivate toggle** (Task 1 from original plan) — `profiles.is_deactivated` exists and `api/session.js` already blocks deactivated teachers, but there is no admin UI or API action to toggle it.
-- [ ] **Account lifecycle state matrix document** (Task 5 from original plan) — `docs/account-lifecycle-states.md` not written. The state transitions are documented in code and in this plan's "Decisions" section.
-- [ ] **README.md cross-link** for state matrix — deferred until the document is written.
+- [x] **Deactivate/reactivate toggle** (Task 1 from original plan) — Implemented 2026-04-25. `profiles.is_deactivated` exists, `api/admin.js` has `toggle-deactivation` action with self-targeting protection and audit logging, and `app/js/admin.js` shows Deactivate/Reactivate buttons per teacher row.
+- [x] **Account lifecycle state matrix document** (Task 5 from original plan) — `docs/account-lifecycle-states.md` written and updated 2026-04-25. Captures the Trial → Lapsed → Free fallback flow, deactivation, and admin deletion paths.
+- [ ] **README.md cross-link** for state matrix — deferred until the document stabilizes.
 
 ---
 

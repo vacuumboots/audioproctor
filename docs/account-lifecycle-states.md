@@ -2,8 +2,8 @@
 
 A single reference for every state a teacher account can be in, what it means for data access, and who can trigger each transition.
 
-> **Last updated:** 2026-04-24  
-> **Authoritative for:** `api/`, `app/js/`, Supabase migrations 005–016  
+> **Last updated:** 2026-04-25
+> **Authoritative for:** `api/`, `app/js/`, Supabase migrations 005–017
 > **If this doc conflicts with code, the code wins — update this doc.**
 
 ---
@@ -14,9 +14,10 @@ A teacher account is a row in `profiles`. Its effective state is determined by t
 
 | State | DB Condition | What it means |
 |---|---|---|
-| **Active** | `is_deactivated = false` AND `expires_at IS NULL OR expires_at > now()` | Normal operation. Teacher can upload, customize, and have sessions resolved. |
-| **Detached** | `school_id IS NULL` AND `division_id IS NULL` | Teacher was removed from all orgs. Reverts to free tier. Uploads and session history are preserved. |
-| **Deactivated** | `is_deactivated = true` | Explicit suspension by platform admin. All data preserved. Session access blocked. Uploads blocked. |
+| **Active** | `is_deactivated = false` AND (`expires_at IS NULL OR expires_at > now()`) | Normal operation. Teacher can upload, customize, and have sessions resolved. |
+| **Trial** | `tier = 'premium'` AND `expires_at IS NOT NULL AND expires_at > now()` | New signups get 30 days of premium by default. `get_effective_tier()` returns `'premium'`. All premium features active. |
+| **Detached** | `school_id IS NULL` AND `division_id IS NULL` | Teacher was removed from all orgs. Reverts to free tier (unless they have Teacher Premium or a trial). Uploads and session history are preserved. |
+| **Deactivated** | `is_deactivated = true` | Explicit suspension by platform admin. All data preserved. Session access blocked. Uploads blocked (enforced by RLS). |
 | **Lapsed** | `expires_at IS NOT NULL AND expires_at < now()` | Trial or subscription expired. `get_effective_tier()` returns `'free'`. Existing uploads work; new uploads blocked by quota. |
 | **Deleted** | Row does not exist | All data permanently removed. Irreversible. |
 
@@ -57,9 +58,11 @@ A teacher account is a row in `profiles`. Its effective state is determined by t
 | Active | Deactivated | Platform admin toggles `is_deactivated` | Platform admin | Yes | Yes | Yes | No |
 | Deactivated | Active | Platform admin toggles `is_deactivated` | Platform admin | Yes | Yes | No | No |
 | Active | Lapsed | `expires_at` passes | System (`get_effective_tier()`) | Yes | Yes | No | No |
+| Trial | Lapsed | 30 days elapse since signup | System (`get_effective_tier()`) | Yes | Yes | No | No |
 | Lapsed | Active | Admin approves request, subscription renews, trial extended | Platform admin, Stripe webhook | Yes | Yes | No | No |
 | Active | Deleted | Teacher self-deletes | Teacher (self) | No | No | Yes | No |
 | Active | Deleted | Admin deletes account | Platform admin | No | No | Yes | No |
+| Deactivated | Deleted | Admin deletes deactivated account | Platform admin | No | No | Yes | No |
 
 ### Key rules
 
@@ -78,8 +81,8 @@ A teacher account is a row in `profiles`. Its effective state is determined by t
 | Active + attached to school with division plan | `'division'` | Inherited from division |
 | Active + attached to school with school plan | `'school'` | Inherited from school |
 | Active + Teacher Premium paid | `'premium'` | Own purchased tier |
-| Active + free trial not expired | `'premium'` | (or whatever `profiles.tier` is set to) |
-| Detached | `'free'` | No org to inherit from |
+| Active + 30-day trial not expired | `'premium'` | Set by `ensureProfile()` on first login |
+| Detached | `'free'` | No org to inherit from; own tier ignored unless it's premium via trial |
 | Deactivated | Whatever profile/org says | But sessions are blocked before tier is checked |
 | Lapsed | `'free'` | Regardless of what `profiles.tier` says |
 | Deleted | N/A | No row exists |
@@ -140,19 +143,27 @@ Deleting a school or division does **not** delete teachers. Foreign key constrai
 
 These are documented for transparency. They may become implementation tasks.
 
-### Gap 1: Deactivation does not block uploads
-
-`is_deactivated` is checked in `api/session.js` only. A deactivated teacher can still create new uploads (though students can't play them). Mitigation: an RLS policy on `uploads` INSERT blocks deactivated teachers. Added in migration 017.
-
-### Gap 2: No email on deactivate/reactivate
+### Gap 1: No email on deactivate/reactivate
 
 Teachers are not notified when their account is suspended or restored. Acceptable for pilot scale.
 
-### Gap 3: No email on trial expiry
+### Gap 2: No email on trial expiry
 
 Teachers discover expiry via the dashboard banner. No proactive email is sent.
 
-### Gap 4: Admin-initiated deletion
+### Gap 3: No renewal reminders
+
+Automated 60/30/7-day emails before `expires_at` are not implemented.
+
+---
+
+## Resolved Items (no longer gaps)
+
+### Deactivation upload blocking
+
+`is_deactivated` is checked in `api/session.js` and enforced by RLS on `uploads` INSERT (migration 017). A deactivated teacher cannot create new uploads.
+
+### Admin-initiated deletion
 
 Platform admin can delete teacher accounts, schools, and divisions from `/admin.html`. Teacher deletion removes uploads, session events, storage files, the profile row, and the auth user. School/division deletion detaches teachers via `ON DELETE SET NULL` and removes invitations via `ON DELETE CASCADE`.
 
@@ -163,10 +174,10 @@ Platform admin can delete teacher accounts, schools, and divisions from `/admin.
 - `api/session.js` — checks `is_deactivated` before resolving access codes
 - `api/account.js` — `delete-account` action for self-service deletion
 - `api/org.js` — `detach-teacher` action
-- `api/admin.js` — `reassign-teacher`, `deactivate` (planned) actions
+- `api/admin.js` — `reassign-teacher`, `toggle-deactivation`, `delete-teacher`, `delete-school`, `delete-division` actions
 - `app/js/dashboard.js` — `handleUpload()`, quota display, trial banners
-- `app/js/admin.js` — platform admin UI for teacher management
-- `supabase/migrations/005_account_hierarchy.sql` — `get_effective_tier()`
+- `app/js/admin.js` — platform admin UI for teacher/division/school management
+- `supabase/migrations/005_account_hierarchy.sql` — `get_effective_tier()`, org FKs
 - `supabase/migrations/009_deactivation.sql` — `is_deactivated` column
 - `supabase/migrations/016_auto_trial_and_requests.sql` — `expires_at` enhancements
-- `supabase/migrations/017_block_deactivated_uploads.sql` — RLS policy (see below)
+- `supabase/migrations/017_block_deactivated_uploads.sql` — RLS policy blocking deactivated teachers from uploading
