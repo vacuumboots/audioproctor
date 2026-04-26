@@ -312,16 +312,20 @@ async function handleUpload() {
     if (!session) { window.location.href = '/login.html'; return; }
     const userId = session.user.id;
 
-    // Check for duplicate filename (keep original selected name for UX continuity)
+    const dbFilename = isWavFile(selectedFile)
+      ? selectedFile.name.replace(/\.wav$/i, '.mp3')
+      : selectedFile.name;
+
+    // Check for duplicate filename as it will be stored/shown in the dashboard
     const { data: existing } = await supabaseClient
       .from('uploads')
       .select('id')
       .eq('teacher_id', userId)
-      .eq('filename', selectedFile.name)
+      .eq('filename', dbFilename)
       .maybeSingle();
 
     if (existing) {
-      const proceed = confirm(`You already have an upload named "${selectedFile.name}". Upload another copy anyway?`);
+      const proceed = confirm(`You already have an upload named "${dbFilename}". Upload another copy anyway?`);
       if (!proceed) {
         btn.disabled = false;
         return;
@@ -430,7 +434,7 @@ async function handleUpload() {
       .from('uploads')
       .insert({
         teacher_id:     userId,
-        filename:       selectedFile.name,
+        filename:       dbFilename,
         label:          label,
         storage_path:   storagePath,
         access_code:    accessCode,
