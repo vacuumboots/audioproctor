@@ -893,11 +893,40 @@ async function loadQuota() {
 
   // Upgrade CTA / trial status
   const ctaEl = document.getElementById('upgrade-cta');
+  const trialBanner = document.getElementById('trial-banner');
+  const trialBannerText = document.getElementById('trial-banner-text');
+  const trialBannerBtn = document.getElementById('trial-banner-btn');
+
   if (ctaEl) {
     const expiresAt = profile?.expires_at ? new Date(profile.expires_at) : null;
     const isTrial   = expiresAt && profile?.tier === 'premium' && !profile?.tier_override && !profile?.school_id && !profile?.division_id;
     const trialExpired = isTrial && expiresAt < new Date();
     const daysLeft = expiresAt ? Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+
+    // ——— Visible trial banner ———
+    if (isTrial && daysLeft !== null && daysLeft > 0) {
+      trialBanner?.classList.remove('hidden');
+      if (daysLeft <= 7) {
+        trialBanner.style.background = 'var(--light-accent)';
+        trialBanner.style.borderColor = 'var(--accent)';
+        trialBannerText.innerHTML = `<strong style="color:var(--accent);">Trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong> — Upgrade to keep unlimited uploads.`;
+      } else {
+        trialBanner.style.background = '#f0f8f0';
+        trialBanner.style.borderColor = '#4a7c59';
+        trialBannerText.innerHTML = `<strong style="color:#4a7c59;">Trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong> — Upgrade to keep unlimited uploads.`;
+      }
+      trialBannerBtn.textContent = 'Upgrade Now';
+      trialBannerBtn.onclick = startUpgrade;
+    } else if (trialExpired) {
+      trialBanner?.classList.remove('hidden');
+      trialBanner.style.background = 'var(--light-accent)';
+      trialBanner.style.borderColor = 'var(--accent)';
+      trialBannerText.innerHTML = `<strong style="color:var(--accent);">Your trial has expired</strong> — You're back on the Free plan.`;
+      trialBannerBtn.textContent = 'Request Extension';
+      trialBannerBtn.onclick = () => openRequestModal('premium_trial');
+    } else {
+      trialBanner?.classList.add('hidden');
+    }
 
     if (currentTier === 'free') {
       if (trialExpired) {
