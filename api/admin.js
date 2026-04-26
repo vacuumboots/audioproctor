@@ -137,7 +137,7 @@ module.exports = async (req, res) => {
       const { data, error } = await supabase
         .from('profiles')
         .select(`
-          id, role, tier, tier_override, country_code, division_name, notes, school_id, division_id, is_deactivated,
+          id, role, tier, tier_override, expires_at, country_code, division_name, notes, school_id, division_id, is_deactivated,
           schools(name), divisions(name)
         `)
         .order('id', { ascending: true })
@@ -385,6 +385,29 @@ module.exports = async (req, res) => {
         return res.status(500).json({ error: 'Could not update tier' });
       }
       audit(supabase, user.id, 'set_tier', entityType, entityId, null, { tier });
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'set-expires') {
+      const { entityType, entityId, expiresAt } = body;
+      if (!entityType || !entityId) return res.status(400).json({ error: 'entityType and entityId required' });
+
+      let error;
+      const expiry = expiresAt || null;
+      if (entityType === 'division') {
+        ({ error } = await supabase.from('divisions').update({ expires_at: expiry }).eq('id', entityId));
+      } else if (entityType === 'school') {
+        ({ error } = await supabase.from('schools').update({ expires_at: expiry }).eq('id', entityId));
+      } else if (entityType === 'teacher') {
+        ({ error } = await supabase.from('profiles').update({ expires_at: expiry }).eq('id', entityId));
+      } else {
+        return res.status(400).json({ error: 'Invalid entityType' });
+      }
+      if (error) {
+        console.error('set-expires failed:', error.message);
+        return res.status(500).json({ error: 'Could not update expiry' });
+      }
+      audit(supabase, user.id, 'set_expires', entityType, entityId, null, { expires_at: expiry });
       return res.status(200).json({ ok: true });
     }
 

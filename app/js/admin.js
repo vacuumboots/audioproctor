@@ -359,6 +359,23 @@ function renderTeachers(teachers) {
 
     const effectiveTier = t.tier_override || t.tier || 'free';
 
+    // Trial status
+    let trialHtml = '<span style="color:var(--muted); font-size:0.8rem;">—</span>';
+    if (t.expires_at) {
+      const exp = new Date(t.expires_at);
+      const now = new Date();
+      const dateStr = exp.toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
+      const daysLeft = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+      if (exp > now) {
+        trialHtml = `<span style="color:#4a7c59; font-size:0.8rem;">Expires ${dateStr}</span>`;
+        if (daysLeft <= 7) {
+          trialHtml = `<span style="color:var(--accent); font-size:0.8rem; font-weight:500;">Expires ${dateStr}</span>`;
+        }
+      } else {
+        trialHtml = `<span style="color:var(--accent); font-size:0.8rem;">Expired ${dateStr}</span>`;
+      }
+    }
+
     const deactivatedBadge = t.is_deactivated
       ? `<span style="color:var(--accent); font-size:0.75rem; margin-left:0.4rem;">(deactivated)</span>`
       : '';
@@ -375,6 +392,11 @@ function renderTeachers(teachers) {
           <select class="tier-select" onchange="setTier('teacher','${t.id}',this.value)">
             ${tierOptions(effectiveTier)}
           </select>
+        </td>
+        <td style="white-space:nowrap;">
+          ${trialHtml}
+          <button class="btn btn--ghost btn--small" style="margin-left:0.5rem; padding:0.2rem 0.5rem; font-size:0.65rem;"
+            onclick="extendTrial('${t.id}', 30)">+30d</button>
         </td>
         <td>
           <select class="tier-select" onchange="setRole('${t.id}',this.value)">
@@ -408,6 +430,7 @@ function renderTeachers(teachers) {
           <th>Email</th>
           <th>School / Division</th>
           <th>Tier Override</th>
+          <th>Trial</th>
           <th>Role</th>
           <th>Country</th>
           <th>Notes / Flags</th>
@@ -575,6 +598,21 @@ async function setNotes(entityType, entityId, notes) {
     await adminApi('set-notes', 'POST', { entityType, entityId, notes });
   } catch (err) {
     console.error('Could not save notes:', err.message);
+  }
+}
+
+async function extendTrial(userId, days) {
+  try {
+    const teacher = allTeachers.find(t => t.id === userId);
+    const baseDate = (teacher?.expires_at && new Date(teacher.expires_at) > new Date())
+      ? new Date(teacher.expires_at)
+      : new Date();
+    baseDate.setDate(baseDate.getDate() + days);
+    const iso = baseDate.toISOString();
+    await adminApi('set-expires', 'POST', { entityType: 'teacher', entityId: userId, expiresAt: iso });
+    await loadTeachers();
+  } catch (err) {
+    alert('Could not extend trial: ' + err.message);
   }
 }
 
