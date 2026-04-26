@@ -901,6 +901,7 @@ async function loadQuota() {
     const expiresAt = profile?.expires_at ? new Date(profile.expires_at) : null;
     const isTrial   = expiresAt && profile?.tier === 'premium' && !profile?.tier_override && !profile?.school_id && !profile?.division_id;
     const trialExpired = isTrial && expiresAt < new Date();
+    const daysSinceExpiry = trialExpired ? Math.floor((Date.now() - expiresAt) / (1000 * 60 * 60 * 24)) : null;
     const daysLeft = expiresAt ? Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24)) : null;
 
     // ——— Visible trial banner ———
@@ -917,7 +918,7 @@ async function loadQuota() {
       }
       trialBannerBtn.textContent = 'Upgrade Now';
       trialBannerBtn.onclick = startUpgrade;
-    } else if (trialExpired) {
+    } else if (trialExpired && daysSinceExpiry !== null && daysSinceExpiry <= 15) {
       trialBanner?.classList.remove('hidden');
       trialBanner.style.background = 'var(--light-accent)';
       trialBanner.style.borderColor = 'var(--accent)';
@@ -929,7 +930,7 @@ async function loadQuota() {
     }
 
     if (currentTier === 'free') {
-      if (trialExpired) {
+      if (trialExpired && daysSinceExpiry !== null && daysSinceExpiry <= 15) {
         ctaEl.innerHTML = `
           <span>Your 30-day premium trial has expired.</span>
           <button id="btn-request-premium" style="margin-left:1rem; padding:0.3rem 0.9rem; border:1px solid var(--ink); background:var(--paper); color:var(--ink); font-family:inherit; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">Request Premium Access</button>
