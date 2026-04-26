@@ -433,12 +433,21 @@ async function loadUploads() {
           ${showFilename ? `<div class="col-assessment__filename">${escapeHtml(u.filename)}</div>` : ''}
           ${statsBlock}
         </td>
-        <td class="col-code"><span class="monospace">${u.access_code}</span></td>
-        <td class="col-word">${escapeHtml(u.exit_word)}</td>
+        <td class="col-code">
+          <div class="cell-copy-group">
+            <span class="monospace">${u.access_code}</span>
+            <button class="btn btn--ghost btn--small" onclick="copyCode('${u.access_code}', this)">Copy</button>
+          </div>
+        </td>
+        <td class="col-word">
+          <div class="cell-copy-group">
+            <span>${escapeHtml(u.exit_word)}</span>
+            <button class="btn btn--ghost btn--small" data-copy="${escapeHtml(u.exit_word)}" onclick="copyCode(this.dataset.copy, this)">Copy</button>
+          </div>
+        </td>
         <td><span class="chip ${chipClass}">${expiryText}</span></td>
         <td>
           <div class="action-row">
-            <button class="btn btn--ghost btn--small" onclick="copyCode('${u.access_code}', this)">Copy Code</button>
             <button class="btn btn--ghost btn--small" onclick="openEditModal('${u.id}', '${escapeHtml(u.label || u.filename)}')">Rename</button>
             <button class="btn btn--ghost btn--small" onclick="duplicateUpload('${u.id}', this)">Duplicate</button>
             ${extendBtn}
