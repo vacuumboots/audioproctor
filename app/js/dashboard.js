@@ -39,7 +39,7 @@ let editTargetId  = null;
 let allUploads    = [];
 let allSummaries  = {};
 
-const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 // ─── Access Code Generation ──────────────────────────────────────
 
@@ -269,7 +269,7 @@ function handleFileSelect(input) {
 
   if (!file) {
     btn.disabled = true;
-    hint.textContent = 'Max 100 MB · MP3 or WAV (WAV converts to MP3)';
+    hint.textContent = 'Max 50 MB · MP3 or WAV (WAV converts to MP3)';
     return;
   }
 
@@ -282,7 +282,7 @@ function handleFileSelect(input) {
 
   const effectiveBytes = isWavFile(file) ? estimateMp3UpperBoundBytes(file) : file.size;
   if (effectiveBytes > MAX_UPLOAD_BYTES) {
-    showUploadNotice('File is too large. Maximum size is 100 MB.', 'error');
+    showUploadNotice('File is too large. Maximum size is 50 MB.', 'error');
     input.value = '';
     btn.disabled = true;
     return;
@@ -312,16 +312,20 @@ async function handleUpload() {
     if (!session) { window.location.href = '/login.html'; return; }
     const userId = session.user.id;
 
-    // Check for duplicate filename (keep original selected name for UX continuity)
+    const dbFilename = isWavFile(selectedFile)
+      ? selectedFile.name.replace(/\.wav$/i, '.mp3')
+      : selectedFile.name;
+
+    // Check for duplicate filename as it will be stored/shown in the dashboard
     const { data: existing } = await supabaseClient
       .from('uploads')
       .select('id')
       .eq('teacher_id', userId)
-      .eq('filename', selectedFile.name)
+      .eq('filename', dbFilename)
       .maybeSingle();
 
     if (existing) {
-      const proceed = confirm(`You already have an upload named "${selectedFile.name}". Upload another copy anyway?`);
+      const proceed = confirm(`You already have an upload named "${dbFilename}". Upload another copy anyway?`);
       if (!proceed) {
         btn.disabled = false;
         return;
@@ -401,7 +405,7 @@ async function handleUpload() {
       showProgress(5, 'Converting WAV to MP3…');
       uploadFile = await convertWavFileToMp3(selectedFile);
       if (uploadFile.size > MAX_UPLOAD_BYTES) {
-        throw new Error('Converted MP3 is larger than 100 MB. Please trim or compress the source audio and try again.');
+        throw new Error('Converted MP3 is larger than 50 MB. Please trim or compress the source audio and try again.');
       }
     }
 
@@ -430,7 +434,7 @@ async function handleUpload() {
       .from('uploads')
       .insert({
         teacher_id:     userId,
-        filename:       selectedFile.name,
+        filename:       dbFilename,
         label:          label,
         storage_path:   storagePath,
         access_code:    accessCode,
@@ -455,7 +459,7 @@ async function handleUpload() {
     hideProgress();
     fileInput.value = '';
     document.getElementById('label-input').value = '';
-    document.getElementById('file-hint').textContent = 'Max 100 MB · MP3 or WAV (WAV converts to MP3)';
+    document.getElementById('file-hint').textContent = 'Max 50 MB · MP3 or WAV (WAV converts to MP3)';
     if (document.getElementById('exit-word-mode'))  document.getElementById('exit-word-mode').value  = 'random-short';
     if (document.getElementById('code-format'))     document.getElementById('code-format').value     = 'standard';
     if (document.getElementById('custom-exit-word')) document.getElementById('custom-exit-word').value = '';
