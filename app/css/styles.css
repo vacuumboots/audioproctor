@@ -239,6 +239,14 @@ code, .monospace {
   font-weight: 500;
 }
 
+/* ─── Inline copy group (value + copy button side by side) ──────── */
+.cell-copy-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
 /* ─── Status Chips ──────────────────────────────────────────────── */
 .chip {
   display: inline-block;
