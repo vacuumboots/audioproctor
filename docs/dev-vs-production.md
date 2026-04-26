@@ -11,8 +11,11 @@ GitHub branch protection rules require a Team organization account. We don't hav
 | Branch | Purpose | What goes here |
 |---|---|---|
 | `main` | Production | Only code that teachers see at `app.audioproctor.com`. |
+| `stable` | Known good | Last commit that was verified working in production. A bookmark you can roll back to. |
 | `dev` | Integration | Work-in-progress, experiments, features being tested. |
 | `feature/*` | Short-lived | Individual changes branched from `dev`, merged back to `dev`. |
+
+`stable` is not deployed anywhere. It exists purely as a safety net. After you merge to `main` and confirm production is healthy, fast-forward `stable` to `main`. If `main` breaks, you can instantly reset `main` back to `stable`.
 
 ## The workflow
 
@@ -43,7 +46,27 @@ The PR diff is your safety net. Read it like someone else wrote it. Ask:
 - Does this migration touch the `profiles` or `uploads` tables?
 - Did I leave a hardcoded test value or `console.log`?
 
-### 3. Hotfixes (rare)
+### 3. Mark `stable` after verifying production
+
+Once the PR merges to `main` and you've confirmed production is healthy (upload works, login works, extension plays audio):
+
+```bash
+git checkout stable
+git merge --ff-only main   # fast-forward stable to main
+git push origin stable
+```
+
+If `main` breaks and you need to roll back immediately:
+
+```bash
+git checkout main
+git reset --hard stable    # main is now back to the last known good commit
+git push origin main --force-with-lease
+```
+
+Then investigate the failure on `dev` and try again.
+
+### 4. Hotfixes (rare)
 
 If production is broken and needs an immediate fix:
 
@@ -157,11 +180,11 @@ Until then, discipline + the PR diff review is enough.
 
 | | Right now | After first real users |
 |---|---|---|
-| Branches | `main`, `dev`, feature branches | Same |
+| Branches | `main`, `stable`, `dev`, feature branches | Same |
 | Enforced rules | None (discipline only) | Consider GitHub Team for enforcement |
 | Database | One shared Supabase project | Separate staging Supabase project |
 | Stripe | Live mode only | Live + test mode |
 | Extension | Unpacked local testing | Same + staged rollout via Chrome Web Store |
-| Safe fallback | PR diff review + preview deployments | Full staging environment + PR reviews |
+| Safe fallback | `stable` bookmark + PR diff review | Full staging environment + PR reviews |
 
 The goal is not perfect process. The goal is not breaking production on a Monday morning because you were experimenting on the weekend.

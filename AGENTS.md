@@ -100,6 +100,7 @@ For extension dev: open Chrome → `chrome://extensions` → Developer mode → 
 ## Branches and deployment
 
 - `main` → production (`audioproctor.com`, `app.audioproctor.com`)
+- `stable` → last known good commit. Fast-forwarded to `main` after production is verified. Instant rollback target.
 - `dev` → integration branch. Every push gets a Vercel preview URL.
 - Feature branches off `dev`. PR `dev` → `main` for production releases.
 - GitHub branch protection is not enforced (private repo without Team plan). Discipline-only.
