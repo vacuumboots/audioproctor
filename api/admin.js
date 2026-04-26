@@ -1096,6 +1096,33 @@ async function seedDemoData(supabase) {
   const { error: refreshErr } = await supabase.rpc('refresh_upload_summaries');
   if (refreshErr) console.warn('refresh_upload_summaries rpc failed:', refreshErr.message);
 
+  // 9. Seed fake requests and invitations for dev testing
+  // Clean old seed data first
+  await supabase.from('teacher_requests').delete().ilike('email', 'seed-%@example.com');
+  await supabase.from('invitations').delete().ilike('email', 'seed-%@example.com');
+
+  const { error: reqErr } = await supabase.from('teacher_requests').insert([
+    { name: 'Alice Tremblay', email: 'seed-alice@example.com', school: 'École Secondaire Laurier', division: 'FrancoSud', message: 'Requesting premium trial for oral reading assessments.', status: 'pending', request_type: 'premium_trial', created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+    { name: 'Bob Singh', email: 'seed-bob@example.com', school: 'William Aberhart High', division: 'Calgary Board of Education', message: 'School plan pilot request.', status: 'pending', request_type: 'school_plan', created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+    { name: 'Carla Nguyen', email: 'seed-carla@example.com', school: 'Ross Sheppard High', division: 'Edmonton Public Schools', status: 'pending', request_type: 'access', created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+    { name: 'David Okafor', email: 'seed-david@example.com', school: 'Lester B. Pearson High', division: 'Calgary Board of Education', message: 'Already approved.', status: 'approved', request_type: 'premium_trial', created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
+    { name: 'Emma Larsson', email: 'seed-emma@example.com', school: 'Queen Elizabeth High', message: 'Rejected earlier.', status: 'rejected', request_type: 'premium_trial', created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString() },
+    { name: 'Frank Deluca', email: 'seed-frank@example.com', school: 'Bishop Carroll High', division: 'Calgary Catholic School District', message: 'Division-wide interest.', status: 'pending', request_type: 'division_plan', created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+  ]);
+  if (reqErr) console.warn('seed demo requests failed:', reqErr.message);
+
+  const [{ data: aDiv }, { data: aSchool }] = await Promise.all([
+    supabase.from('divisions').select('id').limit(1).maybeSingle(),
+    supabase.from('schools').select('id').limit(1).maybeSingle(),
+  ]);
+  const { error: invErr } = await supabase.from('invitations').insert([
+    { email: 'seed-invite-1@example.com', role: 'teacher', expires_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString() },
+    { email: 'seed-invite-2@example.com', role: 'school_admin', school_id: aSchool?.id || null, expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() },
+    { email: 'seed-invite-3@example.com', role: 'teacher', division_id: aDiv?.id || null, expires_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+    { email: 'seed-invite-4@example.com', role: 'teacher', expires_at: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString() },
+  ]);
+  if (invErr) console.warn('seed demo invitations failed:', invErr.message);
+
   return report;
 }
 
