@@ -380,17 +380,33 @@ async function loadUploads() {
 
   if (!uploads || uploads.length === 0) {
     container.innerHTML = `
-      <div class="empty-state" style="text-align:left; padding:2.5rem;">
-        <p class="label" style="margin-bottom:1rem;">Get started in three steps</p>
-        <ol style="list-style:none; display:flex; flex-direction:column; gap:0.75rem;">
-          <li style="font-size:0.9rem; color:var(--muted);"><strong style="color:var(--ink);">1. Add a label</strong> — give the assessment a name your students will recognise</li>
-          <li style="font-size:0.9rem; color:var(--muted);"><strong style="color:var(--ink);">2. Choose an MP3</strong> — the audio file for this assessment</li>
-          <li style="font-size:0.9rem; color:var(--muted);"><strong style="color:var(--ink);">3. Upload</strong> — you'll get an access code and exit word to share with your student</li>
-        </ol>
+      <div class="empty-state" style="text-align:left; padding:2.5rem; border:1px solid var(--ink); background:var(--paper);">
+        <h2 style="font-family:'Playfair Display',serif; font-size:1.4rem; margin-bottom:0.5rem; color:var(--ink);">Upload your first assessment</h2>
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:1.5rem; line-height:1.5;">
+          Once you upload an audio file, you’ll get an <strong>access code</strong> for your student and an <strong>exit word</strong> that you read aloud when the assessment is finished.
+        </p>
+
+        <div style="display:flex; flex-direction:column; gap:1rem; margin-bottom:1.5rem;">
+          <div style="border:1px solid var(--warm-mid); padding:1rem;">
+            <p class="label" style="margin-bottom:0.3rem;">Step 1 — Label</p>
+            <p style="font-size:0.85rem; color:var(--muted); margin:0;">Give the assessment a name your students will recognise (e.g. “Grade 7 Reading — May 26”).</p>
+          </div>
+          <div style="border:1px solid var(--warm-mid); padding:1rem;">
+            <p class="label" style="margin-bottom:0.3rem;">Step 2 — Choose MP3</p>
+            <p style="font-size:0.85rem; color:var(--muted); margin:0;">Select the audio file from your computer. Max 50 MB on the free tier.</p>
+          </div>
+          <div style="border:1px solid var(--warm-mid); padding:1rem;">
+            <p class="label" style="margin-bottom:0.3rem;">Step 3 — Share</p>
+            <p style="font-size:0.85rem; color:var(--muted); margin:0;">Give the student the <strong>access code</strong>. Keep the <strong>exit word</strong> private — only read it aloud when the assessment is done.</p>
+          </div>
+        </div>
+
+        <button class="btn" onclick="document.getElementById('upload-modal').style.display='block'" style="font-size:0.85rem; padding:0.6rem 1.2rem;">
+          Upload Audio
+        </button>
       </div>`;
     return;
   }
-
   // Fetch summaries for paid tiers — fire in parallel with rendering
   if (currentTier !== 'free') {
     const { data: summaryRows } = await supabaseClient.rpc('get_my_upload_summaries');
