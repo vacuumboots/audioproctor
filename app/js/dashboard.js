@@ -436,7 +436,7 @@ async function loadUploads() {
         <td class="col-code">
           <div class="cell-copy-group">
             <span class="monospace">${u.access_code}</span>
-            <button class="btn btn--ghost btn--small" onclick="copyCode('${u.access_code}', this)">Copy</button>
+            <button class="btn btn--ghost btn--small" data-copy="${u.access_code}" onclick="copyCode(this.dataset.copy, this)">Copy</button>
           </div>
         </td>
         <td class="col-word">
