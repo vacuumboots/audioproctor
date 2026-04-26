@@ -39,6 +39,8 @@ let editTargetId  = null;
 let allUploads    = [];
 let allSummaries  = {};
 
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+
 // ─── Access Code Generation ──────────────────────────────────────
 
 function randomChar(pool) {
@@ -139,6 +141,125 @@ function toggleCustomCode() {
   group.classList.toggle('hidden', format !== 'custom');
 }
 
+function isMp3File(file) {
+  const name = (file?.name || '').toLowerCase();
+  const type = (file?.type || '').toLowerCase();
+  return type.includes('mpeg') || name.endsWith('.mp3');
+}
+
+function isWavFile(file) {
+  const name = (file?.name || '').toLowerCase();
+  const type = (file?.type || '').toLowerCase();
+  return type.includes('wav') || name.endsWith('.wav');
+}
+
+function isSupportedAudioFile(file) {
+  return isMp3File(file) || isWavFile(file);
+}
+
+function estimateMp3UpperBoundBytes(file) {
+  // Conservative estimate for validation: conversion + MP3 framing overhead can grow slightly.
+  return Math.ceil(file.size * 1.02) + 2048;
+}
+
+function toInt16Sample(floatSample) {
+  const clamped = Math.max(-1, Math.min(1, floatSample));
+  return clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff;
+}
+
+function interleaveStereo(left, right) {
+  const length = left.length + right.length;
+  const result = new Int16Array(length);
+  let idx = 0;
+  for (let i = 0; i < left.length; i++) {
+    result[idx++] = toInt16Sample(left[i]);
+    result[idx++] = toInt16Sample(right[i]);
+  }
+  return result;
+}
+
+function floatToMonoInt16(channel) {
+  const out = new Int16Array(channel.length);
+  for (let i = 0; i < channel.length; i++) out[i] = toInt16Sample(channel[i]);
+  return out;
+}
+
+function encodeBufferToMp3(audioBuffer) {
+  if (!window.lamejs) {
+    throw new Error('Audio conversion library failed to load. Please refresh and try again.');
+  }
+
+  const channels = audioBuffer.numberOfChannels;
+  if (channels < 1 || channels > 2) {
+    throw new Error('Only mono or stereo WAV files are supported right now.');
+  }
+
+  const sampleRate = audioBuffer.sampleRate;
+  const kbps = 128;
+  const encoder = new window.lamejs.Mp3Encoder(channels, sampleRate, kbps);
+
+  const left  = audioBuffer.getChannelData(0);
+  const right = channels === 2 ? audioBuffer.getChannelData(1) : null;
+
+  const blockSize = 1152;
+  const mp3Chunks = [];
+
+  if (channels === 1) {
+    const mono = floatToMonoInt16(left);
+    for (let i = 0; i < mono.length; i += blockSize) {
+      const chunk = mono.subarray(i, i + blockSize);
+      const mp3buf = encoder.encodeBuffer(chunk);
+      if (mp3buf.length > 0) mp3Chunks.push(new Int8Array(mp3buf));
+    }
+  } else {
+    const stereoInterleaved = interleaveStereo(left, right);
+    for (let i = 0; i < stereoInterleaved.length; i += blockSize * 2) {
+      const frame = stereoInterleaved.subarray(i, i + blockSize * 2);
+      const leftChunk = new Int16Array(Math.ceil(frame.length / 2));
+      const rightChunk = new Int16Array(Math.floor(frame.length / 2));
+      for (let j = 0, l = 0, r = 0; j < frame.length; j++) {
+        if (j % 2 === 0) leftChunk[l++] = frame[j];
+        else rightChunk[r++] = frame[j];
+      }
+      const mp3buf = encoder.encodeBuffer(leftChunk, rightChunk);
+      if (mp3buf.length > 0) mp3Chunks.push(new Int8Array(mp3buf));
+    }
+  }
+
+  const end = encoder.flush();
+  if (end.length > 0) mp3Chunks.push(new Int8Array(end));
+
+  return new Blob(mp3Chunks, { type: 'audio/mpeg' });
+}
+
+async function convertWavFileToMp3(file) {
+  const arrayBuffer = await file.arrayBuffer();
+
+  let audioContext;
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+    const mp3Blob = encodeBufferToMp3(audioBuffer);
+
+    if (!mp3Blob || mp3Blob.size === 0) {
+      throw new Error('Converted audio was empty.');
+    }
+
+    const outName = file.name.replace(/\.wav$/i, '.mp3');
+    return new File([mp3Blob], outName, {
+      type: 'audio/mpeg',
+      lastModified: Date.now(),
+    });
+  } catch (err) {
+    if (err?.message?.includes('mono or stereo')) throw err;
+    throw new Error('Could not convert WAV to MP3. Please re-export as MP3 and try again.');
+  } finally {
+    if (audioContext && typeof audioContext.close === 'function') {
+      try { await audioContext.close(); } catch {}
+    }
+  }
+}
+
 // ─── File Select ─────────────────────────────────────────────────
 
 function handleFileSelect(input) {
@@ -148,26 +269,27 @@ function handleFileSelect(input) {
 
   if (!file) {
     btn.disabled = true;
-    hint.textContent = 'Max 100 MB · MP3 only';
+    hint.textContent = 'Max 100 MB · MP3 or WAV (WAV converts to MP3)';
     return;
   }
 
-  if (!file.type.includes('mpeg') && !file.name.endsWith('.mp3')) {
-    showUploadNotice('Please select an MP3 file.', 'error');
+  if (!isSupportedAudioFile(file)) {
+    showUploadNotice('Please select an MP3 or WAV file.', 'error');
     input.value = '';
     btn.disabled = true;
     return;
   }
 
-  const maxBytes = 100 * 1024 * 1024;
-  if (file.size > maxBytes) {
+  const effectiveBytes = isWavFile(file) ? estimateMp3UpperBoundBytes(file) : file.size;
+  if (effectiveBytes > MAX_UPLOAD_BYTES) {
     showUploadNotice('File is too large. Maximum size is 100 MB.', 'error');
     input.value = '';
     btn.disabled = true;
     return;
   }
 
-  hint.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB`;
+  const suffix = isWavFile(file) ? ' · WAV will convert to MP3 on upload' : '';
+  hint.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB${suffix}`;
   btn.disabled = false;
   hideUploadNotice();
 }
@@ -176,8 +298,8 @@ function handleFileSelect(input) {
 
 async function handleUpload() {
   const fileInput = document.getElementById('file-input');
-  const file = fileInput.files[0];
-  if (!file) return;
+  const selectedFile = fileInput.files[0];
+  if (!selectedFile) return;
 
   const label = document.getElementById('label-input').value.trim() || null;
   const btn   = document.getElementById('btn-upload');
@@ -190,16 +312,16 @@ async function handleUpload() {
     if (!session) { window.location.href = '/login.html'; return; }
     const userId = session.user.id;
 
-    // Check for duplicate filename
+    // Check for duplicate filename (keep original selected name for UX continuity)
     const { data: existing } = await supabaseClient
       .from('uploads')
       .select('id')
       .eq('teacher_id', userId)
-      .eq('filename', file.name)
+      .eq('filename', selectedFile.name)
       .maybeSingle();
 
     if (existing) {
-      const proceed = confirm(`You already have an upload named "${file.name}". Upload another copy anyway?`);
+      const proceed = confirm(`You already have an upload named "${selectedFile.name}". Upload another copy anyway?`);
       if (!proceed) {
         btn.disabled = false;
         return;
@@ -233,8 +355,10 @@ async function handleUpload() {
         .eq('id', userId)
         .maybeSingle();
       const storageUsed = profile?.storage_used_mb || 0;
-      const fileSizeMb  = file.size / 1024 / 1024;
-      if (storageUsed + fileSizeMb > 50) {
+      const estimatedUploadMb = (isWavFile(selectedFile)
+        ? estimateMp3UpperBoundBytes(selectedFile)
+        : selectedFile.size) / 1024 / 1024;
+      if (storageUsed + estimatedUploadMb > 50) {
         btn.disabled = false;
         showUploadNotice(
           `This file would exceed your 50 MB storage limit. You've used ${storageUsed.toFixed(1)} of 50 MB. Delete older assessments to free up space.`,
@@ -271,18 +395,28 @@ async function handleUpload() {
     }
     const exitWordHash = await hashWord(exitWord);
 
+    // Convert WAV to MP3 if needed
+    let uploadFile = selectedFile;
+    if (isWavFile(selectedFile)) {
+      showProgress(5, 'Converting WAV to MP3…');
+      uploadFile = await convertWavFileToMp3(selectedFile);
+      if (uploadFile.size > MAX_UPLOAD_BYTES) {
+        throw new Error('Converted MP3 is larger than 100 MB. Please trim or compress the source audio and try again.');
+      }
+    }
+
     // Upload to Supabase Storage with progress tracking
     const storagePath = `${userId}/${accessCode}.mp3`;
-    showProgress(0, 'Uploading…');
+    showProgress(10, 'Uploading…');
 
     const { error: storageError } = await supabaseClient.storage
       .from('audio-files')
-      .upload(storagePath, file, {
+      .upload(storagePath, uploadFile, {
         contentType: 'audio/mpeg',
         upsert: false,
         onUploadProgress: (progress) => {
-          const pct = Math.round((progress.loaded / progress.total) * 100);
-          showProgress(pct, `Uploading… ${pct}%`);
+          const pct = Math.round((progress.loaded / progress.total) * 90) + 10;
+          showProgress(Math.min(99, pct), `Uploading… ${Math.min(99, pct)}%`);
         },
       });
 
@@ -296,14 +430,14 @@ async function handleUpload() {
       .from('uploads')
       .insert({
         teacher_id:     userId,
-        filename:       file.name,
+        filename:       selectedFile.name,
         label:          label,
         storage_path:   storagePath,
         access_code:    accessCode,
         exit_word:      exitWord,
         exit_word_hash: exitWordHash,
         expires_at:     expiresAt,
-        file_size_mb:   file.size / 1024 / 1024,
+        file_size_mb:   uploadFile.size / 1024 / 1024,
       });
 
     if (dbError) {
@@ -321,7 +455,7 @@ async function handleUpload() {
     hideProgress();
     fileInput.value = '';
     document.getElementById('label-input').value = '';
-    document.getElementById('file-hint').textContent = 'Max 100 MB · MP3 only';
+    document.getElementById('file-hint').textContent = 'Max 100 MB · MP3 or WAV (WAV converts to MP3)';
     if (document.getElementById('exit-word-mode'))  document.getElementById('exit-word-mode').value  = 'random-short';
     if (document.getElementById('code-format'))     document.getElementById('code-format').value     = 'standard';
     if (document.getElementById('custom-exit-word')) document.getElementById('custom-exit-word').value = '';
@@ -392,8 +526,8 @@ async function loadUploads() {
             <p style="font-size:0.85rem; color:var(--muted); margin:0;">Give the assessment a name your students will recognise (e.g. “Grade 7 Reading — May 26”).</p>
           </div>
           <div style="border:1px solid var(--warm-mid); padding:1rem;">
-            <p class="label" style="margin-bottom:0.3rem;">Step 2 — Choose MP3</p>
-            <p style="font-size:0.85rem; color:var(--muted); margin:0;">Select the audio file from your computer. Max 50 MB on the free tier.</p>
+            <p class="label" style="margin-bottom:0.3rem;">Step 2 — Choose Audio File</p>
+            <p style="font-size:0.85rem; color:var(--muted); margin:0;">Select an MP3 or WAV file from your computer. WAV files convert to MP3 automatically.</p>
           </div>
           <div style="border:1px solid var(--warm-mid); padding:1rem;">
             <p class="label" style="margin-bottom:0.3rem;">Step 3 — Share</p>

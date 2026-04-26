@@ -145,15 +145,15 @@
       </div>
 
       <div class="form-group">
-        <label class="label" for="file-input">MP3 Audio File</label>
+        <label class="label" for="file-input">Audio File (MP3 or WAV)</label>
         <input
           type="file"
           id="file-input"
           class="input-field"
-          accept=".mp3,audio/mpeg"
+          accept=".mp3,audio/mpeg,.wav,audio/wav,audio/x-wav"
           onchange="handleFileSelect(this)"
         >
-        <span id="file-hint" class="label text-muted">Max 100 MB · MP3 only</span>
+        <span id="file-hint" class="label text-muted">Max 100 MB · MP3 or WAV (WAV converts to MP3)</span>
       </div>
 
       <!-- Advanced Options — premium only, hidden for free tier -->
@@ -316,6 +316,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
   <script src="/js/supabase-client.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/dashboard.js"></script>
