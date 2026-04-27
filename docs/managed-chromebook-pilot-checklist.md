@@ -1,5 +1,9 @@
 # Managed Chromebook Pilot Checklist
 
+For each formal run, record results in:
+- `docs/test-runs/2026-04-26-managed-chromebook-pilot.md` (current prefilled run sheet)
+- or a new dated file under `docs/test-runs/` using the same structure.
+
 ## Purpose
 Validate that AudioProctor works on a real managed Chromebook under school-style policy enforcement and is ready for a live student pilot. "Managed Chromebook end-to-end validated" means a tester can launch a session from the force-installed extension, hear audio reliably, use the player controls, confirm lock-down behavior, recover from common interruptions, and end the session only with the correct exit word.
 

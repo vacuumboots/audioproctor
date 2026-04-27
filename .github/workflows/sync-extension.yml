@@ -20,6 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Push extension subtree to public repo
         env:
@@ -27,11 +28,18 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [ -z "${PUBLIC_REPO_TOKEN:-}" ]; then
+            echo "PUBLIC_REPO_TOKEN is empty or unavailable. Check repo secrets." >&2
+            exit 1
+          fi
+
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
-          git remote add public https://x-access-token:${PUBLIC_REPO_TOKEN}@github.com/vacuumboots/audioproctor-extension.git
-          git fetch public main || true
+          git remote add public https://vacuumboots:${PUBLIC_REPO_TOKEN}@github.com/vacuumboots/audioproctor-extension.git
+
+          # Quick auth check with the PAT before attempting push
+          git ls-remote public >/dev/null
 
           SPLIT_SHA=$(git subtree split --prefix=extension HEAD)
           git push public ${SPLIT_SHA}:main --force

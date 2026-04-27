@@ -4,7 +4,7 @@
 > **Priority:** Medium (deferred from Shipment 3)  
 > **Estimated effort:** 2–3 hours  
 > **Type:** Documentation + minor code alignment  
-> **Commits:** (to be filled on commit)  
+> **Commits:** Implemented and merged to `main` (see git history around 2026-04-25)  
 
 **Goal:** Write `docs/account-lifecycle-states.md` — a single authoritative reference for every possible state a teacher account can be in, what it means for data access, who can trigger transitions, and what happens to uploads, sessions, and billing at each step. Update README to cross-link it.
 
