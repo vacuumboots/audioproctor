@@ -6,6 +6,14 @@ This file provides a verifiable chain-of-custody between:
 - release artifact hash
 - Chrome Web Store release metadata
 
+## Why this is cool
+This gives AudioProctor a real, auditable supply-chain story:
+- Anyone can verify the public source matches the private extension subtree.
+- Anyone can verify the uploaded release artifact hash.
+- Each store release can be tied to a specific public commit.
+
+In plain terms: trust is no longer “because we said so” — it is cryptographically checkable.
+
 ## Verification method
 1. Compute private subtree split SHA:
    `git subtree split --prefix=extension HEAD`
