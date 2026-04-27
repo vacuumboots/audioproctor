@@ -41,4 +41,5 @@ jobs:
           # Quick auth check with the PAT before attempting push
           git ls-remote public >/dev/null
 
-          git subtree push --prefix=extension public main
+          SPLIT_SHA=$(git subtree split --prefix=extension HEAD)
+          git push public ${SPLIT_SHA}:main --force
