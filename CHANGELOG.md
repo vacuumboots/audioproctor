@@ -2,6 +2,22 @@
 
 All notable changes to AudioProctor are documented in this file.
 
+## [1.0.1] - 2026-04-27
+
+Extension patch release for managed Chromebook validation and Chrome Web Store promotion.
+
+### Changed
+- Extension popup/session fetch flow now permits the live `www.audioproctor.com` redirect target in manifest host permissions and CSP `connect-src`.
+- Extension version bumped from `1.0.0` to `1.0.1`.
+
+### Security / privacy hardening
+- Removed Google Fonts dependency from extension UI pages.
+- Added an explicit Manifest V3 content security policy for extension pages.
+- Added `no-referrer` fetch policy on extension network calls.
+
+### Validation
+- Chromebook retest confirmed the popup/session flow works after the CSP host allowlist update.
+
 ## [0.100.0] - 2026-04-26
 
 Milestone release for demo readiness, extension open-source visibility, and repo doc hygiene.
