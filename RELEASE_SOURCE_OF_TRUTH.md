@@ -25,7 +25,7 @@ In plain terms: trust is no longer “because we said so” — it is cryptograp
 
 | store_version | version_name | public_commit | public_tag | artifact | sha256 | cws_published_at |
 |---|---|---|---|---|---|---|
-| 1.0.1 | `v1.0.1` | `963d551573122e31003f3dd4aa4d4bb7bbeaef20` | `store-v1.0.1` | `extension-v1.0.1+git.963d551.zip` | `9a2602d01e805b804205b3ce700952284762543b90402dcfea648be0db8ca2a2` | _(pending)_ |
+| 1.0.1 | `v1.0.1` | `963d551573122e31003f3dd4aa4d4bb7bbeaef20` | `store-v1.0.1` | `extension-v1.0.1+git.963d551.zip` | `9a2602d01e805b804205b3ce700952284762543b90402dcfea648be0db8ca2a2` | `submitted for Chrome Web Store review 2026-04-27T13:58:52-06:00` |
 | 1.0.0 | `v1.0.0+git.ade0de7` | `ade0de7c49335df16489eaf1a66e03dc8728272f` | `store-v1.0.0` | `extension-v1.0.0+git.ade0de7.zip` | `77c9cd543c124828d882ee64c1e9374e5c2b220b1fc196e7223e0a8fd203995c` | _(pending)_ |
 
 ## Last local proof run
