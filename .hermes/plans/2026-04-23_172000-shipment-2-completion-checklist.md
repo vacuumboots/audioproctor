@@ -3,7 +3,7 @@
 **Ship:** Invite Delivery and Minimum Onboarding Completion  
 **Status:** IMPLEMENTED  
 **Date:** 2026-04-23  
-**Commits:** 8 ahead of origin/main  
+**Commits:** Implemented and merged to `main` (historical note; ahead count intentionally removed)  
 
 ---
 

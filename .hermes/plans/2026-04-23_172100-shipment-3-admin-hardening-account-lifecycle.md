@@ -1,6 +1,6 @@
 # Shipment 3 — Admin Hardening for Real Account Lifecycle Implementation Plan
 
-> **Status:** PARTIALLY IMPLEMENTED (2026-04-23)  
+> **Status:** IMPLEMENTED (core Shipment 3 scope completed; historical plan retained)  
 > **Commits:** 2556ef9 pushed to origin/main  
 > **Migration:** 016 applied in Supabase
 
@@ -30,7 +30,7 @@
 
 ## Deliverables — Completed
 
-### Trial & Tier Enforcement
+### Trial & Tier Enforcement (Implemented)
 - [x] `supabase/migrations/016_auto_trial_and_requests.sql` — adds `profiles.expires_at`, `teacher_requests.teacher_id`, `teacher_requests.request_type`
 - [x] `app/js/auth.js` `ensureProfile()` — new signups get `tier: 'premium'` + 30-day `expires_at`
 - [x] `get_effective_tier()` updated — respects `expires_at`; expired trials fall back to 'free'
@@ -115,11 +115,11 @@ Retest the full lifecycle if any of these change:
 
 ---
 
-## Next Recommended Work
+## Next Recommended Work (historical)
 
-If continuing on this track:
-1. **Deactivate/reactivate toggle** — highest operational value. Blocks bad actors immediately.
-2. **Account lifecycle state matrix document** — useful for onboarding future developers or support staff.
+If continuing on this track (status as of 2026-04-23):
+1. **Deactivate/reactivate toggle** — completed 2026-04-25.
+2. **Account lifecycle state matrix document** — completed 2026-04-25.
 
 If switching to monetization:
 4. **Stripe webhook expansion** — handle `past_due`, `unpaid`, `canceled` states beyond `checkout.session.completed` and `customer.subscription.deleted`.
