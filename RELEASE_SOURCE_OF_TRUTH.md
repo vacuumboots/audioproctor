@@ -25,10 +25,10 @@ In plain terms: trust is no longer “because we said so” — it is cryptograp
 
 | store_version | version_name | public_commit | public_tag | artifact | sha256 | cws_published_at |
 |---|---|---|---|---|---|---|
-| 1.0.0 | _(not yet stamped in manifest; recommended: `v1.0.0+git.72d438e`)_ | `72d438e4d40780f617786933768e911d97b72bc2` | _(pending)_ | `extension-v1.0.0+git.72d438e.zip` | `339b32a6e4ea64bdf1c2c56f3d8725e7540ab2724833755f26c366808d298a72` | _(pending)_ |
+| 1.0.0 | `v1.0.0+git.ade0de7` | `ade0de7c49335df16489eaf1a66e03dc8728272f` | `store-v1.0.0` | `extension-v1.0.0+git.ade0de7.zip` | `77c9cd543c124828d882ee64c1e9374e5c2b220b1fc196e7223e0a8fd203995c` | _(pending)_ |
 
 ## Last local proof run
-- private subtree SHA: `72d438e4d40780f617786933768e911d97b72bc2`
-- public main SHA: `72d438e4d40780f617786933768e911d97b72bc2`
+- private subtree SHA: `ade0de7c49335df16489eaf1a66e03dc8728272f`
+- public main SHA: `ade0de7c49335df16489eaf1a66e03dc8728272f`
 - match: `yes`
-- artifact path used for hash: `/tmp/extension-v1.0.0+git.72d438e.zip`
+- artifact path used for hash: `/tmp/extension-v1.0.0+git.ade0de7.zip`
