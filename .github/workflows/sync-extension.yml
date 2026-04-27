@@ -1,0 +1,37 @@
+name: Sync extension to public repo
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'extension/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout private repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push extension subtree to public repo
+        env:
+          PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          git remote add public https://x-access-token:${PUBLIC_REPO_TOKEN}@github.com/vacuumboots/audioproctor-extension.git
+          git fetch public main || true
+
+          SPLIT_SHA=$(git subtree split --prefix=extension HEAD)
+          git push public ${SPLIT_SHA}:main --force
