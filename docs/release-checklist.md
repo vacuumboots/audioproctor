@@ -16,6 +16,7 @@ Use this checklist before shipping to `main` and before demos.
 - [ ] Confirm deactivated teacher behavior is still blocked where expected.
 
 ## 3) Extension mirror/public repo sync
+- [ ] If this release touches `extension/**`, complete `docs/extension-release-checklist.md`.
 - [ ] Confirm `.github/workflows/sync-extension.yml` exists on `main`.
 - [ ] Confirm `PUBLIC_REPO_TOKEN` secret is set in private repo.
 - [ ] If first sync, run workflow manually (`workflow_dispatch`) and verify success.
