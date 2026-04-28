@@ -294,13 +294,70 @@ function handleFileSelect(input) {
   hideUploadNotice();
 }
 
+// ─── Assessment Type Toggle ──────────────────────────────────────
+
+function getSelectedAssessmentType() {
+  return document.getElementById('assessment-type')?.value || 'audio';
+}
+
+function toggleAssessmentType() {
+  const type      = getSelectedAssessmentType();
+  const audioGroup = document.getElementById('audio-input-group');
+  const textGroup  = document.getElementById('text-input-group');
+  const btn        = document.getElementById('btn-upload');
+
+  if (type === 'text') {
+    audioGroup.classList.add('hidden');
+    textGroup.classList.remove('hidden');
+    // Reset audio input
+    document.getElementById('file-input').value = '';
+    document.getElementById('file-hint').textContent = 'Max 50 MB · MP3 or WAV (WAV converts to MP3)';
+  } else {
+    audioGroup.classList.remove('hidden');
+    textGroup.classList.add('hidden');
+    // Reset text input
+    document.getElementById('text-content-input').value = '';
+    document.getElementById('text-hint').textContent = 'Plain text only · Max 25,000 characters';
+  }
+
+  btn.disabled = true;
+  hideUploadNotice();
+}
+
+function normalizeTextContent(raw) {
+  return raw
+    .replace(/\r\n/g, '\n')           // CRLF → LF
+    .replace(/\r/g, '\n')             // lone CR → LF
+    .replace(/\n{3,}/g, '\n\n')       // collapse 3+ blank lines to 2
+    .trim();
+}
+
+function handleTextInput() {
+  const raw  = document.getElementById('text-content-input').value;
+  const text = normalizeTextContent(raw);
+  const btn  = document.getElementById('btn-upload');
+  const hint = document.getElementById('text-hint');
+
+  if (text.length === 0) {
+    btn.disabled = true;
+    hint.textContent = 'Plain text only · Max 25,000 characters';
+    return;
+  }
+
+  if (text.length > 25000) {
+    btn.disabled = true;
+    hint.textContent = `${text.length.toLocaleString()} / 25,000 characters — too long`;
+    return;
+  }
+
+  btn.disabled = false;
+  hint.textContent = `${text.length.toLocaleString()} characters`;
+}
+
 // ─── Upload ──────────────────────────────────────────────────────
 
 async function handleUpload() {
-  const fileInput = document.getElementById('file-input');
-  const selectedFile = fileInput.files[0];
-  if (!selectedFile) return;
-
+  const assessmentType = getSelectedAssessmentType();
   const label = document.getElementById('label-input').value.trim() || null;
   const btn   = document.getElementById('btn-upload');
 
@@ -312,28 +369,72 @@ async function handleUpload() {
     if (!session) { window.location.href = '/login.html'; return; }
     const userId = session.user.id;
 
-    const dbFilename = isWavFile(selectedFile)
-      ? selectedFile.name.replace(/\.wav$/i, '.mp3')
-      : selectedFile.name;
+    // ─── Type-specific input validation ────────────────────────────
+    let dbFilename, storagePath, uploadFile, textContent, textCharCount;
 
-    // Check for duplicate filename as it will be stored/shown in the dashboard
-    const { data: existing } = await supabaseClient
-      .from('uploads')
-      .select('id')
-      .eq('teacher_id', userId)
-      .eq('filename', dbFilename)
-      .maybeSingle();
-
-    if (existing) {
-      const proceed = confirm(`You already have an upload named "${dbFilename}". Upload another copy anyway?`);
-      if (!proceed) {
+    if (assessmentType === 'text') {
+      const raw  = document.getElementById('text-content-input').value;
+      textContent = normalizeTextContent(raw);
+      if (!textContent || textContent.length === 0) {
         btn.disabled = false;
+        showUploadNotice('Please paste some assessment text.', 'error');
         return;
+      }
+      if (textContent.length > 25000) {
+        btn.disabled = false;
+        showUploadNotice('Text is too long. Maximum 25,000 characters.', 'error');
+        return;
+      }
+      textCharCount = textContent.length;
+      dbFilename    = 'text-assessment.txt';
+      storagePath   = `text/${userId}`;  // synthetic placeholder (NOT NULL constraint)
+      uploadFile    = null;
+    } else {
+      const fileInput    = document.getElementById('file-input');
+      const selectedFile = fileInput.files[0];
+      if (!selectedFile) { btn.disabled = false; return; }
+      dbFilename = isWavFile(selectedFile)
+        ? selectedFile.name.replace(/\.wav$/i, '.mp3')
+        : selectedFile.name;
+      uploadFile   = selectedFile;
+      textContent  = null;
+      textCharCount = 0;
+
+      // Check for duplicate filename
+      const { data: existing } = await supabaseClient
+        .from('uploads')
+        .select('id')
+        .eq('teacher_id', userId)
+        .eq('filename', dbFilename)
+        .maybeSingle();
+      if (existing) {
+        const proceed = confirm(`You already have an upload named "${dbFilename}". Upload another copy anyway?`);
+        if (!proceed) { btn.disabled = false; return; }
+      }
+
+      // Check storage cap for audio
+      if (currentTier === 'free') {
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('storage_used_mb')
+          .eq('id', userId)
+          .maybeSingle();
+        const storageUsed = profile?.storage_used_mb || 0;
+        const estimatedUploadMb = (isWavFile(selectedFile)
+          ? estimateMp3UpperBoundBytes(selectedFile)
+          : selectedFile.size) / 1024 / 1024;
+        if (storageUsed + estimatedUploadMb > 50) {
+          btn.disabled = false;
+          showUploadNotice(
+            `This file would exceed your 50 MB storage limit. You've used ${storageUsed.toFixed(1)} of 50 MB.`,
+            'error'
+          );
+          return;
+        }
       }
     }
 
-    // Check quota and storage cap (UI-side gate; server enforces via RLS).
-    // currentTier is already set by loadQuota() which runs on page load.
+    // ─── Shared: quota check (both types count toward monthly limit) ─
     if (currentTier === 'free') {
       const now        = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -348,24 +449,6 @@ async function handleUpload() {
         const resetFmt = reset.toLocaleDateString('en-CA', { month: 'long', day: 'numeric' });
         showUploadNotice(
           `You've used all 3 uploads for this month. Your quota resets on ${resetFmt}.`,
-          'error'
-        );
-        return;
-      }
-
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('storage_used_mb')
-        .eq('id', userId)
-        .maybeSingle();
-      const storageUsed = profile?.storage_used_mb || 0;
-      const estimatedUploadMb = (isWavFile(selectedFile)
-        ? estimateMp3UpperBoundBytes(selectedFile)
-        : selectedFile.size) / 1024 / 1024;
-      if (storageUsed + estimatedUploadMb > 50) {
-        btn.disabled = false;
-        showUploadNotice(
-          `This file would exceed your 50 MB storage limit. You've used ${storageUsed.toFixed(1)} of 50 MB. Delete older assessments to free up space.`,
           'error'
         );
         return;
@@ -399,34 +482,33 @@ async function handleUpload() {
     }
     const exitWordHash = await hashWord(exitWord);
 
-    // Convert WAV to MP3 if needed
-    let uploadFile = selectedFile;
-    if (isWavFile(selectedFile)) {
-      showProgress(5, 'Converting WAV to MP3…');
-      uploadFile = await convertWavFileToMp3(selectedFile);
-      if (uploadFile.size > MAX_UPLOAD_BYTES) {
-        throw new Error('Converted MP3 is larger than 50 MB. Please trim or compress the source audio and try again.');
+    // ─── Audio: convert + upload to storage ───────────────────────
+    if (assessmentType === 'audio') {
+      if (isWavFile(uploadFile)) {
+        showProgress(5, 'Converting WAV to MP3…');
+        uploadFile = await convertWavFileToMp3(uploadFile);
+        if (uploadFile.size > MAX_UPLOAD_BYTES) {
+          throw new Error('Converted MP3 is larger than 50 MB. Please trim or compress the source audio.');
+        }
       }
+      storagePath = `${userId}/${accessCode}.mp3`;
+      showProgress(10, 'Uploading…');
+      const { error: storageError } = await supabaseClient.storage
+        .from('audio-files')
+        .upload(storagePath, uploadFile, {
+          contentType: 'audio/mpeg',
+          upsert: false,
+          onUploadProgress: (progress) => {
+            const pct = Math.round((progress.loaded / progress.total) * 90) + 10;
+            showProgress(Math.min(99, pct), `Uploading… ${Math.min(99, pct)}%`);
+          },
+        });
+      if (storageError) throw new Error('Upload failed: ' + storageError.message);
+    } else {
+      showProgress(50, 'Saving…');
     }
 
-    // Upload to Supabase Storage with progress tracking
-    const storagePath = `${userId}/${accessCode}.mp3`;
-    showProgress(10, 'Uploading…');
-
-    const { error: storageError } = await supabaseClient.storage
-      .from('audio-files')
-      .upload(storagePath, uploadFile, {
-        contentType: 'audio/mpeg',
-        upsert: false,
-        onUploadProgress: (progress) => {
-          const pct = Math.round((progress.loaded / progress.total) * 90) + 10;
-          showProgress(Math.min(99, pct), `Uploading… ${Math.min(99, pct)}%`);
-        },
-      });
-
-    if (storageError) throw new Error('Upload failed: ' + storageError.message);
-
-    // Save to database
+    // ─── Save to database ─────────────────────────────────────────
     showProgress(100, 'Saving…');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -441,11 +523,16 @@ async function handleUpload() {
         exit_word:      exitWord,
         exit_word_hash: exitWordHash,
         expires_at:     expiresAt,
-        file_size_mb:   uploadFile.size / 1024 / 1024,
+        file_size_mb:   uploadFile ? uploadFile.size / 1024 / 1024 : 0,
+        assessment_type: assessmentType,
+        text_content:    textContent,
+        text_char_count: textCharCount,
       });
 
     if (dbError) {
-      await supabaseClient.storage.from('audio-files').remove([storagePath]);
+      if (assessmentType === 'audio') {
+        await supabaseClient.storage.from('audio-files').remove([storagePath]);
+      }
       if (dbError.code === '23505') {
         throw new Error('The generated access code was already taken — this is rare. Please try uploading again.');
       }
@@ -457,9 +544,13 @@ async function handleUpload() {
 
     // Reset form
     hideProgress();
-    fileInput.value = '';
     document.getElementById('label-input').value = '';
+    document.getElementById('file-input').value = '';
+    document.getElementById('text-content-input').value = '';
     document.getElementById('file-hint').textContent = 'Max 50 MB · MP3 or WAV (WAV converts to MP3)';
+    document.getElementById('text-hint').textContent = 'Plain text only · Max 25,000 characters';
+    document.getElementById('assessment-type').value = 'audio';
+    toggleAssessmentType();
     if (document.getElementById('exit-word-mode'))  document.getElementById('exit-word-mode').value  = 'random-short';
     if (document.getElementById('code-format'))     document.getElementById('code-format').value     = 'standard';
     if (document.getElementById('custom-exit-word')) document.getElementById('custom-exit-word').value = '';
@@ -502,7 +593,7 @@ async function loadUploads() {
 
   const { data: uploads, error } = await supabaseClient
     .from('uploads')
-    .select('id, filename, label, access_code, exit_word, expires_at, storage_path, file_size_mb')
+    .select('id, filename, label, access_code, exit_word, expires_at, storage_path, file_size_mb, assessment_type, text_char_count')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -555,8 +646,14 @@ async function loadUploads() {
   const rows = uploads.map(u => {
     const { text: expiryText, expired } = formatExpiry(u.expires_at);
     const chipClass    = expired ? 'chip--expired' : 'chip--active';
-    const displayName  = u.label || u.filename;
-    const showFilename = u.label && u.label !== u.filename;
+    const isText       = u.assessment_type === 'text';
+    const displayName  = u.label || (isText ? 'Text Assessment' : u.filename);
+    const typeBadge    = isText
+      ? '<span class="chip chip--active" style="font-size:0.65rem; margin-left:0.4rem;">Text</span>'
+      : '';
+    const metaLine     = isText
+      ? `<div class="col-assessment__filename">${u.text_char_count || 0} chars</div>`
+      : (u.label && u.label !== u.filename ? `<div class="col-assessment__filename">${escapeHtml(u.filename)}</div>` : '');
 
     const extendBtn = (!expired && currentTier !== 'free')
       ? `<button class="btn btn--ghost btn--small" onclick="openExpiryModal('${u.id}', '${u.expires_at}')">Edit Expiry</button>`
@@ -567,8 +664,8 @@ async function loadUploads() {
     return `
       <tr>
         <td class="col-assessment">
-          <div class="col-assessment__label">${escapeHtml(displayName)}</div>
-          ${showFilename ? `<div class="col-assessment__filename">${escapeHtml(u.filename)}</div>` : ''}
+          <div class="col-assessment__label">${escapeHtml(displayName)}${typeBadge}</div>
+          ${metaLine}
           ${statsBlock}
         </td>
         <td class="col-code">
@@ -589,7 +686,7 @@ async function loadUploads() {
             <button class="btn btn--ghost btn--small" onclick="openEditModal('${u.id}', '${escapeHtml(u.label || u.filename)}')">Rename</button>
             <button class="btn btn--ghost btn--small" onclick="duplicateUpload('${u.id}', this)">Duplicate</button>
             ${extendBtn}
-            <button class="btn btn--danger btn--small" onclick="deleteUpload('${u.id}', '${u.storage_path}', this)">Delete</button>
+            <button class="btn btn--danger btn--small" onclick="deleteUpload('${u.id}', '${u.storage_path}', this, '${u.assessment_type || 'audio'}')">Delete</button>
           </div>
         </td>
       </tr>`;
@@ -748,29 +845,31 @@ function formatExpiry(expiresAt) {
   return { text: 'Expiring soon', expired: false };
 }
 
-async function deleteUpload(id, storagePath, btn) {
+async function deleteUpload(id, storagePath, btn, assessmentType) {
   if (!confirm('Delete this assessment? Students will lose access immediately.')) return;
 
   btn.disabled    = true;
   btn.textContent = 'Deleting…';
 
-  // Only delete the storage file if no other upload shares this path (duplicates)
-  const { count } = await supabaseClient
-    .from('uploads')
-    .select('id', { count: 'exact', head: true })
-    .eq('storage_path', storagePath)
-    .neq('id', id);
+  // Audio: only delete the storage file if no other upload shares this path (duplicates)
+  if (assessmentType !== 'text') {
+    const { count } = await supabaseClient
+      .from('uploads')
+      .select('id', { count: 'exact', head: true })
+      .eq('storage_path', storagePath)
+      .neq('id', id);
 
-  if (count === 0) {
-    const { error: storageErr } = await supabaseClient.storage
-      .from('audio-files')
-      .remove([storagePath]);
+    if (count === 0) {
+      const { error: storageErr } = await supabaseClient.storage
+        .from('audio-files')
+        .remove([storagePath]);
 
-    if (storageErr) {
-      alert('Could not delete audio file: ' + storageErr.message);
-      btn.disabled    = false;
-      btn.textContent = 'Delete';
-      return;
+      if (storageErr) {
+        alert('Could not delete audio file: ' + storageErr.message);
+        btn.disabled    = false;
+        btn.textContent = 'Delete';
+        return;
+      }
     }
   }
 
@@ -904,7 +1003,7 @@ async function duplicateUpload(id, btn) {
     // Fetch source row
     const { data: source, error: fetchErr } = await supabaseClient
       .from('uploads')
-      .select('filename, label, storage_path, file_size_mb')
+      .select('filename, label, storage_path, file_size_mb, assessment_type, text_content, text_char_count')
       .eq('id', id)
       .single();
 
@@ -933,6 +1032,9 @@ async function duplicateUpload(id, btn) {
           exit_word_hash: newWordHash,
           expires_at:     expiresAt,
           file_size_mb:   source.file_size_mb || 0,
+          assessment_type: source.assessment_type || 'audio',
+          text_content:    source.text_content || null,
+          text_char_count: source.text_char_count || 0,
         });
 
       if (!error) { inserted = true; break; }

@@ -24,11 +24,29 @@
     return;
   }
 
-  // Populate player
-  document.getElementById('player-filename').textContent = session.filename;
-  document.title = 'AudioProctor — ' + session.filename;
+  const displayTitle = session.title || session.filename || 'Assessment';
+  document.getElementById('player-filename').textContent = displayTitle;
+  document.title = 'AudioProctor — ' + displayTitle;
 
+  if (session.assessmentType === 'text' && session.textContent) {
+    // Text assessment — show text reader
+    const textEl = document.getElementById('text-content');
+    if (textEl) {
+      textEl.textContent = session.textContent;
+    }
+    const textFilename = document.getElementById('text-filename');
+    if (textFilename) textFilename.textContent = displayTitle;
+    document.getElementById('state-loading').classList.add('hidden');
+    document.getElementById('state-text').classList.remove('hidden');
+    return;  // skip audio wiring
+  }
+
+  // Audio assessment — existing flow
   const audio = document.getElementById('audio-el');
+  if (!session.signedUrl) {
+    showError('No audio URL received. Please re-enter your code.');
+    return;
+  }
   audio.src   = session.signedUrl;
 
   // Wire controls

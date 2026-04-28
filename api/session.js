@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
   // ─── Access code lookup ───────────────────────────────────────
   const { data: upload, error } = await supabase
     .from('uploads')
-    .select('id, filename, storage_path, exit_word_hash, expires_at, teacher_id')
+    .select('id, filename, storage_path, exit_word_hash, expires_at, teacher_id, assessment_type, label, text_content, text_char_count')
     .eq('access_code', code.toUpperCase().trim())
     .single();
 
@@ -86,14 +86,37 @@ module.exports = async (req, res) => {
     return res.status(403).json({ error: 'This assessment is no longer available' });
   }
 
-  // Generate a signed URL valid for 1 hour
-  const { data: signed, error: signError } = await supabase
-    .storage
-    .from('audio-files')
-    .createSignedUrl(upload.storage_path, 3600);
+  // ─── Build typed response ───────────────────────────────────────
+  // Text assessments skip signed URL generation entirely.
 
-  if (signError || !signed) {
-    return res.status(500).json({ error: 'Could not generate audio link' });
+  let responseBody;
+
+  if (upload.assessment_type === 'text') {
+    responseBody = {
+      assessmentType: 'text',
+      title:         upload.label || upload.filename || 'Text Assessment',
+      textContent:   upload.text_content,
+      textCharCount: upload.text_char_count,
+      exitWordHash:  upload.exit_word_hash,
+    };
+  } else {
+    // Audio: generate a signed URL valid for 1 hour
+    const { data: signed, error: signError } = await supabase
+      .storage
+      .from('audio-files')
+      .createSignedUrl(upload.storage_path, 3600);
+
+    if (signError || !signed) {
+      return res.status(500).json({ error: 'Could not generate audio link' });
+    }
+
+    responseBody = {
+      assessmentType: 'audio',
+      title:         upload.label || upload.filename,
+      filename:      upload.filename,
+      signedUrl:     signed.signedUrl,
+      exitWordHash:  upload.exit_word_hash,
+    };
   }
 
   // Log the successful code entry — fire-and-forget, never blocks the response.
@@ -106,9 +129,5 @@ module.exports = async (req, res) => {
 
   // Return only what the client needs.
   // storage_path and exit_word (plain) are intentionally omitted.
-  return res.status(200).json({
-    signedUrl:    signed.signedUrl,
-    filename:     upload.filename,
-    exitWordHash: upload.exit_word_hash,
-  });
+  return res.status(200).json(responseBody);
 };

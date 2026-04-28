@@ -23,6 +23,8 @@ const ALLOWED_EVENTS = new Set([
   'exit_word_used',
   'session_expired',
   'audio_error',
+  'text_viewed',
+  'text_completed',
 ]);
 
 module.exports = async (req, res) => {
