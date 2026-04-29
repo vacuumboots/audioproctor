@@ -300,6 +300,19 @@ function getSelectedAssessmentType() {
   return document.getElementById('assessment-type')?.value || 'audio';
 }
 
+function selectAssessmentType(type) {
+  const hidden = document.getElementById('assessment-type');
+  if (hidden) hidden.value = type;
+
+  // Update toggle button states
+  const btns = document.querySelectorAll('#assessment-type-toggle .type-toggle__btn');
+  btns.forEach(btn => {
+    btn.classList.toggle('type-toggle__btn--active', btn.dataset.type === type);
+  });
+
+  toggleAssessmentType();
+}
+
 function toggleAssessmentType() {
   const type      = getSelectedAssessmentType();
   const audioGroup = document.getElementById('audio-input-group');
@@ -550,7 +563,7 @@ async function handleUpload() {
     document.getElementById('file-hint').textContent = 'Max 50 MB · MP3 or WAV (WAV converts to MP3)';
     document.getElementById('text-hint').textContent = 'Plain text only · Max 25,000 characters';
     document.getElementById('assessment-type').value = 'audio';
-    toggleAssessmentType();
+    selectAssessmentType('audio');
     if (document.getElementById('exit-word-mode'))  document.getElementById('exit-word-mode').value  = 'random-short';
     if (document.getElementById('code-format'))     document.getElementById('code-format').value     = 'standard';
     if (document.getElementById('custom-exit-word')) document.getElementById('custom-exit-word').value = '';
