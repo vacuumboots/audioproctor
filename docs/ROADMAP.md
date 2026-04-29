@@ -81,6 +81,13 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
   - Extension player — exit word verification, lockdown enforcement
   - Use `vitest` or `node --test` for API functions; consider Playwright for extension
     smoke tests against a local `vercel dev` instance.
+- [ ] **Documentation review as release gate** — `README.md` and `docs/ROADMAP.md` drift
+  from the live codebase every time a feature ships without a doc review. The README had
+  stale file paths for months; the roadmap was missing two shipped features. Add these to
+  the release readiness checklist in `docs/OPERATIONS.md`:
+  - `README.md` — verify file structure, feature list, and tier model match reality
+  - `docs/ROADMAP.md` — verify recently shipped items are checked off
+  - One minute of review per release prevents the kind of drift that takes an hour to fix
 
 ---
 
@@ -372,6 +379,13 @@ The `invitations` table and token generation shipped in Stage 4. Completed in St
 - [ ] **Store listing assets** — branded screenshots, a short demo video (screen
   recording of the teacher upload flow and student player), and a concise description
   written for IT admins, not teachers.
+- [ ] **Attestation automation** — the `RELEASE_SOURCE_OF_TRUTH.md` attestation log is
+  currently maintained manually: compute subtree split SHA, build artifact, hash it,
+  record in markdown. If a step is skipped or a hash is copied wrong, the chain breaks
+  silently. Automate as a GitHub Action that runs on extension changes: compute the
+  subtree SHA, build the artifact, verify the hash, and either auto-populate the
+  attestation row or fail the workflow if it doesn't match. Extends the existing
+  `sync-extension.yml` workflow.
 
 ---
 
@@ -500,6 +514,58 @@ The `invitations` table and token generation shipped in Stage 4. Completed in St
   usage over the pilot period: total sessions, unique assessments delivered, active
   teachers, estimated hours of accommodation support provided. Handed to the Division
   Admin as a record and used as a sales asset for the next division conversation.
+
+---
+
+## Project Health
+*What's working, what's not, and how to keep it working. Last reviewed April 2026.*
+
+### What works well
+
+- **Architecture is AI-augmentation friendly.** No build step, no framework, no bundler.
+  Every file is readable in isolation. An AI agent can pick up any file, understand it,
+  and make changes without running a build pipeline. API endpoints are one file each.
+  Extension is separated from the app. Migrations are numbered and self-contained.
+- **Privacy model is structural, not policy-based.** No student data column exists in the
+  database. The system can't leak what it doesn't store. This is the difference between
+  "trust us" and "there's nothing to trust us with."
+- **Role model is well-scoped.** Teacher, school admin, division admin, platform admin.
+  Each has their own dashboard, their own API scope, their own permissions. The
+  `get_effective_tier()` cascade resolves inherited tiers server-side so the UI never
+  has to reason about org hierarchy.
+- **Extension supply-chain attestation is novel.** The public mirror repo, the subtree
+  SHA matching, the artifact hashing, and the Chrome Web Store version mapping give
+  AudioProctor a cryptographically verifiable chain of custody. This is unusual for any
+  product and effectively unheard of in edtech.
+- **Self-serve distribution works.** Open Google login with auto 30-day premium trial,
+  teacher request flow with Resend email notification, admin approval with invitation
+  email. A teacher can go from "heard about it" to "running assessments" without direct
+  platform admin intervention.
+- **Design system is consistent.** Editorial print aesthetic applied uniformly across the
+  marketing site, teacher dashboard, admin dashboards, and extension. The design
+  principles (`docs/design-principles.md`) are documented and followed.
+
+### Process notes (from April 2026 review)
+
+1. **Documentation drift is the biggest process risk.** See Stage 2 item: documentation
+   review as release gate. The README, roadmap, and AGENTS.md all drifted from the live
+   codebase. One minute of review per release prevents it.
+2. **Automated tests are the biggest product risk.** See Stage 2 item. The session API,
+   exit word hashing, and access code validation are security-critical paths with zero
+   test coverage. A dozen targeted tests would cover the paths where a bug means a
+   student is stuck in a locked window.
+3. **The `.hermes/plans/` pattern works.** Implementation plans with exact file paths,
+   code snippets, verification steps, and commit hashes. Useful for AI agents picking up
+   work later, for auditing what was done, and for not re-solving solved problems.
+4. **Constraint-setting is the key AI collaboration skill.** "Light cleanup, don't touch
+   .hermes/plans, ask before moving files" gives the agent enough structure to work
+   independently without guessing. Fast corrections with evidence ("actually, the
+   self-serve signup works") keep the agent aligned.
+5. **The `AGENTS.md` file should reference files that exist.** It currently references
+   `CLAUDE.md` which is not in the repo. Keep it updated or remove the reference.
+6. **Docs subdirectories would help at scale.** The `docs/` folder has 14 files with no
+   subdirectories. As it grows, grouping by concern (operations/, testing/, pilot/) would
+   help both humans and AI agents find the right document faster.
 
 ---
 
