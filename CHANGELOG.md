@@ -16,11 +16,15 @@ Feature release adding text assessment support — teachers can now create eithe
 - Dual-mode session API: `/api/session` returns typed payload (audio gets signed URL, text gets content).
 - Database migrations 018–019: `assessment_type`, `text_content`, `text_char_count` columns; text session event types.
 - Text-safe delete and duplicate in the dashboard — text rows skip storage cleanup.
+- FAQ on use cases page explaining the difference between audio and text assessments.
 
 ### Changed
 - Extension bumped to v1.1.0 with `tts` permission added to manifest.
 - Dashboard uploads table shows assessment type badges (Audio/Text).
 - Dashboard copy updated: "Create Assessment" replaces "Upload Audio".
+- Dashboard assessment type selector replaced with segmented toggle (Audio/Text), moved above label field.
+- Assessment label hint now indicates it's shown to students in the extension.
+- Landing page, use cases, and about page updated to describe both audio and text accommodation.
 
 ## [1.0.1] - 2026-04-27
 
