@@ -114,8 +114,8 @@ module.exports = async (req, res) => {
     // Fire-and-forget welcome email — don't block the response
     try {
       const welcomeSubject = 'Welcome to AudioProctor';
-      const welcomeText = `Hi there,\n\nWelcome to AudioProctor! Your account is now active and you can start creating audio assessments for your students.\n\nIf you have any questions, reply to this email or contact us at hello@audioproctor.com.\n\n— The AudioProctor Team`;
-      const welcomeHtml = `<p>Hi there,</p><p>Welcome to AudioProctor! Your account is now active and you can start creating audio assessments for your students.</p><p>If you have any questions, reply to this email or contact us at <a href="mailto:hello@audioproctor.com">hello@audioproctor.com</a>.</p><p>— The AudioProctor Team</p>`;
+      const welcomeText = `Hi there,\n\nWelcome to AudioProctor! Your account is now active and you can start creating assessments for your students.\n\nIf you have any questions, reply to this email or contact us at hello@audioproctor.com.\n\n— The AudioProctor Team`;
+      const welcomeHtml = `<p>Hi there,</p><p>Welcome to AudioProctor! Your account is now active and you can start creating assessments for your students.</p><p>If you have any questions, reply to this email or contact us at <a href="mailto:hello@audioproctor.com">hello@audioproctor.com</a>.</p><p>— The AudioProctor Team</p>`;
       sendEmail({ to: invite.email, subject: welcomeSubject, text: welcomeText, html: welcomeHtml }).catch(() => {});
     } catch {
       // ignore — welcome email is best-effort

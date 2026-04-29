@@ -1,6 +1,6 @@
 # AGENTS.md — AudioProctor
 
-This file is for AI agents, coding assistants, and automated systems working on this codebase. It duplicates nothing from `CLAUDE.md` — read that first, then use this as a quick-reference.
+This file is for AI agents, coding assistants, and automated systems working on this codebase. Use this as a quick-reference for the project structure, conventions, and critical context.
 
 ## One-line summary
 
