@@ -29,7 +29,7 @@ No build step. No bundler. No framework. Files are served as-is.
 | `app/js/supabase-client.js` | Single Supabase client init for the browser |
 | `extension/` | Chrome extension Manifest V3: popup + player + options |
 | `extension/popup.js` | Validates access code, calls `/api/session`, stores in `chrome.storage.session` |
-| `extension/player.js` | Fullscreen audio player, exit word SHA-256 verification |
+| `extension/player.js` | Fullscreen audio player + text assessment with TTS read-aloud (voice selection, speed, paragraph navigation) |
 | `supabase/migrations/` | Sequential SQL migrations (001, 002, ... 016) |
 | `site/` | Marketing pages (about, contact, privacy, terms) |
 | `vercel.json` | URL rewrites: `/about` → `site/about.html`, `/css/*` → `app/css/*` etc. |
@@ -121,6 +121,7 @@ For extension dev: open Chrome → `chrome://extensions` → Developer mode → 
 - ✅ Trial expiry banner on teacher dashboard (hides 15 days after expiry)
 - ✅ Admin audit log
 - ✅ Session analytics (per-upload and platform-wide)
+- ✅ Text assessment mode with chrome.tts read-aloud, voice selection, paragraph navigation, font size/fullwidth controls
 - ❌ No automated email reminders before trial expiry
 - ❌ No full staging environment (single Supabase project shared by dev and prod)
 
