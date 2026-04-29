@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Use Cases — AudioProctor</title>
-  <meta name="description" content="How schools use AudioProctor to deliver audio accommodation during assessments.">
+  <meta name="description" content="How schools use AudioProctor to deliver audio and text accommodation during assessments.">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/site/site.css">
 </head>
@@ -16,7 +16,7 @@
   <div class="site-container">
     <span class="section-label">Use Cases</span>
     <h1 class="section-headline">Who uses AudioProctor and how.</h1>
-    <p class="section-intro">AudioProctor is for any assessed student who needs audio support: students with reading disabilities, English Language Learners in applicable assessments, and students with IEPs or designations requiring an audio accommodation.</p>
+    <p class="section-intro">AudioProctor is for any assessed student who needs audio or text support: students with reading disabilities, English Language Learners in applicable assessments, and students with IEPs or designations requiring an accommodation.</p>
   </div>
 </div>
 
@@ -26,14 +26,14 @@
     <div class="card-grid">
       <div class="site-card">
         <span class="site-card__label">Provincial Assessment</span>
-        <p class="site-card__title">IEP or designation requiring audio</p>
-        <p class="site-card__body">A student has a designation requiring audio support during provincial assessments. The teacher uploads the official audio track — or records their own read-aloud — and shares the access code for the assessment window. The student uses the extension during the exam on their managed Chromebook.<br><br>
+        <p class="site-card__title">IEP or designation requiring accommodation</p>
+        <p class="site-card__body">A student has a designation requiring audio or text support during provincial assessments. The teacher uploads the official audio track, records their own read-aloud, or pastes the assessment text directly. The student uses the extension during the exam on their managed Chromebook — a locked player for audio, or a fullscreen reader with built-in read-aloud for text.<br><br>
         </p>
       </div>
       <div class="site-card">
         <span class="site-card__label">Small School</span>
         <p class="site-card__title">Flexible accommodation without infrastructure</p>
-        <p class="site-card__body">Schools with only a few accommodation students don't need a full assistive tech platform. One teacher, one upload, one code. There's no provisioning, no student accounts, and no coordination with IT for each assessment.<br><br>
+        <p class="site-card__body">Schools with only a few accommodation students don't need a full assistive tech platform. One teacher, one assessment (audio or text), one code. There's no provisioning, no student accounts, and no coordination with IT for each assessment.<br><br>
         <em style="font-size:0.8rem; color:var(--muted);">Free tier covers it — no infrastructure required.</em></p>
       </div>
       <div class="site-card">
@@ -59,15 +59,19 @@
       </div>
       <div class="faq-item">
         <p class="faq-item__q">Do students need accounts?</p>
-        <p class="faq-item__a">No. Students never sign in. They enter a short access code — given verbally by the teacher — and the extension opens directly to the audio player. There is no student-facing login, no email required, and no account creation.</p>
+        <p class="faq-item__a">No. Students never sign in. They enter a short access code — given verbally by the teacher — and the extension opens directly to the assessment. There is no student-facing login, no email required, and no account creation.</p>
       </div>
       <div class="faq-item">
-        <p class="faq-item__q">Who can see uploaded audio files?</p>
-        <p class="faq-item__a">Only the teacher who uploaded the file. Files are stored in a private storage bucket, and access is controlled by row-level security tied to the teacher's Google account. Even the access code doesn't reveal the file — it only works through our API, which verifies the code and generates a short-lived link.</p>
+        <p class="faq-item__q">Who can see my assessments?</p>
+        <p class="faq-item__a">Only the teacher who created the assessment. Audio files are stored in a private storage bucket; text assessments are stored in the database. Access is controlled by row-level security tied to the teacher's Google account. Even the access code doesn't reveal the content — it only works through our API, which verifies the code and returns only what's needed for the student's session.</p>
       </div>
       <div class="faq-item">
         <p class="faq-item__q">What happens when the access code expires?</p>
-        <p class="faq-item__a">Files and codes expire automatically after 7 days by default (the division tier allows custom expiry windows). When an upload expires, the access code stops working and the audio file is deleted from storage. Teachers can also delete uploads manually at any time from the dashboard.</p>
+        <p class="faq-item__a">Assessments and codes expire automatically after 7 days by default (the division tier allows custom expiry windows). When an assessment expires, the access code stops working and the content is deleted. Teachers can also delete assessments manually at any time from the dashboard.</p>
+      </div>
+      <div class="faq-item">
+        <p class="faq-item__q">What's the difference between audio and text assessments?</p>
+        <p class="faq-item__a">Audio assessments play a locked fullscreen audio player — the student listens to the recording. Text assessments display the passage in a fullscreen reader with built-in read-aloud powered by the device's text-to-speech. Both use the same access code and exit word flow, and both are locked to the Chromebook until the teacher provides the exit word.</p>
       </div>
       <div class="faq-item">
         <p class="faq-item__q">Is this compliant with privacy legislation?</p>
