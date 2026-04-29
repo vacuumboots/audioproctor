@@ -2,6 +2,26 @@
 
 All notable changes to AudioProctor are documented in this file.
 
+## [1.1.0] - 2026-04-28
+
+Feature release adding text assessment support — teachers can now create either audio or text assessments from the same dashboard.
+
+### Added
+- Text assessment type: teachers can paste plain text (up to 25,000 chars) as an alternative to audio uploads.
+- Assessment type selector in the teacher dashboard upload form.
+- Text reader mode in the Chrome extension — fullscreen locked view with paragraph structure.
+- Built-in Read Aloud via `chrome.tts` with play/pause, prev/next paragraph, and speed control.
+- Keyboard controls for text reader: Space (play/pause), Left/Right arrows (navigate paragraphs).
+- Display settings for text reader: font size +/- and full width toggle.
+- Dual-mode session API: `/api/session` returns typed payload (audio gets signed URL, text gets content).
+- Database migrations 018–019: `assessment_type`, `text_content`, `text_char_count` columns; text session event types.
+- Text-safe delete and duplicate in the dashboard — text rows skip storage cleanup.
+
+### Changed
+- Extension bumped to v1.1.0 with `tts` permission added to manifest.
+- Dashboard uploads table shows assessment type badges (Audio/Text).
+- Dashboard copy updated: "Create Assessment" replaces "Upload Audio".
+
 ## [1.0.1] - 2026-04-27
 
 Extension patch release for managed Chromebook validation and Chrome Web Store promotion.
