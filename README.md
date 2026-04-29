@@ -1,8 +1,8 @@
 # AudioProctor
 
-Audio accommodation for provincial assessments on managed Chromebooks.
+Audio and text accommodation for provincial assessments on managed Chromebooks.
 
-Teachers upload an MP3, generate a short access code, and hand it to the student. The student enters the code into the Chrome extension on their Chromebook. A fullscreen, locked audio player opens. When the assessment is done, the teacher reads an exit word aloud — the student types it in, the player closes, and the Chromebook returns to normal.
+Teachers create an assessment — upload an audio file or paste text — and get a short access code. The student enters the code into the Chrome extension on their Chromebook. For audio, a locked fullscreen player opens. For text, a fullscreen reader with built-in read-aloud opens. When the assessment is done, the teacher provides an exit word to close the session.
 
 No student accounts. No student data. No IT ticket per assessment.
 
@@ -56,74 +56,89 @@ STRIPE_PRICE_ID=
 
 ```
 /
-├── index.html              # Marketing homepage
-├── login.html              # Google OAuth sign-in
-├── dashboard.html          # Teacher upload dashboard
-├── player.html             # Web-based audio player (fallback)
-├── admin.html              # Platform admin dashboard
-├── school-admin.html       # School admin dashboard
-├── division-admin.html     # Division admin dashboard
-├── settings.html           # Teacher profile + subscription settings
-├── accept-invite.html      # Invitation acceptance flow
+├── index.html                  # Marketing homepage (served from site/index.html via vercel.json)
+├── vercel.json                 # URL rewrites, routes, headers
+├── package.json                # Dependencies (Stripe, Resend, Supabase)
 │
-├── site/                   # Marketing site pages
+├── site/                       # Marketing site pages
+│   ├── index.html              # Homepage
 │   ├── about.html
 │   ├── contact.html
-│   ├── request-access.html # Teacher access request form
+│   ├── request-access.html     # Teacher access request form
 │   ├── use-cases.html
 │   ├── privacy.html
 │   ├── terms.html
-│   ├── nav.js              # Shared nav/footer injected on every marketing page
-│   └── site.css            # Marketing-only styles
+│   ├── nav.js                  # Shared nav/footer injected on every marketing page
+│   └── site.css                # Marketing-only styles
 │
-├── api/                    # Vercel serverless functions
-│   ├── session.js          # Validate access code → signed URL + exit word hash
-│   ├── event.js            # Log playback events (anonymous)
-│   ├── account.js          # Profile update + account deletion
-│   ├── org.js              # School/division admin operations
-│   ├── admin.js            # Platform admin operations (service role)
-│   ├── request-access.js   # Store teacher access request + notify admin
-│   ├── accept-invite.js    # Validate + accept invitation tokens
-│   ├── stripe-checkout.js  # Create Stripe Checkout Session
-│   ├── stripe-webhook.js   # Handle Stripe subscription events
-│   └── contact.js          # Contact/demo request form handler
+├── app/                        # Teacher-facing application
+│   ├── login.html              # Google OAuth sign-in
+│   ├── dashboard.html          # Teacher upload dashboard
+│   ├── player.html             # Web-based player (fallback)
+│   ├── admin.html              # Platform admin dashboard
+│   ├── school-admin.html       # School admin dashboard
+│   ├── division-admin.html     # Division admin dashboard
+│   ├── settings.html           # Teacher profile + subscription settings
+│   ├── accept-invite.html      # Invitation acceptance flow
+│   ├── css/styles.css          # Full design system (app + shared)
+│   └── js/
+│       ├── auth.js             # Shared auth helpers (requireAuth, ensureProfile, getEffectiveTier)
+│       ├── dashboard.js        # Upload, quota, analytics, exit word generation
+│       ├── admin.js            # Platform admin UI
+│       ├── school-admin.js     # School admin UI
+│       ├── division-admin.js   # Division admin UI
+│       ├── settings.js         # Settings page
+│       ├── player.js           # Web player (fallback)
+│       └── supabase-client.js  # Supabase client initialisation
 │
-├── app/js/                   # Client-side JavaScript
-│   ├── auth.js             # Shared auth helpers (requireAuth, ensureProfile, getEffectiveTier)
-│   ├── dashboard.js        # Upload, quota, analytics, exit word generation
-│   ├── admin.js            # Platform admin UI
-│   ├── school-admin.js     # School admin UI
-│   ├── division-admin.js   # Division admin UI
-│   ├── settings.js         # Settings page
-│   ├── player.js           # Web player (fallback)
-│   └── supabase-client.js  # Supabase client initialisation
+├── api/                        # Vercel serverless functions
+│   ├── session.js              # Validate access code → typed response (audio signed URL or text content)
+│   ├── event.js                # Log session events (anonymous)
+│   ├── account.js              # Profile update + account deletion
+│   ├── org.js                  # School/division admin operations
+│   ├── admin.js                # Platform admin operations (service role)
+│   ├── request-access.js       # Store teacher access request + notify admin
+│   ├── accept-invite.js        # Validate + accept invitation tokens
+│   ├── stripe-checkout.js      # Create Stripe Checkout Session
+│   ├── stripe-webhook.js       # Handle Stripe subscription events
+│   ├── contact.js              # Contact/demo request form handler
+│   └── _lib/email.js           # Shared Resend helper
 │
-├── css/
-│   └── styles.css          # Full design system (app + shared)
-│
-├── extension/              # Chrome Extension (Manifest V3)
+├── extension/                  # Chrome Extension (Manifest V3)
 │   ├── manifest.json
-│   ├── popup.html/js       # Code entry UI
-│   ├── player.html/js      # Fullscreen locked audio player
-│   ├── background.js       # Service worker — window lifecycle + fullscreen enforcement
-│   ├── offscreen.html/js   # Audio playback (Chrome offscreen document)
+│   ├── popup.html/js           # Code entry UI
+│   ├── player.html/js          # Fullscreen locked player (audio + text reader)
+│   ├── background.js           # Service worker — window lifecycle + fullscreen enforcement
+│   ├── offscreen.html/js       # Audio playback (Chrome offscreen document)
 │   └── icons/
 │
-└── supabase/
-    └── migrations/         # SQL migrations (run in order in Supabase SQL editor)
-        ├── 001–003         # uploads, profiles, rate limiting
-        ├── 004             # session_events
-        ├── 005             # divisions, schools, invitations, get_effective_tier()
-        ├── 006             # upload_summaries materialized view
-        ├── 007             # RLS for org tables
-        ├── 008             # admin audit log
-        ├── 009             # account deactivation flag
-        ├── 010             # demo data helpers
-        ├── 011             # rate_limit_log RLS
-        ├── 012             # security hardening
-        ├── 015             # invite email log
-        └── 016             # auto trial, teacher requests, enhanced get_effective_tier()
-        └── 017             # block uploads for deactivated teachers
+├── supabase/
+│   ├── migrations/             # SQL migrations (run in order in Supabase SQL editor)
+│   │   ├── 004                 # session_events
+│   │   ├── 005                 # divisions, schools, invitations, get_effective_tier()
+│   │   ├── 006                 # upload_summaries materialized view
+│   │   ├── 007                 # RLS for org tables
+│   │   ├── 008                 # admin audit log
+│   │   ├── 009                 # account deactivation flag
+│   │   ├── 010                 # demo data helpers
+│   │   ├── 011                 # rate_limit_log RLS
+│   │   ├── 012                 # security hardening
+│   │   ├── 013                 # Stripe integration
+│   │   ├── 014                 # teacher_requests
+│   │   ├── 015                 # invite email log
+│   │   ├── 016                 # auto trial, teacher requests, enhanced get_effective_tier()
+│   │   ├── 017                 # block uploads for deactivated teachers
+│   │   ├── 018                 # text assessments (assessment_type, text_content, text_char_count)
+│   │   └── 019                 # text session event types
+│   └── seeds/dev-seed.sql      # Demo data for local dev
+│
+├── docs/                       # Project documentation
+│   ├── ROADMAP.md              # Staged product roadmap
+│   ├── OPERATIONS.md           # Release, attestation, rollback runbook
+│   └── ...                     # See docs/ for full listing
+│
+├── archive/                    # Historical documents
+└── .hermes/plans/              # Implementation plans (active working documents)
 ```
 
 ---
@@ -134,7 +149,9 @@ STRIPE_PRICE_ID=
 `dashboard.js handleUpload()` — validates quota and storage cap client-side (enforced server-side via RLS), uploads file to Supabase Storage, inserts row to `uploads`, updates `storage_used_mb` on `profiles`.
 
 ### Student access (extension)
-`popup.js` → `GET /api/session?code=ABC-123` → stores `{ signedUrl, exitWordHash, filename }` in `chrome.storage.session` → opens `player.html` in a fullscreen popup window → `player.js` loads audio, locks fullscreen, verifies exit word by SHA-256 hash comparison.
+`popup.js` → `GET /api/session?code=ABC-123` → stores typed session data in `chrome.storage.session` → opens `player.html` in a fullscreen popup window → `player.js` branches on `assessmentType`:
+- **Audio:** loads signed URL in offscreen document, locks fullscreen, verifies exit word by SHA-256 hash
+- **Text:** renders paragraphs in a fullscreen reader, wires `chrome.tts` read-aloud with play/pause and paragraph navigation, locks fullscreen, verifies exit word
 
 ### Teacher access request
 Teacher submits `/request-access` form → stored in `teacher_requests` → admin notified by email → admin approves in `/admin.html` → invitation link generated → teacher clicks link → `accept-invite.html` attaches them to their org via `/api/accept-invite`.
@@ -151,8 +168,8 @@ Both `dashboard.js` and `extension/player.js` use identical `hashWord()` — SHA
 
 | Tier | Who | How acquired |
 |------|-----|-------------|
-| Free | Individual teacher | Default on sign-up |
-| Teacher Premium | Individual teacher | Stripe self-serve ($75 CAD/yr) |
+| Free | Individual teacher | Default after 30-day trial expires |
+| Teacher Premium | Individual teacher | Auto 30-day trial on signup; Stripe self-serve ($75 CAD/yr) after |
 | School | All teachers at a school | School purchases ($200 CAD/yr) |
 | Division | All teachers in a division | Division contract (from $800 CAD/yr) |
 
@@ -196,4 +213,4 @@ Fonts: **Playfair Display** (headlines) · **DM Sans 300/500** (body/labels). No
 
 ## Roadmap
 
-See [`roadmap.md`](roadmap.md) for the full staged plan from MVP polish through distribution and billing. See [`improvements.md`](improvements.md) for the current prioritised improvement list.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full staged plan from MVP polish through distribution and billing.

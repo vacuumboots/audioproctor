@@ -11,6 +11,10 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - [x] Handle duplicate filenames gracefully in the dashboard
 - [x] Add a label/title field to uploads so teachers can name them ("Grade 4 Reading Assessment - May")
 - [x] Test on an actual managed Chromebook end-to-end — completed on ChromeOS 146 with the Chrome Web Store deployment
+- [x] **Text assessment support** — teachers can create either audio or text assessments
+  from the same dashboard. Text assessments store plain text in the database, return it
+  from `/api/session`, and render in a fullscreen reader in the extension with built-in
+  read-aloud via `chrome.tts`. Migrations 018–019, extension v1.1.0.
 - [ ] **Audio normalization on upload** — transcode all uploaded files to 32kbps mono MP3
   via a Supabase Edge Function triggered on upload. Reduces file sizes 4–6x, ensures
   consistent playback quality, and protects against teachers uploading large high-bitrate
@@ -57,6 +61,15 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - [x] **Marketing site copy audit** — "5 active uploads" → "3 uploads per calendar
   month" on homepage pricing card. FOIP → ATIA on privacy page. Pilot program section
   removed from contact page.
+- [ ] **Automated test suite** — the project has zero automated tests. Priority areas:
+  - `api/session.js` — access code validation, expiry checks, rate limiting, typed
+    response for audio vs text
+  - Exit word SHA-256 hashing — identical behavior in `dashboard.js` and `player.js`
+  - `api/event.js` — event type validation, session event insertion
+  - `api/admin.js` — role checks, service role boundary
+  - Extension player — exit word verification, lockdown enforcement
+  - Use `vitest` or `node --test` for API functions; consider Playwright for extension
+    smoke tests against a local `vercel dev` instance.
 
 ---
 
@@ -368,16 +381,23 @@ The `invitations` table and token generation shipped in Stage 4. Completed in St
 
 ### Self-Serve Signup & Access Control
 
+- [x] **Open Google signup with auto-trial** — any Google account can sign in at
+  `/login.html`. On first login, `ensureProfile()` creates a profile with
+  `tier='premium'` and `expires_at` 30 days out. No approval needed. After 30 days,
+  `get_effective_tier()` returns `'free'` and new uploads are blocked by free-tier limits.
+  Existing uploads remain accessible until they expire.
 - [x] **Teacher request flow** — existing teachers submit in-app requests (premium trial,
   school plan, division plan) from the dashboard. Requests land in the platform admin
-  dashboard with an approve/reject button. No email back-and-forth needed.
+  dashboard with an approve/reject button. Admin notified by email via Resend.
+- [x] **Platform admin invitation flow** — platform admin creates invitations from
+  `/admin.html`; invitation email sent via Resend. Teacher clicks link, signs in with
+  Google, lands in the dashboard attached to the correct school/division.
+- [ ] **School/division admin invitation flow** — School Admins and Division Admins can
+  invite teachers directly by email from their own dashboards. Currently only platform
+  admin can send invitations.
 - [ ] **Division admin approval flow** — once a division is on a paid plan, their
   Division Admin receives and approves teacher requests without your involvement.
   You only handle unattached requests.
-- [ ] **Email invite flow** — Division and School Admins can invite teachers directly
-  by email. Invited teacher clicks link, signs in with Google, lands in the dashboard
-  already attached to the correct school. No request approval needed for invited
-  teachers.
 - [ ] **Domain restriction** — optionally lock a division's account to a specific
   email domain (e.g. `@fsd38.ab.ca`) so only staff from that division can join,
   even if someone shares an invite link externally.
