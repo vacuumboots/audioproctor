@@ -395,6 +395,35 @@ The `invitations` table and token generation shipped in Stage 4. Completed in St
 - [ ] **School/division admin invitation flow** — School Admins and Division Admins can
   invite teachers directly by email from their own dashboards. Currently only platform
   admin can send invitations.
+
+  *What exists:* The platform admin invite flow in `api/admin.js` (lines 632–670) is
+  fully functional — creates an `invitations` row, sends email via Resend, logs to
+  `invite_email_log`. The `api/accept-invite.js` endpoint handles token validation,
+  profile update, and welcome email for any role and any org. The `invitations` table
+  already stores `school_id` and `division_id`. The `buildInviteEmail()` and
+  `sendEmail()` helpers are reusable as-is.
+
+  *What's needed:*
+  1. **`api/org.js` — add `invite-teacher` action.** Accepts `{ email }`. Caller must
+     be `school_admin` or `division_admin`. Auto-fills `school_id` (from
+     `profile.school_id`) or `division_id` (from `profile.division_id`) and sets
+     `role='teacher'`. Reuses the same insert-to-invitations → send-email → log pattern
+     from `api/admin.js`. School admins can only invite into their own school. Division
+     admins can only invite into their own division. Cannot invite with elevated roles
+     (school_admin, division_admin) — only platform admin can do that.
+  2. **`app/school-admin.html` + `app/js/school-admin.js` — invite form.** Add an
+     "Invite Teacher" button above or beside the teachers table. Opens a simple modal
+     with an email field. On submit, calls `orgApi('invite-teacher', 'POST', { email })`.
+     Show success/error feedback inline. Reuse the modal pattern already in
+     `dashboard.html` (`.modal-overlay` / `.modal-box`).
+  3. **`app/division-admin.html` + `app/js/division-admin.js` — invite form.** Same
+     pattern. The division admin's invite attaches the teacher to the division (not a
+     specific school). Optionally allow selecting a school from the division's school
+     list if the admin wants to target a specific school.
+  4. **Accept-invite welcome email** — already sends "Welcome to AudioProctor" on
+     acceptance (line 114–122 of `api/accept-invite.js`). Consider personalizing with
+     the org name: "Welcome to AudioProctor — you've been added to [School Name]." Low
+     priority.
 - [ ] **Division admin approval flow** — once a division is on a paid plan, their
   Division Admin receives and approves teacher requests without your involvement.
   You only handle unattached requests.
