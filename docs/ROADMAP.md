@@ -11,6 +11,17 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - [x] Handle duplicate filenames gracefully in the dashboard
 - [x] Add a label/title field to uploads so teachers can name them ("Grade 4 Reading Assessment - May")
 - [x] Test on an actual managed Chromebook end-to-end — completed on ChromeOS 146 with the Chrome Web Store deployment
+- [ ] **Purge em dashes from front-facing copy** — the `—` character appears throughout
+  the marketing site and dashboard copy. It's an obvious AI tell. Replace with commas,
+  periods, colons, shorter sentences, or restructured phrasing. Scope:
+  - `site/index.html` — hero sub, pricing cards, why section (~8 instances)
+  - `site/about.html` — problem/solution paragraphs (~5 instances)
+  - `site/use-cases.html` — use case cards, FAQ answers (~7 instances)
+  - `site/contact.html` — placeholder text, response copy (~2 instances)
+  - `site/terms.html`, `site/privacy.html`, `site/request-access.html`
+  - `app/dashboard.html` — assessment label hint text
+  - Leave alone: page titles (`About — AudioProctor`), admin stat placeholders,
+    dashboard option labels, HTML comments
 - [x] **Text assessment support** — teachers can create either audio or text assessments
   from the same dashboard. Text assessments store plain text in the database, return it
   from `/api/session`, and render in a fullscreen reader in the extension with built-in
