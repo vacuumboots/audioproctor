@@ -29,8 +29,9 @@ No build step. No bundler. No framework. Files are served as-is.
 | `app/js/supabase-client.js` | Single Supabase client init for the browser |
 | `extension/` | Chrome extension Manifest V3: popup + player + options |
 | `extension/popup.js` | Validates access code, calls `/api/session`, stores in `chrome.storage.session` |
-| `extension/player.js` | Fullscreen audio player + text assessment with TTS read-aloud (voice selection, speed, paragraph navigation) |
-| `supabase/migrations/` | Sequential SQL migrations (001, 002, ... 016) |
+| `extension/player.js` | Fullscreen audio player + text assessment with TTS read-aloud (voice selection, speed, paragraph navigation, inline images) |
+| `extension/lib/sanitize.js` | Minimal HTML sanitizer for text assessment content |
+| `supabase/migrations/` | Sequential SQL migrations (001–021) |
 | `site/` | Marketing pages (about, contact, privacy, terms) |
 | `vercel.json` | URL rewrites: `/about` → `site/about.html`, `/css/*` → `app/css/*` etc. |
 
@@ -45,9 +46,12 @@ Key function: `get_effective_tier(user_id)` resolves the actual tier via cascade
 
 ### `uploads` (teacher audio files)
 ```
-id, teacher_id, filename, label, storage_path, access_code, exit_word, exit_word_hash, expires_at, file_size_mb
+id, teacher_id, filename, label, storage_path, access_code, exit_word, exit_word_hash, expires_at, file_size_mb,
+assessment_type, text_content, text_char_count, image_count
 ```
-Stored in Supabase Storage bucket `audio-files` at `{teacher_id}/{access_code}.mp3`.
+Audio: stored in Supabase Storage bucket `audio-files` at `{teacher_id}/{access_code}.mp3`.
+Text: `text_content` stores HTML (may include `<img data-apimg-idx="N">` placeholders for inline images).
+Images: stored in `assessment-images` bucket at `{teacher_id}/{access_code}/img_N.ext`. Session API resolves placeholders to signed URLs.
 
 ### `divisions` / `schools`
 Org hierarchy. Schools optionally belong to divisions. Both have `tier`, `expires_at`, `notes`.
@@ -71,7 +75,7 @@ Analytics. `session_events` tracks code_entered, playback_started, playback_comp
 
 | File | Route | Purpose |
 |---|---|---|
-| `session.js` | `GET /api/session?code=...` | Validates access code, returns signed URL + exit word hash. No auth. Rate-limited. |
+| `session.js` | `GET /api/session?code=...` | Validates access code, returns signed URL (audio) or resolved HTML with inline images (text) + exit word hash. No auth. Rate-limited. |
 | `admin.js` | `GET/POST /api/admin?action=...` | Platform admin operations. Requires `platform_admin` role. Service role key. |
 | `request-access.js` | `POST /api/request-access` | Stores teacher request + emails admin. No auth. |
 | `stripe-checkout.js` | `POST /api/stripe-checkout` | Creates Stripe Checkout Session. Requires Bearer token. |
@@ -121,7 +125,8 @@ For extension dev: open Chrome → `chrome://extensions` → Developer mode → 
 - ✅ Trial expiry banner on teacher dashboard (hides 15 days after expiry)
 - ✅ Admin audit log
 - ✅ Session analytics (per-upload and platform-wide)
-- ✅ Text assessment mode with chrome.tts read-aloud, voice selection, paragraph navigation, font size/fullwidth controls
+- ✅ Text assessment mode with chrome.tts read-aloud, voice selection, paragraph navigation, font size/fullwidth controls, inline image support
+- ✅ Inline images in text assessments — paste images in editor, stored in `assessment-images` bucket, rendered in extension player
 - ❌ No automated email reminders before trial expiry
 - ❌ No full staging environment (single Supabase project shared by dev and prod)
 
@@ -147,3 +152,7 @@ For extension dev: open Chrome → `chrome://extensions` → Developer mode → 
 See `supabase/seeds/dev-seed.sql` for fake teacher_requests and invitations. Run in Supabase SQL editor.
 
 The admin panel also has a "Seed / Refresh Demo Data" button that creates 9 demo accounts, 2 schools, 1 division, 27 uploads, and ~2,000 session events.
+
+## USERSTEPS.md
+
+Manual steps for the human operator live in `USERSTEPS.md`. When implementation requires hands-on action (Supabase console, Google Cloud, Stripe dashboard, Chrome Web Store), add a checklist item there with clear instructions. Check the file before starting work to see what's pending.

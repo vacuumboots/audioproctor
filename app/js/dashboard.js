@@ -40,6 +40,7 @@ let allUploads    = [];
 let allSummaries  = {};
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+let pendingImages = [];  // { blob, url, name } — queued for upload on submit
 
 // ─── Access Code Generation ──────────────────────────────────────
 
@@ -325,16 +326,199 @@ function toggleAssessmentType() {
     // Reset audio input
     document.getElementById('file-input').value = '';
     document.getElementById('file-hint').textContent = 'Max 50 MB · MP3 or WAV (WAV converts to MP3)';
+    // Initialize editor if not already done
+    if (!document.getElementById('text-content-editor')._initialized) {
+      initTextEditor();
+      document.getElementById('text-content-editor')._initialized = true;
+    }
+    // Clear editor
+    const editor = document.getElementById('text-content-editor');
+    editor.innerHTML = '';
+    // Revoke old blob URLs
+    pendingImages.forEach(img => URL.revokeObjectURL(img.url));
+    pendingImages = [];
+    handleEditorInput();
   } else {
     audioGroup.classList.remove('hidden');
     textGroup.classList.add('hidden');
-    // Reset text input
-    document.getElementById('text-content-input').value = '';
-    document.getElementById('text-hint').textContent = 'Plain text only · Max 25,000 characters';
+    // Clear editor when leaving text mode
+    const editor = document.getElementById('text-content-editor');
+    if (editor) {
+      editor.innerHTML = '';
+      pendingImages.forEach(img => URL.revokeObjectURL(img.url));
+      pendingImages = [];
+    }
   }
 
   btn.disabled = true;
   hideUploadNotice();
+}
+
+// ─── Contenteditable editor ──────────────────────────────────────
+
+function initTextEditor() {
+  const editor = document.getElementById('text-content-editor');
+  if (!editor) return;
+
+  editor.addEventListener('paste', handleEditorPaste);
+  editor.addEventListener('input', handleEditorInput);
+
+  // Prevent drag-and-drop of arbitrary files
+  editor.addEventListener('dragover', e => e.preventDefault());
+  editor.addEventListener('drop', e => {
+    e.preventDefault();
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      insertImageFiles(files);
+    }
+  });
+}
+
+function handleEditorPaste(e) {
+  const editor = document.getElementById('text-content-editor');
+  const items = e.clipboardData?.items;
+  if (!items) return;
+
+  const imageItems = [];
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      imageItems.push(item);
+    }
+  }
+
+  if (imageItems.length === 0) {
+    // Plain text paste — let default behavior handle it
+    setTimeout(() => {
+      stripUnwantedEditorHTML();
+      handleEditorInput();
+    }, 0);
+    return;
+  }
+
+  // Has images — prevent default, handle ourselves
+  e.preventDefault();
+
+  for (const item of imageItems) {
+    const blob = item.getAsFile();
+    if (!blob) continue;
+
+    // Validate type
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(blob.type)) {
+      showUploadNotice('Only PNG, JPEG, and WebP images are supported.', 'error');
+      continue;
+    }
+
+    // Validate size
+    if (blob.size > 2 * 1024 * 1024) {
+      showUploadNotice('Image is larger than 2 MB. Please resize it.', 'error');
+      continue;
+    }
+
+    // Create blob URL for preview
+    const url = URL.createObjectURL(blob);
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+
+    // Insert at cursor position
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0 && editor.contains(sel.anchorNode)) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(img);
+      range.setStartAfter(img);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      editor.appendChild(img);
+    }
+
+    // Track for upload
+    pendingImages.push({ blob, url, name: blob.name || 'pasted-image' });
+  }
+
+  handleEditorInput();
+}
+
+function insertImageFiles(files) {
+  const editor = document.getElementById('text-content-editor');
+  if (!editor) return;
+
+  for (const file of files) {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      showUploadNotice('"' + file.name + '" is not a supported image type.', 'error');
+      continue;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showUploadNotice('"' + file.name + '" is larger than 2 MB.', 'error');
+      continue;
+    }
+
+    const url = URL.createObjectURL(file);
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    editor.appendChild(img);
+    editor.appendChild(document.createElement('br'));
+
+    pendingImages.push({ blob: file, url, name: file.name });
+  }
+
+  handleEditorInput();
+}
+
+function stripUnwantedEditorHTML() {
+  const editor = document.getElementById('text-content-editor');
+  if (!editor) return;
+
+  const walk = (node) => {
+    const children = [...node.childNodes];
+    for (const child of children) {
+      if (child.nodeType === Node.ELEMENT_NODE) {
+        const tag = child.tagName.toLowerCase();
+        if (tag === 'div' || tag === 'span' || tag === 'font') {
+          while (child.firstChild) {
+            node.insertBefore(child.firstChild, child);
+          }
+          node.removeChild(child);
+        } else if (!['p', 'br', 'strong', 'em', 'b', 'i', 'img'].includes(tag)) {
+          child.remove();
+        } else {
+          walk(child);
+        }
+      }
+    }
+  };
+  walk(editor);
+}
+
+function handleEditorInput() {
+  const editor = document.getElementById('text-content-editor');
+  const btn    = document.getElementById('btn-upload');
+  const hint   = document.getElementById('text-hint');
+  if (!editor) return;
+
+  const text = editor.innerText || '';
+  const imageCount = pendingImages.length;
+
+  if (text.length === 0 && imageCount === 0) {
+    btn.disabled = true;
+    hint.textContent = 'Paste text and images · Max 2 MB per image';
+    return;
+  }
+
+  if (text.length > 25000) {
+    btn.disabled = true;
+    hint.textContent = text.length.toLocaleString() + ' / 25,000 characters — too long';
+    return;
+  }
+
+  const imageSizeMB = pendingImages.reduce((sum, img) => sum + img.blob.size, 0) / 1024 / 1024;
+  btn.disabled = false;
+  hint.textContent = text.length.toLocaleString() + ' characters · ' + imageCount + ' image' + (imageCount !== 1 ? 's' : '') + ' · ' + imageSizeMB.toFixed(1) + ' MB';
 }
 
 function normalizeTextContent(raw) {
@@ -367,6 +551,92 @@ function handleTextInput() {
   hint.textContent = `${text.length.toLocaleString()} characters`;
 }
 
+// ─── Inline image upload helpers ─────────────────────────────────
+
+async function uploadInlineImages(teacherId, accessCode) {
+  if (pendingImages.length === 0) return { html: null, count: 0, totalBytes: 0 };
+
+  const editor = document.getElementById('text-content-editor');
+  let totalBytes = 0;
+
+  for (let i = 0; i < pendingImages.length; i++) {
+    const { blob } = pendingImages[i];
+    const ext = blob.type === 'image/png' ? 'png'
+              : blob.type === 'image/webp' ? 'webp'
+              : 'jpg';
+    const storagePath = teacherId + '/' + accessCode + '/img_' + i + '.' + ext;
+
+    showProgress(10 + Math.round((i / pendingImages.length) * 70), 'Uploading image ' + (i + 1) + ' of ' + pendingImages.length + '…');
+
+    const { error } = await supabaseClient.storage
+      .from('assessment-images')
+      .upload(storagePath, blob, {
+        contentType: blob.type,
+        upsert: false,
+      });
+
+    if (error) throw new Error('Image upload failed: ' + error.message);
+
+    totalBytes += blob.size;
+  }
+
+  // Build HTML: replace blob URLs in editor with placeholder img tags
+  const imgs = editor.querySelectorAll('img');
+  let imgIdx = 0;
+  for (const img of imgs) {
+    if (img.src.startsWith('blob:')) {
+      img.setAttribute('data-apimg-idx', String(imgIdx));
+      img.removeAttribute('src');
+      imgIdx++;
+    }
+  }
+
+  // Extract and normalize HTML from editor
+  let html = normalizeEditorHTML(editor);
+
+  return { html, count: pendingImages.length, totalBytes };
+}
+
+function normalizeEditorHTML(editor) {
+  // Clone the editor DOM so we don't modify the displayed version
+  const clone = editor.cloneNode(true);
+
+  // Wrap bare top-level text nodes in <p> tags
+  const children = [...clone.childNodes];
+  clone.innerHTML = '';
+  for (const child of children) {
+    if (child.nodeType === Node.TEXT_NODE) {
+      const text = child.textContent.trim();
+      if (text.length === 0) continue;
+      const p = document.createElement('p');
+      p.textContent = text;
+      clone.appendChild(p);
+    } else if (child.nodeType === Node.ELEMENT_NODE) {
+      clone.appendChild(child);
+    }
+  }
+
+  // Strip non-whitelisted attributes from all elements
+  const ALLOWED_ATTRS = new Set(['data-apimg-idx', 'alt']);
+  const walkAttrs = (el) => {
+    for (const attr of [...el.attributes]) {
+      if (!ALLOWED_ATTRS.has(attr.name)) {
+        el.removeAttribute(attr.name);
+      }
+    }
+    for (const child of el.children) walkAttrs(child);
+  };
+  walkAttrs(clone);
+
+  return clone.innerHTML;
+}
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 // ─── Upload ──────────────────────────────────────────────────────
 
 async function handleUpload() {
@@ -386,11 +656,12 @@ async function handleUpload() {
     let dbFilename, storagePath, uploadFile, textContent, textCharCount;
 
     if (assessmentType === 'text') {
-      const raw  = document.getElementById('text-content-input').value;
+      const editorEl = document.getElementById('text-content-editor');
+      const raw = editorEl ? editorEl.innerText || '' : '';
       textContent = normalizeTextContent(raw);
-      if (!textContent || textContent.length === 0) {
+      if ((!textContent || textContent.length === 0) && pendingImages.length === 0) {
         btn.disabled = false;
-        showUploadNotice('Please paste some assessment text.', 'error');
+        showUploadNotice('Please paste some assessment text or images.', 'error');
         return;
       }
       if (textContent.length > 25000) {
@@ -402,6 +673,25 @@ async function handleUpload() {
       dbFilename    = 'text-assessment.txt';
       storagePath   = `text/${userId}`;  // synthetic placeholder (NOT NULL constraint)
       uploadFile    = null;
+
+      // Check total image size against storage cap (free tier)
+      const totalImageMB = pendingImages.reduce((sum, img) => sum + img.blob.size, 0) / 1024 / 1024;
+      if (currentTier === 'free') {
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('storage_used_mb')
+          .eq('id', userId)
+          .maybeSingle();
+        const storageUsed = profile?.storage_used_mb || 0;
+        if (storageUsed + totalImageMB > 50) {
+          btn.disabled = false;
+          showUploadNotice(
+            'Images (' + totalImageMB.toFixed(1) + ' MB) would exceed your 50 MB storage limit. You have ' + (50 - storageUsed).toFixed(1) + ' MB remaining.',
+            'error'
+          );
+          return;
+        }
+      }
     } else {
       const fileInput    = document.getElementById('file-input');
       const selectedFile = fileInput.files[0];
@@ -495,6 +785,29 @@ async function handleUpload() {
     }
     const exitWordHash = await hashWord(exitWord);
 
+    // ─── Text with images: upload to assessment-images bucket ─────
+    let imageCount = 0;
+    let imageTotalBytes = 0;
+    if (assessmentType === 'text' && pendingImages.length > 0) {
+      const result = await uploadInlineImages(userId, accessCode);
+      textContent = result.html;
+      imageCount = result.count;
+      imageTotalBytes = result.totalBytes;
+    } else if (assessmentType === 'text') {
+      // Plain text (no images) — wrap in <p> tags for consistent player rendering
+      if (textContent) {
+        textContent = textContent
+          .split(/\n{2,}/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0)
+          .map(s => '<p>' + escapeHTML(s) + '</p>')
+          .join('\n');
+      } else {
+        textContent = '';
+      }
+      imageCount = 0;
+    }
+
     // ─── Audio: convert + upload to storage ───────────────────────
     if (assessmentType === 'audio') {
       if (isWavFile(uploadFile)) {
@@ -536,10 +849,13 @@ async function handleUpload() {
         exit_word:      exitWord,
         exit_word_hash: exitWordHash,
         expires_at:     expiresAt,
-        file_size_mb:   uploadFile ? uploadFile.size / 1024 / 1024 : 0,
+        file_size_mb:   uploadFile
+          ? uploadFile.size / 1024 / 1024
+          : (imageTotalBytes / 1024 / 1024),
         assessment_type: assessmentType,
         text_content:    textContent,
         text_char_count: textCharCount,
+        image_count:     imageCount,
       });
 
     if (dbError) {
@@ -559,9 +875,14 @@ async function handleUpload() {
     hideProgress();
     document.getElementById('label-input').value = '';
     document.getElementById('file-input').value = '';
-    document.getElementById('text-content-input').value = '';
+    const textEditor = document.getElementById('text-content-editor');
+    if (textEditor) {
+      textEditor.innerHTML = '';
+      pendingImages.forEach(img => URL.revokeObjectURL(img.url));
+      pendingImages = [];
+    }
     document.getElementById('file-hint').textContent = 'Max 50 MB · MP3 or WAV (WAV converts to MP3)';
-    document.getElementById('text-hint').textContent = 'Plain text only · Max 25,000 characters';
+    document.getElementById('text-hint').textContent = 'Paste text and images · Max 2 MB per image';
     document.getElementById('assessment-type').value = 'audio';
     selectAssessmentType('audio');
     if (document.getElementById('exit-word-mode'))  document.getElementById('exit-word-mode').value  = 'random-short';
@@ -886,6 +1207,28 @@ async function deleteUpload(id, storagePath, btn, assessmentType) {
     }
   }
 
+  // Delete images from assessment-images bucket for text assessments
+  if (assessmentType === 'text') {
+    const { data: upload } = await supabaseClient
+      .from('uploads')
+      .select('image_count, access_code')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (upload && upload.image_count > 0) {
+      const teacherId = (await getSession()).user.id;
+      const accessCode = upload.access_code;
+      const paths = [];
+      for (let i = 0; i < upload.image_count; i++) {
+        for (const ext of ['png', 'jpg', 'webp']) {
+          paths.push(teacherId + '/' + accessCode + '/img_' + i + '.' + ext);
+        }
+      }
+      // Fire-and-forget — best-effort cleanup
+      supabaseClient.storage.from('assessment-images').remove(paths);
+    }
+  }
+
   const { error: dbErr } = await supabaseClient
     .from('uploads')
     .delete()
@@ -1016,7 +1359,7 @@ async function duplicateUpload(id, btn) {
     // Fetch source row
     const { data: source, error: fetchErr } = await supabaseClient
       .from('uploads')
-      .select('filename, label, storage_path, file_size_mb, assessment_type, text_content, text_char_count')
+      .select('filename, label, storage_path, file_size_mb, assessment_type, text_content, text_char_count, image_count, access_code, teacher_id')
       .eq('id', id)
       .single();
 
@@ -1033,6 +1376,44 @@ async function duplicateUpload(id, btn) {
       const newWord     = pickExitWord();
       const newWordHash = await hashWord(newWord);
 
+      // Copy inline images if present (first attempt only)
+      let imageCount = 0;
+      let imageTotalBytes = 0;
+      if (attempt === 0 && source.assessment_type === 'text' && source.image_count > 0) {
+        for (let i = 0; i < source.image_count; i++) {
+          let copied = false;
+          for (const ext of ['png', 'jpg', 'webp']) {
+            const oldPath = source.teacher_id + '/' + source.access_code + '/img_' + i + '.' + ext;
+            const newPath = userId + '/' + newCode + '/img_' + i + '.' + ext;
+
+            const { data: signedData, error: signError } = await supabaseClient
+              .storage
+              .from('assessment-images')
+              .createSignedUrl(oldPath, 60);
+
+            if (!signError && signedData) {
+              const response = await fetch(signedData.signedUrl);
+              if (!response.ok) continue;
+              const blob = await response.blob();
+
+              const { error: uploadError } = await supabaseClient.storage
+                .from('assessment-images')
+                .upload(newPath, blob, {
+                  contentType: blob.type,
+                  upsert: false,
+                });
+
+              if (!uploadError) {
+                imageCount++;
+                imageTotalBytes += blob.size;
+                copied = true;
+              }
+              break;
+            }
+          }
+        }
+      }
+
       const { error } = await supabaseClient
         .from('uploads')
         .insert({
@@ -1044,10 +1425,11 @@ async function duplicateUpload(id, btn) {
           exit_word:      newWord,
           exit_word_hash: newWordHash,
           expires_at:     expiresAt,
-          file_size_mb:   source.file_size_mb || 0,
+          file_size_mb:   (source.file_size_mb || 0) + (imageTotalBytes / (1024 * 1024)),
           assessment_type: source.assessment_type || 'audio',
           text_content:    source.text_content || null,
           text_char_count: source.text_char_count || 0,
+          image_count:     imageCount,
         });
 
       if (!error) { inserted = true; break; }

@@ -13,6 +13,10 @@ const { createClient } = require('@supabase/supabase-js');
 const RATE_LIMIT_MAX    = 10;   // max failed attempts per IP per window
 const RATE_LIMIT_WINDOW = 60;   // minutes
 
+function escapeHTMLAttr(str) {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 module.exports = async (req, res) => {
   // CORS — required so the Chrome extension can call this endpoint.
   // The extension origin is chrome-extension://... not audioproctor.com.
@@ -60,7 +64,7 @@ module.exports = async (req, res) => {
   // ─── Access code lookup ───────────────────────────────────────
   const { data: upload, error } = await supabase
     .from('uploads')
-    .select('id, filename, storage_path, exit_word_hash, expires_at, teacher_id, assessment_type, label, text_content, text_char_count')
+    .select('id, filename, storage_path, exit_word_hash, expires_at, teacher_id, assessment_type, label, text_content, text_char_count, image_count')
     .eq('access_code', code.toUpperCase().trim())
     .single();
 
@@ -92,12 +96,53 @@ module.exports = async (req, res) => {
   let responseBody;
 
   if (upload.assessment_type === 'text') {
+    let resolvedHtml = upload.text_content;
+
+    // Resolve inline images if present
+    if (upload.image_count > 0) {
+      const teacherId = upload.teacher_id;
+      const accessCode = code.toUpperCase().trim();
+
+      // Generate signed URLs for each image
+      const signedUrls = [];
+      for (let i = 0; i < upload.image_count; i++) {
+        let found = false;
+        for (const ext of ['png', 'jpg', 'webp']) {
+          const imgPath = `${teacherId}/${accessCode}/img_${i}.${ext}`;
+          const { data: signed, error: signError } = await supabase
+            .storage
+            .from('assessment-images')
+            .createSignedUrl(imgPath, 3600);
+
+          if (!signError && signed) {
+            signedUrls[i] = signed.signedUrl;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          signedUrls[i] = '';
+        }
+      }
+
+      // Replace <img data-apimg-idx="N"> placeholders with resolved <img> tags
+      resolvedHtml = resolvedHtml.replace(
+        /<img[^>]*data-apimg-idx="(\d+)"[^>]*>/g,
+        (match, idx) => {
+          const url = signedUrls[parseInt(idx)] || '';
+          if (!url) return '';
+          return `<img src="${escapeHTMLAttr(url)}" style="max-width:100%;height:auto;display:inline-block;vertical-align:middle;margin:0.25rem 0;border:1px solid #e8e0d0;">`;
+        }
+      );
+    }
+
     responseBody = {
       assessmentType: 'text',
-      title:         upload.label || upload.filename || 'Text Assessment',
-      textContent:   upload.text_content,
-      textCharCount: upload.text_char_count,
-      exitWordHash:  upload.exit_word_hash,
+      title:          upload.label || upload.filename || 'Text Assessment',
+      textContent:    resolvedHtml,
+      textCharCount:  upload.text_char_count,
+      exitWordHash:   upload.exit_word_hash,
+      imageCount:     upload.image_count,
     };
   } else {
     // Audio: generate a signed URL valid for 1 hour

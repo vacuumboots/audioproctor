@@ -2,6 +2,34 @@
 
 All notable changes to AudioProctor are documented in this file.
 
+## [1.2.1] - 2026-05-02
+
+Feature release adding inline image support in text assessments.
+
+### Added
+- Inline images in text assessments: teachers can paste images (PNG/JPEG/WebP, max 2 MB each) directly into the text editor.
+- Contenteditable editor replaces plain textarea — supports rich text paste with images appearing inline.
+- Images uploaded to new `assessment-images` Supabase Storage bucket at `{teacher_id}/{access_code}/img_N.ext`.
+- Session API resolves image placeholders to signed URLs, embedded in returned HTML.
+- Extension player renders HTML with inline images; TTS read-aloud silently skips image-only paragraphs.
+- Minimal HTML sanitizer (`extension/lib/sanitize.js`) for safe rendering of assessment HTML.
+- Image cleanup on upload delete (best-effort removal from `assessment-images` bucket).
+- Image duplication support — copying a text assessment copies its images to new storage paths.
+- Database migration 020: `image_count` column on uploads.
+- Database migration 021: RLS policies for `assessment-images` bucket.
+
+### Changed
+- Dashboard upload form: text input hint updated to "Paste text and images · Max 2 MB per image".
+- Extension player card widened from 720px to 800px to accommodate inline images.
+- `file_size_mb` now includes image storage bytes for text assessments (RLS quota enforcement).
+- Dashboard uploads table continues to show assessment type badges (Audio/Text) — unchanged.
+
+### Manual deployment steps
+- Run migrations 020 and 021 in Supabase SQL Editor.
+- Create `assessment-images` bucket in Supabase Dashboard (Storage → New Bucket, private, 2 MB file size limit).
+- Deploy to Vercel.
+- Bump extension to v1.2.1 and publish to Chrome Web Store.
+
 ## [1.1.0] - 2026-04-28
 
 Feature release adding text assessment support — teachers can now create either audio or text assessments from the same dashboard.

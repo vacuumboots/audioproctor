@@ -192,6 +192,42 @@ code, .monospace {
   text-transform: uppercase;
 }
 
+/* ── Contenteditable text editor ── */
+.text-editor {
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  padding: 0.85rem 1rem;
+  min-height: 16rem;
+  max-height: 32rem;
+  overflow-y: auto;
+  outline: none;
+  word-wrap: break-word;
+}
+
+.text-editor:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.text-editor:empty::before {
+  content: attr(placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.text-editor img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0.25rem 0;
+  border: 1px solid var(--warm-mid);
+}
+
 /* ─── Divider ───────────────────────────────────────────────────── */
 .divider {
   border: none;

@@ -192,16 +192,14 @@
       </div>
 
       <div id="text-input-group" class="form-group hidden">
-        <label class="label" for="text-content-input">Assessment Text</label>
-        <textarea
-          id="text-content-input"
-          class="input-field"
-          rows="12"
-          maxlength="25000"
+        <label class="label">Assessment Text</label>
+        <div
+          id="text-content-editor"
+          class="text-editor"
+          contenteditable="true"
           placeholder="Paste the passage or assessment text here…"
-          oninput="handleTextInput()"
-        ></textarea>
-        <span id="text-hint" class="label text-muted">Plain text only · Max 25,000 characters</span>
+        ></div>
+        <span id="text-hint" class="label text-muted">Paste text and images · Max 2 MB per image</span>
       </div>
 
       <!-- Advanced Options — premium only, hidden for free tier -->
