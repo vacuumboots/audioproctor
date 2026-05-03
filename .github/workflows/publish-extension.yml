@@ -1,0 +1,59 @@
+name: Publish Extension
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump'
+        required: true
+        type: choice
+        default: 'patch'
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Bump version
+        run: bash scripts/bump-extension.sh ${{ inputs.bump }}
+
+      - name: Get version
+        id: version
+        run: echo "version=$(jq -r .version extension/manifest.json)" >> $GITHUB_OUTPUT
+
+      - name: Zip extension
+        run: cd extension && zip -r ../extension.zip . -x '.DS_Store'
+
+      - name: Upload to Chrome Web Store
+        run: |
+          npx chrome-webstore-upload-cli@latest upload \
+            --source extension.zip \
+            --extension-id "${{ secrets.CHROME_EXTENSION_ID }}" \
+            --client-id "${{ secrets.CHROME_CLIENT_ID }}" \
+            --client-secret "${{ secrets.CHROME_CLIENT_SECRET }}" \
+            --refresh-token "${{ secrets.CHROME_REFRESH_TOKEN }}"
+
+      - name: Publish to Chrome Web Store
+        run: |
+          npx chrome-webstore-upload-cli@latest publish \
+            --extension-id "${{ secrets.CHROME_EXTENSION_ID }}" \
+            --client-id "${{ secrets.CHROME_CLIENT_ID }}" \
+            --client-secret "${{ secrets.CHROME_CLIENT_SECRET }}" \
+            --refresh-token "${{ secrets.CHROME_REFRESH_TOKEN }}"
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add extension/manifest.json
+          git commit -m "chore: bump extension to v${{ steps.version.outputs.version }}"
+          git push
