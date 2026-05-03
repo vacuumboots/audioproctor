@@ -80,6 +80,25 @@
   without deploying. Worth at least a localhost switch even if it's a manual comment.
 
   ---
+  ---
+  14. Monolithic JS files are getting unwieldy
+
+  app/js/dashboard.js is 1,786 lines. app/js/admin.js is 1,214 lines. Both mix UI rendering, API calls, event handlers, validation, and state management in a single file with no module boundaries. Without a bundler you can't use ES modules,
+  but splitting into multiple <script> tags with clear responsibility boundaries (e.g. dashboard-upload.js, dashboard-table.js, dashboard-quota.js) would make these maintainable. Every new feature adds 50-200 lines to an already-large file.
+
+  ---
+  15. Google Fonts loaded from Google's CDN on the web app
+
+  app/css/styles.css imports Playfair Display and DM Sans from fonts.googleapis.com. The extension already removed this dependency for privacy reasons (Manifest V3 CSP). The web app still loads them on every page. For a K-12 product handling
+  student assessment data, loading fonts from a third-party CDN is a privacy consideration — Google receives the request including the page URL and IP. Self-hosting the fonts would close this.
+
+  ---
+  16. WAV-to-MP3 conversion is entirely client-side
+
+  dashboard.js converts WAV files to MP3 in the browser using the Web Audio API + MediaRecorder. This works in Chrome but has browser compatibility risks, memory pressure for large files, and no fallback. A teacher on Firefox or an older
+  Chromebook could hit silent failures. Server-side transcoding (e.g. Supabase Edge Function + ffmpeg) would be more reliable and is partially covered by the "Audio normalization" item in the ROADMAP.
+
+  ---
   The two I'd prioritize before any pilot:
   - #3 (no way to assign admin roles) — blocks the entire multi-org feature
   - #6 (Privacy Policy) — will be the first question from any division's privacy officer

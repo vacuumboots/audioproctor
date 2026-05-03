@@ -81,6 +81,17 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
   - Extension player — exit word verification, lockdown enforcement
   - Use `vitest` or `node --test` for API functions; consider Playwright for extension
     smoke tests against a local `vercel dev` instance.
+- [ ] **Self-host fonts** — both `app/css/styles.css` and `site/site.css` load Playfair
+  Display and DM Sans from `fonts.googleapis.com`. The extension already removed this
+  dependency for privacy reasons. For the web app, self-hosting the WOFF2 files removes
+  a third-party request that leaks page URLs and IPs to Google. Download from Google
+  Fonts, place in `app/fonts/`, update `@font-face` declarations.
+- [ ] **Split monolithic JS files** — `app/js/dashboard.js` (1,786 lines) and
+  `app/js/admin.js` (1,214 lines) mix UI rendering, API calls, event handlers,
+  validation, and state management with no module boundaries. Split into
+  responsibility-focused files (e.g. `dashboard-upload.js`, `dashboard-table.js`,
+  `dashboard-quota.js`, `admin-teachers.js`, `admin-schools.js`) loaded via separate
+  `<script>` tags. No bundler needed — the pattern is already used elsewhere in the app.
 - [ ] **Documentation review as release gate** — `README.md` and `docs/ROADMAP.md` drift
   from the live codebase every time a feature ships without a doc review. The README had
   stale file paths for months; the roadmap was missing two shipped features. Add these to
