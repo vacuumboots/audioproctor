@@ -1,10 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/send-onboarding-emails",
-      "schedule": "0 0 * * *"
-    }
-  ],
   "rewrites": [
     { "source": "/use-cases",         "destination": "/site/use-cases.html" },
     { "source": "/about",             "destination": "/site/about.html" },

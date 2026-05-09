@@ -185,13 +185,13 @@ async function startDivisionCheckout() {
   const priceId = selectedBand ? selectedBand.dataset.priceId : null;
 
   try {
-    const res = await fetch('/api/stripe-checkout-division', {
+    const res = await fetch('/api/stripe-checkout', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({ divisionId, enrolmentBand, priceId })
+      body: JSON.stringify({ action: 'division', divisionId, enrolmentBand, priceId })
     });
 
     const data = await res.json();

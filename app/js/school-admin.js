@@ -225,13 +225,13 @@ async function startSchoolCheckout() {
   if (!session) { window.location = '/login.html'; return; }
 
   try {
-    const res = await fetch('/api/stripe-checkout-school', {
+    const res = await fetch('/api/stripe-checkout', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({ schoolId })
+      body: JSON.stringify({ action: 'school', schoolId })
     });
 
     const data = await res.json();
