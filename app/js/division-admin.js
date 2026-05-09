@@ -1,10 +1,15 @@
 // ─── Division Admin Dashboard ─────────────────────────────────────────────
 // Requires role = 'division_admin' on the profiles row.
+// Includes Division Plan billing management.
 
 const ORG_API = '/api/org';
 
 let orgJwt            = null;
 let allSchools        = [];
+let divisionId        = null;
+let divisionTier      = 'free';
+let divisionStripStatus = null;
+let divisionEnrolmentBand = null;
 
 async function initDivisionAdmin(user) {
   const session = await getSession();
@@ -30,16 +35,23 @@ async function initDivisionAdmin(user) {
     return;
   }
 
-  if (profile.division_id) {
+  divisionId = profile.division_id;
+
+  if (divisionId) {
     const { data: division } = await supabaseClient
       .from('divisions')
-      .select('name')
-      .eq('id', profile.division_id)
+      .select('name, tier, enrolment_band, stripe_subscription_status, stripe_subscription_id')
+      .eq('id', divisionId)
       .maybeSingle();
-    if (division) document.getElementById('division-name-title').textContent = division.name;
+    if (division) {
+      document.getElementById('division-name-title').textContent = division.name;
+      divisionTier = division.tier || 'free';
+      divisionStripStatus = division.stripe_subscription_status;
+      divisionEnrolmentBand = division.enrolment_band;
+    }
   }
 
-  await Promise.all([loadDivisionReport(), loadSchools(), loadActivityChart()]);
+  await Promise.all([loadDivisionReport(), loadSchools(), loadActivityChart(), renderDivisionBilling()]);
 }
 
 // ─── API helper ───────────────────────────────────────────────────────────
@@ -71,6 +83,137 @@ async function loadDivisionReport() {
   } catch (err) {
     console.error('division-report failed:', err.message);
   }
+}
+
+// ─── Billing ──────────────────────────────────────────────────────────────
+
+async function renderDivisionBilling() {
+  const block = document.getElementById('billing-block');
+  const badge = document.getElementById('billing-badge');
+  if (!block) return;
+
+  if (divisionTier === 'division') {
+    const statusLabel = divisionStripStatus === 'active' ? 'Active' :
+      divisionStripStatus === 'past_due' ? 'Past Due' :
+      divisionStripStatus === 'canceled' ? 'Canceled' : 'Active';
+
+    const statusColor = divisionStripStatus === 'active' ? '#4a7c59' :
+      divisionStripStatus === 'past_due' ? 'var(--accent)' : 'var(--muted)';
+
+    badge.textContent = statusLabel;
+    badge.style.color = 'var(--paper)';
+    badge.style.background = statusColor;
+    badge.style.border = `1px solid ${statusColor}`;
+    badge.classList.remove('hidden');
+
+    const bandLabel = divisionEnrolmentBand
+      ? capitalize(divisionEnrolmentBand) + ' Division'
+      : 'Division Plan';
+
+    block.innerHTML = `
+      <p><strong>This division is on a ${bandLabel}.</strong></p>
+      <p style="margin-top:0.5rem; color:var(--muted);">
+        All schools and teachers under this division have unlimited uploads, full analytics,
+        and all premium features included.
+      </p>
+      <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
+        Billing is managed by your division or platform administrator.
+      </p>`;
+  } else {
+    badge.classList.add('hidden');
+
+    // Fetch pricing options
+    const { data: pricing } = await supabaseClient
+      .from('division_pricing')
+      .select('*')
+      .order('annual_price_cents', { ascending: true });
+
+    const band = divisionEnrolmentBand || 'small';
+    let optionsHtml = '';
+    if (pricing && pricing.length > 0) {
+      optionsHtml = pricing.map(p => `
+        <label style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem 0; border-bottom:1px solid var(--warm-mid); cursor:pointer;">
+          <input type="radio" name="enrolment-band" value="${p.enrolment_band}"
+            ${p.enrolment_band === band ? 'checked' : ''}
+            data-price-id="${p.stripe_price_id}">
+          <div>
+            <strong>${p.label}</strong>
+            ${p.description ? `<span style="font-size:0.8rem; color:var(--muted); margin-left:0.5rem;">${p.description}</span>` : ''}
+            <div style="font-size:0.8rem; color:var(--ink); margin-top:0.15rem;">
+              $${(p.annual_price_cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}/year
+            </div>
+          </div>
+        </label>`).join('');
+    }
+
+    block.innerHTML = `
+      <p><strong>This division is on the Free tier.</strong></p>
+      <p style="margin-top:0.5rem; color:var(--muted); line-height:1.6; margin-bottom:1rem;">
+        Purchase a Division Plan to give every school and teacher under this division
+        unlimited uploads, full analytics, and all premium features.
+      </p>
+      ${optionsHtml ? `
+        <div style="margin-top:0.5rem; margin-bottom:1.25rem; border:var(--border); padding:0.75rem 1rem;">
+          <p class="label" style="margin-bottom:0.5rem;">Select Enrolment Band</p>
+          ${optionsHtml}
+        </div>
+      ` : ''}
+      <div style="display:flex; gap:1rem; align-items:center;">
+        <button id="btn-purchase-division-plan" class="btn btn--primary btn--small"
+          onclick="startDivisionCheckout()">Purchase Division Plan</button>
+        <span style="font-size:0.75rem; color:var(--muted);">Billed annually</span>
+      </div>
+      <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
+        Need a PO or invoice? <a href="/request-access" style="color:var(--ink);">Submit a request</a>.
+      </p>`;
+  }
+}
+
+async function startDivisionCheckout() {
+  const btn = document.getElementById('btn-purchase-division-plan');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Redirecting…';
+  }
+
+  const session = await getSession();
+  if (!session) { window.location = '/login.html'; return; }
+
+  // Get selected enrolment band
+  const selectedBand = document.querySelector('input[name="enrolment-band"]:checked');
+  const enrolmentBand = selectedBand ? selectedBand.value : divisionEnrolmentBand;
+  const priceId = selectedBand ? selectedBand.dataset.priceId : null;
+
+  try {
+    const res = await fetch('/api/stripe-checkout-division', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ divisionId, enrolmentBand, priceId })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Checkout failed');
+    window.location = data.url;
+  } catch (err) {
+    alert('Could not start checkout: ' + err.message);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Purchase Division Plan';
+    }
+  }
+}
+
+// Handle successful return from Stripe
+if (new URLSearchParams(window.location.search).get('upgraded') === 'division') {
+  history.replaceState(null, '', window.location.pathname);
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--ink);color:var(--paper);text-align:center;padding:0.6rem;font-size:0.85rem;z-index:999;';
+  banner.textContent = 'Division Plan activated! All schools and teachers in this division now have unlimited access.';
+  document.body.prepend(banner);
+  setTimeout(() => banner.remove(), 6000);
 }
 
 // ─── Activity chart ───────────────────────────────────────────────────────
@@ -291,6 +434,68 @@ async function detachTeacher(userId, email, btn) {
   }
 }
 
+// ─── Invite Teacher ─────────────────────────────────────────────────────
+
+function showInviteTeacherModal() {
+  document.getElementById('invite-email-input').value = '';
+  document.getElementById('invite-notice').classList.add('hidden');
+  document.getElementById('invite-notice').textContent = '';
+
+  // Populate school selector from allSchools
+  const select = document.getElementById('invite-school-select');
+  select.innerHTML = '<option value="">— Any school in this division —</option>';
+  allSchools.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name;
+    select.appendChild(opt);
+  });
+  select.value = '';
+
+  document.getElementById('invite-teacher-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('invite-email-input').focus(), 100);
+}
+
+async function inviteTeacher() {
+  const email = document.getElementById('invite-email-input').value.trim();
+  const schoolId = document.getElementById('invite-school-select').value || null;
+  const notice = document.getElementById('invite-notice');
+  if (!email) {
+    notice.textContent = 'Please enter an email address.';
+    notice.className = 'notice';
+    notice.classList.remove('hidden');
+    return;
+  }
+
+  const btn = document.querySelector('#invite-teacher-modal .btn--primary');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  try {
+    const body = { email };
+    if (schoolId) body.schoolId = schoolId;
+    await orgApi('invite-teacher', 'POST', body);
+    notice.textContent = 'Invitation sent!';
+    notice.className = 'notice';
+    notice.classList.remove('hidden');
+    document.getElementById('invite-email-input').value = '';
+    document.getElementById('invite-school-select').value = '';
+    // Reload both schools and the drill-down if open
+    await Promise.all([loadSchools(), loadDivisionReport()]);
+    setTimeout(() => {
+      document.getElementById('invite-teacher-modal').classList.add('hidden');
+      notice.classList.add('hidden');
+    }, 2000);
+  } catch (err) {
+    notice.textContent = 'Failed to send invitation: ' + err.message;
+    notice.className = 'notice text-accent';
+    notice.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Invitation';
+  }
+}
+
 // ─── CSV Export ───────────────────────────────────────────────────────────
 
 async function exportDivisionCsv() {
@@ -298,7 +503,6 @@ async function exportDivisionCsv() {
   if (btn) { btn.disabled = true; btn.textContent = 'Exporting…'; }
 
   try {
-    // Build CSV from loaded schools data
     if (!allSchools.length) { alert('No schools to export.'); return; }
 
     const headers = ['School', 'Teachers', 'Total Sessions'];
@@ -333,4 +537,9 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function capitalize(str) {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }

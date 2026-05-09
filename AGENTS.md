@@ -23,8 +23,23 @@ No build step. No bundler. No framework. Files are served as-is.
 |---|---|
 | `api/` | Vercel serverless functions (Node.js, root-level) |
 | `app/` | Teacher web app: HTML pages, `css/styles.css`, `js/*.js` |
-| `app/js/dashboard.js` | Upload form, uploads table, quota display, trial banners, request modal |
-| `app/js/admin.js` | Platform admin dashboard (teachers, schools, divisions, analytics) |
+| `app/js/dashboard.js` → split into: | Legacy (no longer loaded). See modules below. |
+| `app/js/dashboard-state.js` | Shared constants and module state (exit words, code pools, `currentTier`, `pendingImages`) |
+| `app/js/dashboard-utils.js` | escapeHtml, formatExpiry, file format checks, notice/progress helpers |
+| `app/js/dashboard-access-codes.js` | Access code generation, exit word picking, hashWord |
+| `app/js/dashboard-audio.js` | WAV-to-MP3 conversion via lamejs |
+| `app/js/dashboard-editor.js` | Contenteditable editor, image paste/drop, assessment type toggle |
+| `app/js/dashboard-upload.js` | handleUpload, duplicateUpload, inline image uploading |
+| `app/js/dashboard-table.js` | Uploads table rendering, insights, CSV export, rename/expiry/delete |
+| `app/js/dashboard-quota.js` | loadQuota, tier badges, trial banners, CTA, Stripe upgrade, first login, request flow |
+| `app/js/admin.js` → split into: | Legacy (no longer loaded). See modules below. |
+| `app/js/admin-state.js` | State vars, initAdmin, adminApi helper |
+| `app/js/admin-utils.js` | switchTab, toggleCreateForm, tierOptions, roleOptions, escapeHtml, capitalize |
+| `app/js/admin-overview.js` | loadOverview, renderAnomalies |
+| `app/js/admin-analytics.js` | loadAnalytics, activity chart, division table |
+| `app/js/admin-entities.js` | CRUD for divisions/schools/teachers + setTier/setRole/extend/deactivate/delete |
+| `app/js/admin-requests.js` | loadRequests, loadInvitations, approve/reject/resend |
+| `app/js/admin-demo.js` | Demo panel, view-as modal, seed demo data |
 | `app/js/auth.js` | Supabase auth helpers, `ensureProfile()`, `getEffectiveTier()` |
 | `app/js/supabase-client.js` | Single Supabase client init for the browser |
 | `extension/` | Chrome extension Manifest V3: popup + player + options |
@@ -77,19 +92,21 @@ Analytics. `session_events` tracks code_entered, playback_started, playback_comp
 |---|---|---|
 | `session.js` | `GET /api/session?code=...` | Validates access code, returns signed URL (audio) or resolved HTML with inline images (text) + exit word hash. No auth. Rate-limited. |
 | `admin.js` | `GET/POST /api/admin?action=...` | Platform admin operations. Requires `platform_admin` role. Service role key. |
-| `request-access.js` | `POST /api/request-access` | Stores teacher request + emails admin. No auth. |
-| `stripe-checkout.js` | `POST /api/stripe-checkout` | Creates Stripe Checkout Session. Requires Bearer token. |
+| `org.js` | `GET/POST /api/org?action=...` | School/division admin ops. Actions: `school-teachers`, `school-report`, `school-detail`, `division-schools`, `division-report`, `division-activity`, `detach-teacher`, `detach-school`, `attach-school`, `remove-school-admin`, `invite-teacher`. |
+| `stripe-checkout.js` | `POST /api/stripe-checkout` | Creates Stripe Checkout Session for Teacher Premium. Requires Bearer token. |
+| `stripe-checkout-school.js` | `POST /api/stripe-checkout-school` | Creates Stripe Checkout Session for School Plan. Requires Bearer token + `schoolId`. |
+| `stripe-checkout-division.js` | `POST /api/stripe-checkout-division` | Creates Stripe Checkout Session for Division Plan. Requires Bearer token + `divisionId`. Enrolment band pricing. |
 | `stripe-webhook.js` | `POST /api/stripe-webhook` | Validates Stripe sig, updates `profiles.tier`. Raw body required. |
 | `contact.js` | `POST /api/contact` | Contact form via Resend. |
 
-`admin.js` actions: `overview`, `divisions`, `schools`, `teachers`, `audit-log`, `login-link`, `list-invitations`, `list-requests`, `platform-analytics`, `set-tier`, `set-expires`, `set-notes`, `set-role`, `attach-teacher`, `reassign-teacher`, `create-division`, `create-school`, `approve-request`, `reject-request`, `invite`, `resend-invite`, `seed-demo`, `delete-teacher`, `delete-school`, `delete-division`, `toggle-deactivation`.
+`admin.js` actions: `overview`, `divisions`, `schools`, `teachers`, `audit-log`, `login-link`, `list-invitations`, `list-requests`, `platform-analytics`, `set-tier`, `set-expires`, `set-notes`, `set-role`, `attach-teacher`, `reassign-teacher`, `create-division`, `create-school`, `approve-request`, `reject-request`, `invite`, `resend-invite`, `seed-demo`, `delete-teacher`, `delete-school`, `delete-division`, `toggle-deactivation`, `cancel-subscription` (cancels school/division Stripe sub with proration).
 
 ## Critical conventions
 
 - **No build step.** `vercel dev` serves files directly. The extension is loaded unpacked from `chrome://extensions`.
 - **Design system:** Editorial print aesthetic. Borders not shadows. `1px solid var(--ink)`. No border-radius. Fonts: Playfair Display (headings), DM Sans (body). Labels are `0.7rem`, `letter-spacing: 0.14em`, uppercase.
-- **Environment variables:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `CONTACT_EMAIL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`. Stored in Vercel dashboard + `.env.local` for local dev.
-- **Exit word hashing:** SHA-256 of lowercased+trimmed input. Used identically in `app/js/dashboard.js` (upload) and `extension/player.js` (verification).
+- **Stripe billing:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` (Teacher Premium), `STRIPE_SCHOOL_PRICE_ID` (School Plan). Additional division plan price IDs are configured in the `division_pricing` DB table. Stored in Vercel dashboard + `.env.local` for local dev.
+- **Exit word hashing:** SHA-256 of lowercased+trimmed input. Used identically in `app/js/dashboard-access-codes.js` (upload) and `extension/player.js` (verification).
 - **Auth:** Google OAuth via Supabase Auth. Redirects to `https://app.audioproctor.com/dashboard.html`. `ensureProfile()` creates the `profiles` row on first login with `tier='premium'` and `expires_at` 30 days out.
 
 ## How to run locally

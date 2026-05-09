@@ -1,0 +1,3 @@
+version = 1
+[functions]
+  normalize-audio.verify_jwt = false

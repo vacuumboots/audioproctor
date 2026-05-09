@@ -83,13 +83,20 @@ STRIPE_PRICE_ID=
 │   ├── css/styles.css          # Full design system (app + shared)
 │   └── js/
 │       ├── auth.js             # Shared auth helpers (requireAuth, ensureProfile, getEffectiveTier)
-│       ├── dashboard.js        # Upload, quota, analytics, exit word generation
-│       ├── admin.js            # Platform admin UI
+│       ├── supabase-client.js  # Supabase client initialisation
+│       ├── dashboard-state.js  # Shared constants, exit word lists, module state
+│       ├── dashboard-utils.js  # escapeHtml, formatExpiry, file helpers, notices, progress
+│       ├── dashboard-access-codes.js  # Code generation, exit word picking, hashWord
+│       ├── dashboard-audio.js  # WAV-to-MP3 conversion via lamejs
+│       ├── dashboard-editor.js # Contenteditable editor, image paste/drop, assessment type toggle
+│       ├── dashboard-upload.js # Upload handler, inline image upload, duplicate, retry normalize
+│       ├── dashboard-table.js  # Uploads table rendering, insights, CSV export, rename/expiry/delete
+│       ├── dashboard-quota.js  # Quota display, tier badges, trial banners, Stripe upgrade, first login
+│       ├── admin.js            # Platform admin UI (modular split: admin-state/overview/analytics/entities/requests/utils/demo)
 │       ├── school-admin.js     # School admin UI
 │       ├── division-admin.js   # Division admin UI
 │       ├── settings.js         # Settings page
-│       ├── player.js           # Web player (fallback)
-│       └── supabase-client.js  # Supabase client initialisation
+│       └── player.js           # Web player (fallback)
 │
 ├── api/                        # Vercel serverless functions
 │   ├── session.js              # Validate access code → typed response (audio signed URL or text content)
@@ -99,8 +106,11 @@ STRIPE_PRICE_ID=
 │   ├── admin.js                # Platform admin operations (service role)
 │   ├── request-access.js       # Store teacher access request + notify admin
 │   ├── accept-invite.js        # Validate + accept invitation tokens
-│   ├── stripe-checkout.js      # Create Stripe Checkout Session
+│   ├── stripe-checkout.js      # Create Stripe Checkout Session (Teacher Premium)
+│   ├── stripe-checkout-school.js   # Create Stripe Checkout Session (School Plan)
+│   ├── stripe-checkout-division.js # Create Stripe Checkout Session (Division Plan)
 │   ├── stripe-webhook.js       # Handle Stripe subscription events
+│   ├── trigger-normalize.js    # Audio normalization via ffmpeg (staging → 32kbps mono MP3)
 │   ├── contact.js              # Contact/demo request form handler
 │   └── _lib/email.js           # Shared Resend helper
 │
@@ -129,7 +139,12 @@ STRIPE_PRICE_ID=
 │   │   ├── 016                 # auto trial, teacher requests, enhanced get_effective_tier()
 │   │   ├── 017                 # block uploads for deactivated teachers
 │   │   ├── 018                 # text assessments (assessment_type, text_content, text_char_count)
-│   │   └── 019                 # text session event types
+│   │   ├── 019                 # text session event types
+│   │   ├── 020                 # image_count column on uploads
+│   │   ├── 021                 # RLS policies for assessment-images bucket
+│   │   ├── 022                 # Stripe school/division billing + division_pricing
+│   │   ├── 023                 # processing_status + staging storage RLS + platform admin RLS
+│   │   └── 024                 # onboarding_emails table
 │   └── seeds/dev-seed.sql      # Demo data for local dev
 │
 ├── docs/                       # Project documentation
@@ -146,7 +161,7 @@ STRIPE_PRICE_ID=
 ## Key flows
 
 ### Teacher upload
-`dashboard.js handleUpload()` — validates quota and storage cap client-side (enforced server-side via RLS), uploads file to Supabase Storage, inserts row to `uploads`, updates `storage_used_mb` on `profiles`.
+`dashboard-upload.js handleUpload()` — validates quota and storage cap client-side (enforced server-side via RLS), uploads file to Supabase Storage staging path for audio (or wraps text in `<p>` tags for text assessments), inserts row to `uploads` with `processing_status`. For audio, triggers `/api/trigger-normalize` which transcodes to 32kbps mono MP3 via ffmpeg and moves to final path. For text, images are uploaded to `assessment-images` bucket and replaced with `data-apimg-idx` placeholders in the stored HTML.
 
 ### Student access (extension)
 `popup.js` → `GET /api/session?code=ABC-123` → stores typed session data in `chrome.storage.session` → opens `player.html` in a fullscreen popup window → `player.js` branches on `assessmentType`:
@@ -157,10 +172,10 @@ STRIPE_PRICE_ID=
 Teacher submits `/request-access` form → stored in `teacher_requests` → admin notified by email → admin approves in `/admin.html` → invitation link generated → teacher clicks link → `accept-invite.html` attaches them to their org via `/api/accept-invite`.
 
 ### Stripe billing
-`/api/stripe-checkout.js` creates a Checkout Session for Teacher Premium. `/api/stripe-webhook.js` handles `checkout.session.completed` (sets `tier_override = 'premium'`) and `customer.subscription.deleted` (resets to null).
+Teacher Premium: `/api/stripe-checkout.js` creates a Checkout Session. School Plan: `/api/stripe-checkout-school.js`. Division Plan: `/api/stripe-checkout-division.js` with enrolment band pricing from `division_pricing` table. `/api/stripe-webhook.js` handles subscription lifecycle events (created, updated, deleted) and updates tier accordingly.
 
 ### Exit word verification
-Both `dashboard.js` and `extension/player.js` use identical `hashWord()` — SHA-256 via Web Crypto API, input lowercased and trimmed before hashing.
+Both the dashboard (`dashboard-access-codes.js`) and extension (`player.js`) use identical `hashWord()` — SHA-256 via Web Crypto API, input lowercased and trimmed before hashing.
 
 ---
 

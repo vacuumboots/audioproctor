@@ -52,10 +52,10 @@ async function initSettings(user) {
 
   // Subscription block
   const tier = await getEffectiveTier(user.id);
-  renderSubscription(tier, profile, schoolDivisionId);
+  await renderSubscription(tier, profile, schoolDivisionId);
 }
 
-function renderSubscription(tier, profile, schoolDivisionId = null) {
+async function renderSubscription(tier, profile, schoolDivisionId = null) {
   const block = document.getElementById('subscription-block');
   if (!block) return;
 
@@ -72,18 +72,43 @@ function renderSubscription(tier, profile, schoolDivisionId = null) {
       <p style="margin-top:0.5rem; color:var(--muted);">Your tier has been set manually by the platform administrator.</p>
     `;
   } else if (profile?.division_id) {
+    // Load division Stripe subscription status
+    const { data: division } = await supabaseClient
+      .from('divisions')
+      .select('name, stripe_subscription_status, tier, enrolment_band')
+      .eq('id', profile.division_id)
+      .maybeSingle();
+
+    const statusHtml = getStripeStatusHtml(division?.stripe_subscription_status);
+    const bandLabel = division?.enrolment_band ? capitalize(division.enrolment_band) + ' Division' : 'Division';
+    const tierLabel = division?.tier === 'division' ? `${bandLabel} Plan` : 'Division';
+
     block.innerHTML = `
-      <p><strong>Your division is on a Division Plan.</strong></p>
+      <p><strong>Your division (${division?.name || '—'}) is on a ${tierLabel}.</strong> ${statusHtml}</p>
       <p style="margin-top:0.5rem; color:var(--muted);">Unlimited uploads · Full analytics · All features included.</p>
+      <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
+        <a href="/division-admin.html" style="color:var(--ink);">Manage Division Plan →</a>
+      </p>
     `;
   } else if (profile?.school_id) {
-    // Teacher linked via school; school may itself be on a Division Plan.
+    // Teacher linked via school — check school's Stripe status
+    const { data: school } = await supabaseClient
+      .from('schools')
+      .select('name, stripe_subscription_status, tier, division_id')
+      .eq('id', profile.school_id)
+      .maybeSingle();
+
     const onDivisionPlan = tier === 'division' || !!schoolDivisionId;
     const label = onDivisionPlan ? 'Division Plan' : 'School Plan';
     const via   = onDivisionPlan ? ' (through your school\'s division)' : '';
+    const statusHtml = school ? getStripeStatusHtml(school.stripe_subscription_status) : '';
+
     block.innerHTML = `
-      <p><strong>Your school is on a ${label}.</strong></p>
+      <p><strong>${school?.name || 'Your school'} is on a ${label}.</strong> ${statusHtml}</p>
       <p style="margin-top:0.5rem; color:var(--muted);">Unlimited uploads · Full analytics · All features included${via}.</p>
+      <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
+        <a href="/school-admin.html" style="color:var(--ink);">Manage School Plan →</a>
+      </p>
     `;
   } else if (tier === 'premium') {
     block.innerHTML = `
@@ -94,6 +119,19 @@ function renderSubscription(tier, profile, schoolDivisionId = null) {
   } else {
     block.innerHTML = `<p>Loading subscription details…</p>`;
   }
+}
+
+function getStripeStatusHtml(status) {
+  if (!status || status === 'active') return '';
+  const statusLabels = {
+    past_due: 'Past Due',
+    canceled: 'Canceled',
+    incomplete: 'Incomplete',
+    unpaid: 'Unpaid',
+    paused: 'Paused',
+  };
+  const label = statusLabels[status] || status;
+  return `<span style="display:inline-block; padding:0.1rem 0.45rem; font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:500; background:var(--light-accent); color:var(--accent); border:1px solid var(--accent); vertical-align:middle;">${label}</span>`;
 }
 
 // ─── Profile ─────────────────────────────────────────────────────────────
@@ -170,4 +208,11 @@ async function confirmDelete() {
     btn.disabled    = false;
     btn.textContent = 'Permanently Delete';
   }
+}
+
+// ─── Util ─────────────────────────────────────────────────────────────────
+
+function capitalize(str) {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }

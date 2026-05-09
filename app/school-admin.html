@@ -56,6 +56,26 @@
       border: 1px solid var(--ink);
       color: var(--ink);
     }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,26,46,0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-box {
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      padding: 2.5rem;
+      max-width: 460px;
+      width: 90%;
+    }
+    .modal-box h2 {
+      font-size: 1.35rem;
+      margin-bottom: 0.75rem;
+    }
   </style>
 </head>
 <body>
@@ -101,16 +121,46 @@
       </div>
     </div>
 
+    <!-- Billing -->
+    <div class="card" style="margin-bottom:2rem;">
+      <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
+        <p class="label">School Plan</p>
+        <div id="billing-badge" class="tier-badge hidden" style="font-size:0.65rem;"></div>
+      </div>
+      <div id="billing-block" class="subscription-block" style="padding:1.25rem 1.5rem; border:var(--border); background:var(--warm-mid); font-size:0.9rem;">
+        <p>Loading billing information…</p>
+      </div>
+    </div>
+
     <!-- Teachers -->
     <div class="card">
-      <div class="card__header">
+      <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
         <p class="label">Teachers</p>
+        <button class="btn btn--ghost btn--small" onclick="showInviteTeacherModal()">Invite Teacher</button>
       </div>
       <div id="teachers-container">
         <div class="empty-state"><p class="label">Loading…</p></div>
       </div>
     </div>
 
+  </div>
+
+  <!-- Invite Teacher modal -->
+  <div id="invite-teacher-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <p class="label" style="margin-bottom:0.75rem;">Invite a Teacher</p>
+      <h2>Send an invitation to join this school</h2>
+      <p style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;">An email will be sent with a link to accept the invitation and create an account.</p>
+      <div class="form-group">
+        <label class="label" for="invite-email-input">Teacher's Email</label>
+        <input type="email" id="invite-email-input" class="input-field" placeholder="teacher@school.edu" maxlength="255">
+      </div>
+      <div id="invite-notice" class="notice hidden" style="margin-bottom:0.75rem;"></div>
+      <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+        <button class="btn btn--primary" onclick="inviteTeacher()">Send Invitation</button>
+        <button class="btn btn--ghost" onclick="document.getElementById('invite-teacher-modal').classList.add('hidden'); document.getElementById('invite-notice').classList.add('hidden');">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>

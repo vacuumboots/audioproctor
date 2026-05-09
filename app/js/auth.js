@@ -12,7 +12,7 @@ async function signInWithGoogle() {
   const { error } = await supabaseClient.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://app.audioproctor.com/login.html',
+      redirectTo: window.location.origin + '/login.html',
     },
   });
 

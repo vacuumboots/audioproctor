@@ -1,9 +1,13 @@
 // ─── School Admin Dashboard ───────────────────────────────────────────────
 // Requires role = 'school_admin' on the profiles row.
+// Includes School Plan billing management.
 
 const ORG_API = '/api/org';
 
 let orgJwt = null;
+let schoolId = null;
+let schoolTier = 'free';
+let schoolStripeStatus = null;
 
 async function initSchoolAdmin(user) {
   const session = await getSession();
@@ -29,17 +33,23 @@ async function initSchoolAdmin(user) {
     return;
   }
 
+  schoolId = profile.school_id;
+
   // Load school name
-  if (profile.school_id) {
+  if (schoolId) {
     const { data: school } = await supabaseClient
       .from('schools')
-      .select('name')
-      .eq('id', profile.school_id)
+      .select('name, tier, stripe_subscription_status, stripe_subscription_id')
+      .eq('id', schoolId)
       .maybeSingle();
-    if (school) document.getElementById('school-name-title').textContent = school.name;
+    if (school) {
+      document.getElementById('school-name-title').textContent = school.name;
+      schoolTier = school.tier || 'free';
+      schoolStripeStatus = school.stripe_subscription_status;
+    }
   }
 
-  await Promise.all([loadSchoolReport(), loadTeachers()]);
+  await Promise.all([loadSchoolReport(), loadTeachers(), renderBilling()]);
 }
 
 // ─── API helper ───────────────────────────────────────────────────────────
@@ -154,6 +164,143 @@ async function detachTeacher(userId, email, btn) {
   }
 }
 
+// ─── Billing ──────────────────────────────────────────────────────────────
+
+async function renderBilling() {
+  const block = document.getElementById('billing-block');
+  const badge = document.getElementById('billing-badge');
+  if (!block) return;
+
+  if (schoolTier === 'school' || schoolTier === 'division') {
+    const statusLabel = schoolStripeStatus === 'active' ? 'Active' :
+      schoolStripeStatus === 'past_due' ? 'Past Due' :
+      schoolStripeStatus === 'canceled' ? 'Canceled' : 'Active';
+
+    const statusColor = schoolStripeStatus === 'active' ? '#4a7c59' :
+      schoolStripeStatus === 'past_due' ? 'var(--accent)' : 'var(--muted)';
+
+    badge.textContent = statusLabel;
+    badge.style.color = 'var(--paper)';
+    badge.style.background = statusColor;
+    badge.style.border = `1px solid ${statusColor}`;
+    badge.classList.remove('hidden');
+
+    const tierLabel = schoolTier === 'division' ? 'Division Plan' : 'School Plan';
+    block.innerHTML = `
+      <p><strong>This school is on a ${tierLabel}.</strong></p>
+      <p style="margin-top:0.5rem; color:var(--muted);">
+        All teachers at this school have unlimited uploads, full analytics, and all features included.
+      </p>
+      <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
+        Billing is managed by your division or platform administrator.
+        Contact them for any changes to your plan.
+      </p>`;
+  } else {
+    badge.classList.add('hidden');
+    block.innerHTML = `
+      <p><strong>This school is on the Free tier.</strong></p>
+      <p style="margin-top:0.5rem; color:var(--muted); line-height:1.6;">
+        Purchase a School Plan to give every teacher at this school unlimited uploads,
+        full analytics, and all premium features.
+      </p>
+      <div style="margin-top:1rem; display:flex; gap:1rem; align-items:center;">
+        <button id="btn-purchase-school-plan" class="btn btn--primary btn--small"
+          onclick="startSchoolCheckout()">Purchase School Plan</button>
+        <span style="font-size:0.75rem; color:var(--muted);">Billed annually</span>
+      </div>
+      <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
+        Prefer an invoice? <a href="/request-access" style="color:var(--ink);">Submit a request</a>.
+      </p>`;
+  }
+}
+
+async function startSchoolCheckout() {
+  const btn = document.getElementById('btn-purchase-school-plan');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Redirecting…';
+  }
+
+  const session = await getSession();
+  if (!session) { window.location = '/login.html'; return; }
+
+  try {
+    const res = await fetch('/api/stripe-checkout-school', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ schoolId })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Checkout failed');
+    window.location = data.url;
+  } catch (err) {
+    alert('Could not start checkout: ' + err.message);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Purchase School Plan';
+    }
+  }
+}
+
+// Handle successful return from Stripe
+if (new URLSearchParams(window.location.search).get('upgraded') === 'school') {
+  history.replaceState(null, '', window.location.pathname);
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--ink);color:var(--paper);text-align:center;padding:0.6rem;font-size:0.85rem;z-index:999;';
+  banner.textContent = 'School Plan activated! All teachers at this school now have unlimited access.';
+  document.body.prepend(banner);
+  setTimeout(() => banner.remove(), 6000);
+}
+
+// ─── Invite Teacher ─────────────────────────────────────────────────────
+
+function showInviteTeacherModal() {
+  document.getElementById('invite-email-input').value = '';
+  document.getElementById('invite-notice').classList.add('hidden');
+  document.getElementById('invite-notice').textContent = '';
+  document.getElementById('invite-teacher-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('invite-email-input').focus(), 100);
+}
+
+async function inviteTeacher() {
+  const email = document.getElementById('invite-email-input').value.trim();
+  const notice = document.getElementById('invite-notice');
+  if (!email) {
+    notice.textContent = 'Please enter an email address.';
+    notice.className = 'notice';
+    notice.classList.remove('hidden');
+    return;
+  }
+
+  const btn = document.querySelector('#invite-teacher-modal .btn--primary');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  try {
+    await orgApi('invite-teacher', 'POST', { email });
+    notice.textContent = 'Invitation sent!';
+    notice.className = 'notice';
+    notice.classList.remove('hidden');
+    document.getElementById('invite-email-input').value = '';
+    await loadTeachers();
+    setTimeout(() => {
+      document.getElementById('invite-teacher-modal').classList.add('hidden');
+      notice.classList.add('hidden');
+    }, 2000);
+  } catch (err) {
+    notice.textContent = 'Failed to send invitation: ' + err.message;
+    notice.className = 'notice text-accent';
+    notice.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Invitation';
+  }
+}
+
 // ─── Util ─────────────────────────────────────────────────────────────────
 
 function escapeHtml(str) {
@@ -162,6 +309,6 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+    .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }

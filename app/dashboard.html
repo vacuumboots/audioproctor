@@ -119,6 +119,57 @@
       font-size: 1.35rem;
       margin-bottom: 0.75rem;
     }
+    /* ─── Autocomplete dropdown ──────────────────────────────────── */
+    .autocomplete-wrap {
+      position: relative;
+    }
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--ink);
+      border-top: none;
+      background: var(--paper);
+      z-index: 200;
+      display: none;
+    }
+    .autocomplete-dropdown.open {
+      display: block;
+    }
+    .autocomplete-dropdown .ac-option {
+      padding: 0.5rem 0.8rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--warm-mid);
+    }
+    .autocomplete-dropdown .ac-option:last-child {
+      border-bottom: none;
+    }
+    .autocomplete-dropdown .ac-option:hover,
+    .autocomplete-dropdown .ac-option.highlighted {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .autocomplete-dropdown .ac-option .ac-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-left: 0.5rem;
+    }
+    .autocomplete-dropdown .ac-option:hover .ac-meta {
+      color: var(--warm-mid);
+    }
+    .autocomplete-dropdown .ac-no-match {
+      padding: 0.75rem 0.8rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+    .autocomplete-selected {
+      border-color: var(--accent) !important;
+    }
   </style>
 </head>
 <body>
@@ -188,7 +239,7 @@
           accept=".mp3,audio/mpeg,.wav,audio/wav,audio/x-wav"
           onchange="handleFileSelect(this)"
         >
-        <span id="file-hint" class="label text-muted">Max 50 MB · MP3 or WAV (WAV converts to MP3)</span>
+        <span id="file-hint" class="label text-muted">Max 50 MB · MP3 or WAV. Audio is transcoded to 32kbps mono MP3 on the server.</span>
       </div>
 
       <div id="text-input-group" class="form-group hidden">
@@ -322,8 +373,14 @@
       <!-- Honeypot — hidden from real users, filled by bots -->
       <input type="text" id="division-honeypot" style="display:none;" tabindex="-1" autocomplete="off">
       <div class="form-group">
-        <input type="text" id="division-name-input" class="input-field" placeholder="e.g. Foothills School Division No. 38" maxlength="120" list="division-suggestions" autocomplete="off">
-        <datalist id="division-suggestions"></datalist>
+        <div class="autocomplete-wrap">
+          <input type="hidden" id="division-id-input" value="">
+          <input type="text" id="division-name-input" class="input-field" placeholder="Search for your division or school…" maxlength="120" autocomplete="off">
+          <div id="division-autocomplete-dropdown" class="autocomplete-dropdown"></div>
+        </div>
+        <p id="division-fallback-note" class="hidden" style="font-size:0.8rem; color:var(--muted); font-style:italic; margin-top:0.25rem;">
+          Can't find your division? You can still type it in — an admin will link it later.
+        </p>
       </div>
       <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:1.25rem;">
         <input type="checkbox" id="tos-checkbox" style="margin-top:0.2rem; flex-shrink:0;" onchange="document.getElementById('btn-continue').disabled = !this.checked;">
@@ -365,7 +422,15 @@
   <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
   <script src="/js/supabase-client.js"></script>
   <script src="/js/auth.js"></script>
-  <script src="/js/dashboard.js"></script>
+  <!-- dashboard module splits -->
+  <script src="/js/dashboard-state.js"></script>
+  <script src="/js/dashboard-utils.js"></script>
+  <script src="/js/dashboard-access-codes.js"></script>
+  <script src="/js/dashboard-audio.js"></script>
+  <script src="/js/dashboard-editor.js"></script>
+  <script src="/js/dashboard-upload.js"></script>
+  <script src="/js/dashboard-table.js"></script>
+  <script src="/js/dashboard-quota.js"></script>
   <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
   <script defer src="/_vercel/insights/script.js"></script>
   <script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>

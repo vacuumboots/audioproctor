@@ -13,9 +13,13 @@
 //   POST ?action=detach-teacher           — body: { userId } — remove teacher from school
 //   POST ?action=detach-school            — body: { schoolId } — remove school from division
 //   POST ?action=remove-school-admin      — body: { userId } — revert school_admin role to teacher
+//   POST ?action=invite-teacher           — body: { email } — create invitation + send email
+//   POST ?action=attach-school            — body: { schoolId } — attach school to division (with proration)
 
 const { createClient } = require('@supabase/supabase-js');
+const Stripe = require('stripe');
 const { Resend }       = require('resend');
+const { sendEmail }    = require('./_lib/email');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin',  'https://app.audioproctor.com');
@@ -554,6 +558,70 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    // ── attach-school ───────────────────────────────────────────────────
+    // Attaches a school to this division, with automatic proration:
+    // if the school has an active School Plan Stripe subscription, cancel it
+    // with `proration_behavior: 'create_prorations'` so the unused portion
+    // credits to the division customer's balance.
+    if (action === 'attach-school') {
+      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      const { schoolId } = body;
+      if (!schoolId) return res.status(400).json({ error: 'schoolId required' });
+
+      const divisionId = profile.division_id;
+      if (!divisionId) return res.status(400).json({ error: 'No division_id' });
+
+      // Verify the school isn't already in a division
+      const { data: school } = await supabase
+        .from('schools').select('id, name, tier, stripe_subscription_id, stripe_customer_id, division_id')
+        .eq('id', schoolId)
+        .single();
+
+      if (!school) return res.status(404).json({ error: 'School not found' });
+      if (school.division_id === divisionId) {
+        return res.status(400).json({ error: 'School is already in this division' });
+      }
+      if (school.division_id) {
+        return res.status(400).json({ error: 'School belongs to another division. Detach it first.' });
+      }
+
+      // ── Proration: cancel school subscription if active ──────────────
+      if (school.stripe_subscription_id && school.tier === 'school') {
+        const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+        try {
+          await stripe.subscriptions.update(school.stripe_subscription_id, {
+            cancellation_details: { comment: `School joined division ${divisionId} — cancelling with proration` },
+            proration_behavior: 'create_prorations',
+          });
+          console.log(`[proration] cancelled school sub ${school.stripe_subscription_id} with proration`);
+
+          await supabase.from('schools').update({
+            tier:                      'free',
+            stripe_subscription_status: 'canceled',
+            cancelled_at:               new Date().toISOString()
+          }).eq('id', schoolId);
+
+        } catch (err) {
+          console.error('attach-school proration failed:', err.message);
+          // Non-fatal — continue with the attachment even if Stripe fails
+        }
+      }
+
+      // ── Attach school to division ────────────────────────────────────
+      const { error } = await supabase
+        .from('schools').update({ division_id: divisionId }).eq('id', schoolId);
+
+      if (error) {
+        console.error('attach-school failed:', error.message);
+        return res.status(500).json({ error: 'Could not attach school to division' });
+      }
+
+      audit(supabase, user.id, 'attach_school', 'school', schoolId,
+        { division_id: school.division_id }, { division_id: divisionId });
+
+      return res.status(200).json({ ok: true, prorated: !!school.stripe_subscription_id });
+    }
+
     // ── remove-school-admin ────────────────────────────────────────────
     if (action === 'remove-school-admin') {
       if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
@@ -593,11 +661,107 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    // ── invite-teacher ──────────────────────────────────────────────────
+    if (action === 'invite-teacher') {
+      // This endpoint is for school admins and division admins only.
+      // Platform admins use the invite action in api/admin.js.
+      if (!['school_admin', 'division_admin'].includes(profile.role)) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const { email } = body;
+      if (!email) return res.status(400).json({ error: 'email required' });
+
+      // School admins must be assigned to a school; division admins to a division.
+      if (profile.role === 'school_admin' && !profile.school_id) {
+        return res.status(400).json({ error: 'You are not assigned to a school' });
+      }
+      if (profile.role === 'division_admin' && !profile.division_id) {
+        return res.status(400).json({ error: 'You are not assigned to a division' });
+      }
+
+      // Resolve org name for the invitation email
+      let orgName = null;
+      if (profile.school_id) {
+        const { data: school } = await supabase
+          .from('schools').select('name').eq('id', profile.school_id).single();
+        orgName = school?.name || null;
+      } else if (profile.division_id) {
+        const { data: division } = await supabase
+          .from('divisions').select('name').eq('id', profile.division_id).single();
+        orgName = division?.name || null;
+      }
+
+      const { data: invite, error: invErr } = await supabase
+        .from('invitations')
+        .insert({
+          email,
+          role: 'teacher',
+          school_id:   body.schoolId || profile.school_id || null,
+          division_id: profile.division_id || null,
+        })
+        .select('id, token')
+        .single();
+      if (invErr) return res.status(500).json({ error: 'Could not create invitation' });
+
+      const inviteUrl = `https://app.audioproctor.com/accept-invite.html?token=${invite.token}`;
+
+      let emailOk = true;
+      let emailError = null;
+      try {
+        const { subject, text, html } = buildInviteEmail({ role: 'teacher', inviteUrl, orgName });
+        const emailResult = await sendEmail({ to: email, subject, text, html });
+        if (!emailResult.ok) {
+          emailOk = false;
+          emailError = emailResult.error;
+        }
+      } catch (err) {
+        emailOk = false;
+        emailError = err.message;
+      }
+
+      logInviteEmail(supabase, invite.id, 'invite', emailOk, emailError);
+
+      audit(supabase, user.id, 'invite_teacher', 'invitation', invite.token, null,
+        { email, role: 'teacher', emailOk, orgName });
+
+      return res.status(200).json({ ok: true, inviteUrl, token: invite.token, emailOk, emailError });
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
 };
+
+// ─── Invite email helper ───────────────────────────────────────────────────
+
+function formatRole(role) {
+  return role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function buildInviteEmail({ role, inviteUrl, orgName }) {
+  const roleLabel = formatRole(role);
+  const subject   = `You've been invited to join AudioProctor`;
+  let text = `You've been invited to join AudioProctor as a ${roleLabel}.`;
+  if (orgName) text += `\n\nas part of ${orgName}`;
+  text += `\n\nClick the link below to accept your invitation:\n${inviteUrl}\n\nThis invitation expires in 7 days.\nIf you did not expect this invitation, you can safely ignore it.`;
+  let html = `<p>You've been invited to join AudioProctor as a <strong>${roleLabel}</strong>.</p>`;
+  if (orgName) html += `<p>as part of <strong>${orgName}</strong></p>`;
+  html += `<p>Click the link below to accept your invitation:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This invitation expires in 7 days.<br>If you did not expect this invitation, you can safely ignore it.</p>`;
+  return { subject, text, html };
+}
+
+function logInviteEmail(supabase, invitationId, action, emailOk, errorMessage) {
+  supabase.from('invite_email_log').insert({
+    invitation_id:  invitationId ?? null,
+    action,
+    email_ok:       emailOk ?? null,
+    error_message:  errorMessage ?? null,
+  }).then(({ error }) => {
+    if (error) console.error('invite email log insert failed:', error.message);
+  });
+}
 
 // ─── Audit log helper ─────────────────────────────────────────────────────
 

@@ -8,3 +8,8 @@ assets/
 audioproctor-video/
 pitch.md
 extension.zip
+.vercel
+.env*.local
+_debug_mock.js
+_verify.js
+supabase/.temp/

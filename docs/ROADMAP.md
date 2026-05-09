@@ -26,7 +26,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
   from the same dashboard. Text assessments store plain text in the database, return it
   from `/api/session`, and render in a fullscreen reader in the extension with built-in
   read-aloud via `chrome.tts`. Migrations 018–019, extension v1.1.0.
-- [ ] **Audio normalization on upload** — transcode all uploaded files to 32kbps mono MP3
+- [x] **Audio normalization on upload** — transcode all uploaded files to 32kbps mono MP3
   via a Supabase Edge Function triggered on upload. Reduces file sizes 4–6x, ensures
   consistent playback quality, and protects against teachers uploading large high-bitrate
   files. Implementation: browser uploads original to a staging path in Supabase storage
@@ -86,7 +86,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
   dependency for privacy reasons. For the web app, self-hosting the WOFF2 files removes
   a third-party request that leaks page URLs and IPs to Google. Download from Google
   Fonts, place in `app/fonts/`, update `@font-face` declarations.
-- [ ] **Split monolithic JS files** — `app/js/dashboard.js` (1,786 lines) and
+- [x] **Split monolithic JS files** — `app/js/dashboard.js` (1,786 lines) and
   `app/js/admin.js` (1,214 lines) mix UI rendering, API calls, event handlers,
   validation, and state management with no module boundaries. Split into
   responsibility-focused files (e.g. `dashboard-upload.js`, `dashboard-table.js`,

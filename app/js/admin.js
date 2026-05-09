@@ -399,7 +399,9 @@ function renderTeachers(teachers) {
             onclick="extendTrial('${t.id}', 30)">+30d</button>
         </td>
         <td>
-          <select class="tier-select" onchange="setRole('${t.id}',this.value)">
+          <select class="tier-select" onchange="assignRole(this)"
+            data-teacher-id="${t.id}" data-teacher-email="${escapeHtml(t.email || '')}"
+            data-school-id="${t.school_id || ''}" data-division-id="${t.division_id || ''}">
             ${roleOptions(t.role || 'teacher')}
           </select>
         </td>
@@ -584,12 +586,85 @@ async function setTier(entityType, entityId, tier) {
   }
 }
 
-async function setRole(userId, role) {
+async function assignRole(selectEl) {
+  const teacherId   = selectEl.dataset.teacherId;
+  const email       = selectEl.dataset.teacherEmail;
+  const role        = selectEl.value;
+  const schoolId    = selectEl.dataset.schoolId;
+  const divisionId  = selectEl.dataset.divisionId;
+
+  // If the role requires an org ID and the teacher doesn't already have one,
+  // show a modal so the admin can pick.
+  const needsOrg = role === 'school_admin' && !schoolId
+    || role === 'division_admin' && !divisionId;
+
+  if (needsOrg) {
+    showRoleOrgModal(teacherId, email, role, selectEl);
+    return; // the modal will call assignRoleSubmit on confirm
+  }
+
+  await assignRoleSubmit(teacherId, role, schoolId || null, divisionId || null);
+}
+
+function showRoleOrgModal(teacherId, email, role, selectEl) {
+  const old = document.getElementById('role-org-modal');
+  if (old) old.remove();
+
+  const isSchool = role === 'school_admin';
+  const list     = isSchool ? allSchoolsList : allDivisionsList;
+  const label    = isSchool ? 'School' : 'Division';
+  const emptyMsg = isSchool
+    ? 'No schools available. Create one first.'
+    : 'No divisions available. Create one first.';
+
+  const opts = list.length
+    ? list.map(item =>
+        `<option value="${item.id}">${escapeHtml(item.name)}</option>`
+      ).join('')
+    : `<option value="">${emptyMsg}</option>`;
+
+  const modal = document.createElement('div');
+  modal.id = 'role-org-modal';
+  modal.style.cssText = `
+    position:fixed; inset:0; background:rgba(26,26,46,0.55); z-index:1000;
+    display:flex; align-items:center; justify-content:center; padding:1rem;
+  `;
+
+  modal.innerHTML = `
+    <div style="background:var(--paper); border:var(--border); max-width:400px; width:100%; padding:2rem;">
+      <p class="label" style="margin-bottom:0.5rem;">Assign ${formatRole(role)}</p>
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:1.25rem;">
+        Select the ${label.toLowerCase()} for <strong>${escapeHtml(email)}</strong>:
+      </p>
+      <div style="margin-bottom:1.5rem;">
+        <label class="label" style="display:block; margin-bottom:0.4rem;">${label}</label>
+        <select id="role-org-select" class="input-field" style="font-size:0.875rem;">
+          ${opts}
+        </select>
+      </div>
+      <div style="display:flex; gap:0.75rem;">
+        <button class="btn btn--primary btn--small" onclick="
+          const sel=document.getElementById('role-org-select');
+          assignRoleSubmit('${teacherId}','${role}',${isSchool ? "sel.value" : "null"},${isSchool ? "null" : "sel.value"});
+          document.getElementById('role-org-modal').remove();
+        ">Assign</button>
+        <button class="btn btn--ghost btn--small"
+          onclick="document.getElementById('role-org-modal').remove(); loadTeachers();">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) { modal.remove(); loadTeachers(); } });
+}
+
+async function assignRoleSubmit(teacherId, role, schoolId, divisionId) {
   try {
-    await adminApi('set-role', 'POST', { userId, role });
+    await adminApi('assign-role', 'POST', { teacher_id: teacherId, role, school_id: schoolId, division_id: divisionId });
+    await loadTeachers();
   } catch (err) {
-    alert('Could not update role: ' + err.message);
-    loadTeachers(); // restore previous value
+    alert('Could not assign role: ' + err.message);
+    await loadTeachers();
   }
 }
 
@@ -666,6 +741,10 @@ function roleOptions(current) {
   return roles.map(([val, label]) =>
     `<option value="${val}" ${val === current ? 'selected' : ''}>${label}</option>`
   ).join('');
+}
+
+function formatRole(role) {
+  return role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 function capitalize(str) {

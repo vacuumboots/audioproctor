@@ -12,11 +12,14 @@
 //   POST ?action=set-tier          — body: { entityType, entityId, tier }
 //   POST ?action=set-notes         — body: { entityType, entityId, notes }
 //   POST ?action=invite            — body: { email, role, schoolId?, divisionId? }
+//   POST ?action=assign-role       — body: { teacher_id, role, school_id?, division_id? }
 //   POST ?action=attach-teacher    — body: { userId, schoolId?, divisionId? }
 
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
+const Stripe = require('stripe');
 const { sendEmail } = require('./_lib/email');
+const { scheduleDivisionOnboarding } = require('./_lib/schedule-onboarding');
 
 function formatRole(role) {
   return role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -32,6 +35,22 @@ function buildInviteEmail({ role, inviteUrl, orgName }) {
   if (orgName) html += `<p>as part of <strong>${orgName}</strong></p>`;
   html += `<p>Click the link below to accept your invitation:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This invitation expires in 7 days.<br>If you did not expect this invitation, you can safely ignore it.</p>`;
   return { subject, text, html };
+}
+
+async function scheduleDivisionOnboardingForAdminAction(supabase, divisionId) {
+  try {
+    const { data: division } = await supabase
+      .from('divisions')
+      .select('name, admin_email')
+      .eq('id', divisionId)
+      .single();
+
+    if (division?.admin_email) {
+      await scheduleDivisionOnboarding(supabase, divisionId, division.admin_email);
+    }
+  } catch (err) {
+    console.error('scheduleDivisionOnboardingForAdminAction failed:', err.message);
+  }
 }
 
 module.exports = async (req, res) => {
@@ -372,6 +391,12 @@ module.exports = async (req, res) => {
       let error;
       if (entityType === 'division') {
         ({ error } = await supabase.from('divisions').update({ tier }).eq('id', entityId));
+        if (!error && tier === 'division') {
+          // Schedule onboarding emails for first-time division activation
+          scheduleDivisionOnboardingForAdminAction(supabase, entityId).catch(err =>
+            console.error('set-tier onboarding scheduling failed:', err.message)
+          );
+        }
       } else if (entityType === 'school') {
         ({ error } = await supabase.from('schools').update({ tier }).eq('id', entityId));
       } else if (entityType === 'teacher') {
@@ -444,6 +469,50 @@ module.exports = async (req, res) => {
         return res.status(500).json({ error: 'Could not update role' });
       }
       audit(supabase, user.id, 'set_role', 'teacher', userId, { role: prevProfile?.role }, { role });
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'assign-role') {
+      const { teacher_id, role, school_id, division_id } = body;
+      const validRoles = ['teacher', 'school_admin', 'division_admin', 'platform_admin'];
+      if (!teacher_id) return res.status(400).json({ error: 'teacher_id required' });
+      if (!validRoles.includes(role)) return res.status(400).json({ error: 'Invalid role' });
+      if (role === 'school_admin' && !school_id) return res.status(400).json({ error: 'school_id required for school_admin role' });
+      if (role === 'division_admin' && !division_id) return res.status(400).json({ error: 'division_id required for division_admin role' });
+
+      const { data: prevProfile } = await supabase
+        .from('profiles').select('role, school_id, division_id').eq('id', teacher_id).single();
+
+      const updateFields = { role };
+
+      if (role === 'school_admin') {
+        updateFields.school_id = school_id;
+        updateFields.division_id = null;
+      } else if (role === 'division_admin') {
+        updateFields.division_id = division_id;
+        updateFields.school_id = null;
+      } else if (role === 'platform_admin') {
+        updateFields.school_id = null;
+        updateFields.division_id = null;
+      } else {
+        updateFields.school_id = school_id || null;
+        updateFields.division_id = division_id || null;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateFields)
+        .eq('id', teacher_id);
+
+      if (error) {
+        console.error('assign-role failed:', error.message);
+        return res.status(500).json({ error: 'Could not assign role' });
+      }
+
+      audit(supabase, user.id, 'assign_role', 'teacher', teacher_id,
+        { role: prevProfile?.role, school_id: prevProfile?.school_id, division_id: prevProfile?.division_id },
+        updateFields);
+
       return res.status(200).json({ ok: true });
     }
 
@@ -842,6 +911,62 @@ module.exports = async (req, res) => {
       audit(supabase, user.id, deactivated ? 'deactivate_teacher' : 'reactivate_teacher', 'teacher', userId,
         { is_deactivated: targetProfile.is_deactivated }, { is_deactivated: deactivated });
       return res.status(200).json({ ok: true, is_deactivated: deactivated });
+    }
+
+    // ── cancel-subscription ────────────────────────────────────────────
+    // Platform admin: cancel a school's or division's Stripe subscription
+    // with proration. Proration creates credit toward the customer's balance,
+    // which is useful when a school joins a division or an org is restructured.
+    if (action === 'cancel-subscription') {
+      const { entityType, entityId } = body;
+      if (!entityType || !entityId) return res.status(400).json({ error: 'entityType and entityId required' });
+      if (!['school', 'division'].includes(entityType)) {
+        return res.status(400).json({ error: 'entityType must be school or division' });
+      }
+
+      let entity;
+      if (entityType === 'school') {
+        const { data: school } = await supabase.from('schools').select('id, name, stripe_subscription_id, tier').eq('id', entityId).maybeSingle();
+        entity = school;
+      } else {
+        const { data: division } = await supabase.from('divisions').select('id, name, stripe_subscription_id, tier').eq('id', entityId).maybeSingle();
+        entity = division;
+      }
+
+      if (!entity) return res.status(404).json({ error: `${entityType} not found` });
+      if (!entity.stripe_subscription_id) {
+        return res.status(400).json({ error: `${entity.name} has no active subscription` });
+      }
+
+      const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+      try {
+        await stripe.subscriptions.update(entity.stripe_subscription_id, {
+          cancellation_details: { comment: `Canceled by platform admin (${user.id})` },
+          proration_behavior: 'create_prorations',
+        });
+      } catch (err) {
+        console.error('cancel-subscription stripe failed:', err.message);
+        return res.status(500).json({ error: `Stripe error: ${err.message}` });
+      }
+
+      if (entityType === 'school') {
+        await supabase.from('schools').update({
+          tier: 'free',
+          stripe_subscription_id: null,
+          stripe_subscription_status: 'canceled',
+          cancelled_at: new Date().toISOString()
+        }).eq('id', entityId);
+      } else {
+        await supabase.from('divisions').update({
+          tier: 'free',
+          stripe_subscription_id: null,
+          stripe_subscription_status: 'canceled',
+          cancelled_at: new Date().toISOString()
+        }).eq('id', entityId);
+      }
+
+      audit(supabase, user.id, 'cancel_subscription', entityType, entityId, { tier: entity.tier }, { tier: 'free' });
+      return res.status(200).json({ ok: true });
     }
 
     return res.status(400).json({ error: 'Unknown action' });

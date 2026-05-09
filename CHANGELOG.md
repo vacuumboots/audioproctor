@@ -2,7 +2,51 @@
 
 All notable changes to AudioProctor are documented in this file.
 
-## [1.2.1] - 2026-05-02
+## [1.3.0] - 2026-05-08
+
+Feature release adding audio normalization, image paste from Google Docs and web pages, Stripe school/division billing, and the modular dashboard refactor.
+
+### Added
+- Audio normalization pipeline: uploads go to a staging path, server-side ffmpeg transcodes to 32kbps mono MP3, normalized file moves to final path. Dashboard polls for completion with progress feedback.
+- `processing_status` column on uploads (pending → processing → ready/failed). Text assessments skip the pipeline and are always `ready`.
+- `/api/trigger-normalize` Vercel function — native ffmpeg transcoding with ownership verification, idempotency, and staging cleanup.
+- Image paste from Google Docs: GDocs images arrive as `data:image/jpeg;base64` URIs and are captured directly.
+- Image paste from web pages: pasted `<img>` tags with external URLs are detected, fetched via CORS, and captured as blobs. CORS-blocked images show a notice suggesting screenshot paste instead.
+- CORS warning notice in the dashboard editor: when images are stripped, a red notice explains why and suggests taking a screenshot.
+- HTML paste unwrapping: non-whitelisted wrapper elements (figure, a, picture, ul, etc.) are unwrapped instead of removed, preserving images and text content inside them.
+- Stripe billing for schools and divisions: `/api/stripe-checkout-school.js`, `/api/stripe-checkout-division.js`, enrolment band pricing via `division_pricing` table.
+- Platform admin RLS policies for divisions, schools, and pricing tables.
+- Onboarding email sequence infrastructure: `onboarding_emails` table + cron endpoint (pending activation).
+- Automated test suite scaffold: vitest config, mock helpers, test directory structure.
+- Modular dashboard JS: `dashboard.js` split into 8 responsibility-focused modules (state, utils, access-codes, audio, editor, upload, table, quota) loaded via separate `<script>` tags.
+
+### Changed
+- Dashboard first-login modal: replaced basic `<datalist>` with autocomplete dropdown supporting keyboard navigation and division ID matching.
+- Extension player: fixed CSP to allow images from `https://*.supabase.co` (`img-src` directive).
+- Extension sanitizer: added null-body guard for DOMParser edge cases in extension contexts.
+- OAuth redirect URL: uses `window.location.origin` instead of hardcoded production URL, enabling local development with `vercel dev`.
+- Upload storage path for audio: files now go to `staging/{userId}/{code}.mp3` before normalization.
+
+### Fixed
+- Extension player text mode: `sanitizeHTML` null-body crash when DOMParser fails in extension context.
+- Extension player text mode: CSP blocked inline images from Supabase signed URLs.
+- Dashboard paste handler: images wrapped in `<figure>`, `<a>`, or `<picture>` tags were destroyed by the HTML stripper instead of being preserved.
+
+### Database migrations
+- 020: `image_count` column on uploads
+- 021: RLS policies for `assessment-images` bucket
+- 022: Stripe school/division columns + `division_pricing` table + helper functions
+- 023 (audio): `processing_status` column + staging storage RLS policies + index
+- 023 (platform admin): RLS policies for divisions, schools, and pricing tables
+- 024: `onboarding_emails` table (not yet activated)
+
+### Manual deployment steps
+- Run migrations 020–024 in Supabase SQL Editor.
+- Install `ffmpeg-static` dependency (`npm install`).
+- Create Stripe Products and Prices for School and Division Plans, update `STRIPE_SCHOOL_PRICE_ID` and `division_pricing` seed data.
+- Configure Stripe webhook endpoint for school/division subscription events.
+- Deploy to Vercel.
+- Bump extension to v1.3.0 and publish to Chrome Web Store.
 
 Feature release adding inline image support in text assessments.
 
