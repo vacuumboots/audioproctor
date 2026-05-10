@@ -4,7 +4,7 @@
 
 A Supabase database connection string containing credentials was committed and
 pushed to the private GitHub repository. The file was removed within minutes,
-the commit was force-pushed over, and the database password was rotated. No
+the commit was force-pushed over, and all exposed credentials were rotated. No
 evidence of compromise.
 
 ## Timeline
@@ -16,8 +16,11 @@ evidence of compromise.
 | 20:12 | Commit pushed to `main` on GitHub. |
 | ~20:13 | Files discovered during review. Commit amended (2031bf2) to remove them. Force-pushed to overwrite remote history. |
 | ~20:15 | Supabase database password rotated via Supabase Dashboard. `SUPABASE_SERVICE_ROLE_KEY` rotated as a precaution. |
-| ~20:15 | Admin API and any service-role-dependent functions broke (expected — Vercel env var still pointed to old key). |
-| Pending | Update `SUPABASE_SERVICE_ROLE_KEY` in Vercel environment variables to the new key. Redeploy. |
+| ~20:15 | Admin API and all service-role-dependent functions broke (expected — Vercel env var still pointed to old key, and Supabase rejected queries using it). |
+| ~20:30 | `SUPABASE_SERVICE_ROLE_KEY` updated in Vercel for Production, Preview, and Development environments via `vercel env rm` / `vercel env add`. |
+| ~20:32 | `.env.local` updated with new key for local development. |
+| ~20:35 | Vercel redeployed (`vercel redeploy`) to pick up the new env var. Env var changes alone did not trigger an automatic redeploy — manual redeploy was required. |
+| ~20:36 | Admin dashboard verified working. |
 
 ## Files involved
 
@@ -25,18 +28,24 @@ evidence of compromise.
 - `check_db2.js` — empty file (0 bytes). Presumed debugging artifact.
 - `supabase/migrations/run-025.mjs` — Node.js script that connected to Supabase via PgBouncer (pooler) and ran migration 025_platform_admin_rls.sql. Contained hardcoded credentials. **Credentials have been rotated; the file's contents are no longer valid.**
 
-All three files have been removed from the repository and history.
+All three files have been removed from the repository and history. Patterns added to `.gitignore` to prevent recurrence.
 
 ## Credentials rotated
 
 - Supabase database password
-- Supabase `service_role` key
+- Supabase `service_role` key (`SUPABASE_SERVICE_ROLE_KEY`)
 
-## Follow-up
+## Lesson learned
 
-- [ ] Update `SUPABASE_SERVICE_ROLE_KEY` in Vercel environment variables
-- [ ] Redeploy Vercel (triggered automatically on env var change)
-- [ ] Verify admin dashboard loads correctly
-- [ ] Verify Stripe webhook endpoint functions
-- [ ] Review `.gitignore` — add patterns for `check_db*.js`, `run-*.mjs`, and any credential-containing scripts
-- [ ] Consider a pre-commit hook that scans for Supabase connection strings
+**Rotating a Supabase key requires updating every place it's stored.** The
+`SUPABASE_SERVICE_ROLE_KEY` lives in three places:
+
+1. Vercel environment variables (Production, Preview, Development)
+2. `.env.local` (local development)
+3. Supabase itself (where the key is generated)
+
+Rotating in Supabase immediately breaks #1 and #2 until they're manually
+updated. Vercel env var changes do **not** always trigger an automatic
+redeploy — a manual `vercel redeploy` may be required.
+
+See `docs/OPERATIONS.md` for the documented key rotation procedure.

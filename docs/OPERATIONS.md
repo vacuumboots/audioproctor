@@ -111,3 +111,31 @@ A change that touches `extension/**` is not done until:
 - [ ] attestation row updated in `RELEASE_SOURCE_OF_TRUTH.md`
 - [ ] managed Chromebook run sheet updated (for behavior-affecting changes)
 - [ ] changelog entry added
+
+## 8) Supabase key rotation
+
+The `SUPABASE_SERVICE_ROLE_KEY` lives in three places. Rotating it in Supabase
+breaks the other two until they're manually updated.
+
+**Procedure:**
+
+1. Rotate the key in Supabase: Project Settings → API → `service_role` key → Rotate
+2. Copy the new key immediately — it won't be shown again
+3. Update Vercel (must be done per-environment — combining environments fails):
+   ```bash
+   vercel env rm SUPABASE_SERVICE_ROLE_KEY production
+   vercel env add SUPABASE_SERVICE_ROLE_KEY   # select Production, Preview
+   vercel env add SUPABASE_SERVICE_ROLE_KEY   # select Development
+   ```
+4. Update `.env.local` with the new key
+5. Force redeploy: `vercel redeploy <latest-deployment-url>` (env var changes do
+   not always trigger an automatic redeploy)
+6. Verify: open the admin dashboard, confirm divisions/schools/teachers load
+
+**What breaks when the key is rotated without these steps:**
+- Admin API (`/api/admin`) — all actions return 403
+- Stripe webhook — subscription events silently fail
+- Session API — access code lookups fail
+- Any endpoint using the service role client
+
+See `docs/security/2026-05-09-credential-leak.md` for the full incident record.
