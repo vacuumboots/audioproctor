@@ -7,7 +7,6 @@
 
 const Stripe = require('stripe');
 const { createClient } = require('@supabase/supabase-js');
-const { scheduleDivisionOnboarding } = require('./_lib/schedule-onboarding');
 
 module.exports.config = { api: { bodyParser: false } };
 
@@ -95,35 +94,6 @@ async function handleDivisionPlan(supabase, session) {
     stripe_price_id:            priceId,
     expires_at:                 null
   }).eq('id', divisionId);
-
-  // Schedule onboarding emails for first-time division activation
-  scheduleDivisionOnboardingForDivision(supabase, divisionId, session);
-}
-
-async function scheduleDivisionOnboardingForDivision(supabase, divisionId, session) {
-  try {
-    // Use the division's admin_email if set, otherwise fall back to the purchaser
-    const { data: division } = await supabase
-      .from('divisions')
-      .select('name, admin_email')
-      .eq('id', divisionId)
-      .single();
-
-    let recipientEmail = division?.admin_email;
-
-    if (!recipientEmail && session.metadata?.supabase_user_id) {
-      const { data: userData } = await supabase.auth.admin.getUserById(session.metadata.supabase_user_id);
-      recipientEmail = userData?.user?.email;
-    }
-
-    if (recipientEmail) {
-      await scheduleDivisionOnboarding(supabase, divisionId, recipientEmail);
-    } else {
-      console.error('handleDivisionPlan: no recipient email for onboarding (division %s)', divisionId);
-    }
-  } catch (err) {
-    console.error('handleDivisionPlan: onboarding scheduling failed:', err.message);
-  }
 }
 
 async function handleSubscriptionDeleted(supabase, subscription) {

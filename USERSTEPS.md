@@ -117,23 +117,28 @@ These are uploaded manually via the Chrome Web Store Developer Dashboard — the
 
 ---
 
-## Audio Normalization (Stage 1 — Edge Function)
+## Pending
 
-- [ ] **Run migration 023** in Supabase SQL Editor (adds `processing_status` column and storage RLS policies for the staging path)
+- [ ] **Run migration 025** in Supabase SQL Editor (`025_platform_admin_rls.sql` — adds platform_admin all-access policies on `divisions`, `schools`, and `division_pricing` tables)
 
-### Verification
+### Migration 025 verification
 
-1. Upload a test audio file (MP3 or WAV) from the dashboard
-2. Watch the progress bar go through "Uploading" → "Normalizing audio…" → "Audio normalized"
-3. The uploads table should show the file with status "Processing" briefly, then transition to normal state
-4. Open the Chrome extension and verify the access code still plays the audio correctly
-5. Check the `audio-files` bucket in Supabase Storage — the file should be at `{userId}/{accessCode}.mp3` (not under `staging/`)
+1. In Supabase SQL Editor, paste and run the contents of `supabase/migrations/025_platform_admin_rls.sql`
+2. After running, verify policies exist by running:
+   ```sql
+   SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
+   FROM pg_policies
+   WHERE tablename IN ('divisions', 'schools', 'division_pricing')
+   ORDER BY tablename, policyname;
+   ```
+   You should see `platform_admin_divisions_all`, `platform_admin_schools_all`, `read_pricing_authenticated`, and `platform_admin_pricing_all` alongside the existing policies from migration 007.
 
 ---
 
 ## Stripe billing for School & Division Plans
 
-- [ ] Run migration 022 (`stripe_school_division`) in Supabase SQL Editor
+- [x] Run migration 022 (`stripe_school_division`) in Supabase SQL Editor — **completed**
+- [x] Run migration 023 (`audio_normalization`) in Supabase SQL Editor — **completed**
 - [ ] Create Stripe Products and Prices for School Plan and Division Plans:
   - **School Plan**: Create a product "School Plan" with a recurring annual price (e.g., $500/year). Save the Price ID as `STRIPE_SCHOOL_PRICE_ID` in Vercel env vars.
   - **Division Plans**: Create products for each enrolment band (Small $250, Medium $500, Large $1,000, Metro $2,000/year). Save each Price ID in the `division_pricing` table — update the seed data in migration 022 with actual Stripe Price IDs after creation.

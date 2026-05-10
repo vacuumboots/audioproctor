@@ -19,7 +19,6 @@ const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 const Stripe = require('stripe');
 const { sendEmail } = require('./_lib/email');
-const { scheduleDivisionOnboarding } = require('./_lib/schedule-onboarding');
 
 function formatRole(role) {
   return role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -35,22 +34,6 @@ function buildInviteEmail({ role, inviteUrl, orgName }) {
   if (orgName) html += `<p>as part of <strong>${orgName}</strong></p>`;
   html += `<p>Click the link below to accept your invitation:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This invitation expires in 7 days.<br>If you did not expect this invitation, you can safely ignore it.</p>`;
   return { subject, text, html };
-}
-
-async function scheduleDivisionOnboardingForAdminAction(supabase, divisionId) {
-  try {
-    const { data: division } = await supabase
-      .from('divisions')
-      .select('name, admin_email')
-      .eq('id', divisionId)
-      .single();
-
-    if (division?.admin_email) {
-      await scheduleDivisionOnboarding(supabase, divisionId, division.admin_email);
-    }
-  } catch (err) {
-    console.error('scheduleDivisionOnboardingForAdminAction failed:', err.message);
-  }
 }
 
 module.exports = async (req, res) => {
@@ -391,12 +374,6 @@ module.exports = async (req, res) => {
       let error;
       if (entityType === 'division') {
         ({ error } = await supabase.from('divisions').update({ tier }).eq('id', entityId));
-        if (!error && tier === 'division') {
-          // Schedule onboarding emails for first-time division activation
-          scheduleDivisionOnboardingForAdminAction(supabase, entityId).catch(err =>
-            console.error('set-tier onboarding scheduling failed:', err.message)
-          );
-        }
       } else if (entityType === 'school') {
         ({ error } = await supabase.from('schools').update({ tier }).eq('id', entityId));
       } else if (entityType === 'teacher') {

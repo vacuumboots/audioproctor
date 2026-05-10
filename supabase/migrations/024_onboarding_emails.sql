@@ -2,8 +2,9 @@
 -- Run in Supabase SQL editor AFTER migration 023.
 --
 -- Tracks scheduled onboarding emails for divisions that have activated a paid
--- plan. A cron endpoint (api/send-onboarding-emails) processes due entries and
--- sends via Resend.
+-- plan. Deferred: the cron endpoint was pruned (commit 8148d63) to stay under
+-- the Vercel Hobby 12-function limit. Onboarding emails will be re-implemented
+-- when the function budget allows.
 --
 -- Flow:
 --   1. Division tier changes to 'division' (Stripe webhook or admin set-tier)

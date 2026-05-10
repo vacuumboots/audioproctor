@@ -24,10 +24,6 @@ vi.mock('../../api/_lib/email', () => ({
   sendEmail: vi.fn(() => Promise.resolve({ ok: true })),
 }));
 
-vi.mock('../../api/_lib/schedule-onboarding', () => ({
-  scheduleDivisionOnboarding: vi.fn(() => Promise.resolve()),
-}));
-
 const handler = (await import('../../api/admin.js')).default;
 
 // Singleton mock client — the CJS require hook in setup.js always returns this
