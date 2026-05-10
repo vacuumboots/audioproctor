@@ -2,7 +2,7 @@
 
 Audio and text accommodation for provincial assessments on managed Chromebooks.
 
-Teachers create an assessment — upload an audio file or paste text — and get a short access code. The student enters the code into the Chrome extension on their Chromebook. For audio, a locked fullscreen player opens. For text, a fullscreen reader with built-in read-aloud opens. When the assessment is done, the teacher provides an exit word to close the session.
+Teachers create an assessment — upload an audio file or paste text with inline images — and get a short access code. The student enters the code into the Chrome extension on their Chromebook. For audio, a locked fullscreen player opens. For text, a fullscreen reader with built-in read-aloud opens. When the assessment is done, the teacher provides an exit word to close the session.
 
 No student accounts. No student data. No IT ticket per assessment.
 
@@ -92,7 +92,13 @@ STRIPE_PRICE_ID=
 │       ├── dashboard-upload.js # Upload handler, inline image upload, duplicate, retry normalize
 │       ├── dashboard-table.js  # Uploads table rendering, insights, CSV export, rename/expiry/delete
 │       ├── dashboard-quota.js  # Quota display, tier badges, trial banners, Stripe upgrade, first login
-│       ├── admin.js            # Platform admin UI (modular split: admin-state/overview/analytics/entities/requests/utils/demo)
+│       ├── admin-state.js      # State vars, initAdmin, adminApi helper
+│       ├── admin-utils.js       # switchTab, toggleCreateForm, tierOptions, roleOptions
+│       ├── admin-overview.js    # loadOverview, renderAnomalies
+│       ├── admin-analytics.js   # Activity chart, division table
+│       ├── admin-entities.js    # CRUD for divisions/schools/teachers, tier/role/extend/deactivate
+│       ├── admin-requests.js    # loadRequests, loadInvitations, approve/reject/resend
+│       ├── admin-demo.js        # Demo panel, view-as modal, seed demo data
 │       ├── school-admin.js     # School admin UI
 │       ├── division-admin.js   # Division admin UI
 │       ├── settings.js         # Settings page
@@ -141,13 +147,15 @@ STRIPE_PRICE_ID=
 │   │   ├── 020                 # image_count column on uploads
 │   │   ├── 021                 # RLS policies for assessment-images bucket
 │   │   ├── 022                 # Stripe school/division billing + division_pricing
-│   │   ├── 023                 # processing_status + staging storage RLS + platform admin RLS
-│   │   └── 024                 # onboarding_emails table
+│   │   ├── 023                 # processing_status + staging storage RLS
+│   │   ├── 024                 # onboarding_emails table (deferred: see ROADMAP)
+│   │   └── 025                 # platform admin RLS policies
 │   └── seeds/dev-seed.sql      # Demo data for local dev
 │
 ├── docs/                       # Project documentation
 │   ├── ROADMAP.md              # Staged product roadmap
-│   ├── OPERATIONS.md           # Release, attestation, rollback runbook
+│   ├── OPERATIONS.md           # Release, attestation, rollback, key rotation runbook
+│   ├── security/               # Security incident reports
 │   └── ...                     # See docs/ for full listing
 │
 ├── archive/                    # Historical documents
@@ -159,7 +167,7 @@ STRIPE_PRICE_ID=
 ## Key flows
 
 ### Teacher upload
-`dashboard-upload.js handleUpload()` — validates quota and storage cap client-side (enforced server-side via RLS), uploads file to Supabase Storage staging path for audio (or wraps text in `<p>` tags for text assessments), inserts row to `uploads` with `processing_status`. For audio, triggers `/api/trigger-normalize` which transcodes to 32kbps mono MP3 via ffmpeg and moves to final path. For text, images are uploaded to `assessment-images` bucket and replaced with `data-apimg-idx` placeholders in the stored HTML.
+`dashboard-upload.js handleUpload()` — validates quota and storage cap client-side (enforced server-side via RLS), uploads audio files to Supabase Storage staging path (or wraps text in `<p>` tags with inline images for text assessments), inserts row to `uploads` with `processing_status`. For audio, triggers `/api/trigger-normalize` which transcodes to 32kbps mono MP3 via ffmpeg and moves to final path. For text, images are uploaded to `assessment-images` bucket and replaced with `data-apimg-idx` placeholders in the stored HTML.
 
 ### Student access (extension)
 `popup.js` → `GET /api/session?code=ABC-123` → stores typed session data in `chrome.storage.session` → opens `player.html` in a fullscreen popup window → `player.js` branches on `assessmentType`:
@@ -167,7 +175,7 @@ STRIPE_PRICE_ID=
 - **Text:** renders paragraphs in a fullscreen reader, wires `chrome.tts` read-aloud with play/pause and paragraph navigation, locks fullscreen, verifies exit word
 
 ### Teacher access request
-Teacher submits `/request-access` form → stored in `teacher_requests` → admin notified by email → admin approves in `/admin.html` → invitation link generated → teacher clicks link → `accept-invite.html` attaches them to their org via `/api/accept-invite`.
+Teachers can request upgraded access from two paths: the `/request-access` form on the marketing site, or the in-app modal on the teacher dashboard (`request-modal`). Both store the request in `teacher_requests` and notify the platform admin by email. Admin approves in `/admin.html` → invitation link generated → teacher clicks link → `accept-invite.html` attaches them to their org via `/api/accept-invite`.
 
 ### Stripe billing
 Teacher Premium: `/api/stripe-checkout.js` creates a Checkout Session for any tier (teacher, school, or division) by inspecting the caller's profile. School/Division tiers use enrolment band pricing from `division_pricing` table. `/api/stripe-webhook.js` handles subscription lifecycle events (created, updated, deleted) and updates tier accordingly.
@@ -198,7 +206,7 @@ AudioProctor is available on the Chrome Web Store:
 - Listing: `https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj`
 - Extension ID: `fcphbkffopenkinliokmlopfnglbcfdj`
 
-Current deployment path: managed Chromebooks should receive AudioProctor through **Google Admin Console** by force-installing the Chrome Web Store listing by Store ID. Teachers and students do not install it manually.
+The eventual deployment model: managed Chromebooks receive AudioProctor through **Google Admin Console** by force-installing the Chrome Web Store listing by Store ID. Currently the extension is publicly available on the Chrome Web Store — teachers can install it manually or share the link with students. Force-install via Google Admin is not yet active for any school or division.
 
 Verified smoke-test status: the core 5-minute managed Chromebook smoke test has been completed successfully on ChromeOS 146.
 
