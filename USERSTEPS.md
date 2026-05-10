@@ -8,7 +8,21 @@ Check off items as you complete them.
 
 ## Pending
 
-*nothing yet*
+- [ ] **Set up separate Supabase dev project** — currently dev and prod share one
+  Supabase project. Create a second project (`audioproctor-dev`), replicate the
+  schema with the same migration files, point `.env.local` at it. See AGENTS.md
+  pitfall #3 for rationale.
+- [ ] **Create Stripe Products and Prices** for School and Division Plans in
+  Stripe Dashboard. The unified `stripe-checkout.js` endpoint inspects the caller's
+  profile to determine pricing. Price IDs for division bands go in the
+  `division_pricing` DB table.
+- [ ] **Configure Stripe webhook endpoint** in Stripe Dashboard to point at
+  `https://app.audioproctor.com/api/stripe-webhook` with events:
+  `checkout.session.completed`, `customer.subscription.deleted`,
+  `customer.subscription.updated`, `invoice.payment_succeeded`.
+- [ ] **Chrome Web Store store assets** — screenshots, promo tiles, and demo video.
+  See `store-assets/README.md` for specs. Upload manually via Developer Dashboard.
+- [ ] **Purge `store-assets/README.md` placeholders** when actual assets are added.
 
 ## Completed
 
@@ -16,8 +30,17 @@ Check off items as you complete them.
 - [x] Run migration 020 (`image_count` column) in Supabase SQL Editor
 - [x] Run migration 021 (RLS policies for assessment-images) in Supabase SQL Editor
 - [x] Create `assessment-images` bucket in Supabase Storage (private, 2 MB file size limit)
-- [x] Set up Chrome Web Store automation secrets (see below)
-- [x] Publish extension v1.2.2 via automated workflow (upload + publish succeeded; git push failed on first run due to workflow permissions — fixed)
+- [x] Set up Chrome Web Store automation secrets
+- [x] Publish extension v1.2.2 via automated workflow
+- [x] Run migration 022 (`stripe_school_division`) in Supabase SQL Editor
+- [x] Run migration 023 (`audio_normalization`) in Supabase SQL Editor
+- [x] Run migration 024 (`onboarding_emails`) in Supabase SQL Editor
+- [x] Run migration 025 (`platform_admin_rls`) in Supabase SQL Editor
+- [x] Rotate Supabase `service_role` key after credential leak (2026-05-09)
+- [x] Update `SUPABASE_SERVICE_ROLE_KEY` in Vercel env vars (all 3 environments)
+- [x] Update `.env.local` with new service role key
+- [x] Redeploy Vercel to pick up new env var
+- [x] Verify admin dashboard loads correctly
 
 ---
 
@@ -108,44 +131,3 @@ These are uploaded manually via the Chrome Web Store Developer Dashboard — the
 1. Run "Publish Extension" from GitHub Actions — this submits the code for review
 2. While under review, update listing assets in `store-assets/` and upload via Developer Dashboard
 3. Submit the listing update from the dashboard separately
-
----
-
-## Pending
-
-*no pending user steps*
-
----
-
-## Pending
-
-- [ ] **Run migration 025** in Supabase SQL Editor (`025_platform_admin_rls.sql` — adds platform_admin all-access policies on `divisions`, `schools`, and `division_pricing` tables)
-
-### Migration 025 verification
-
-1. In Supabase SQL Editor, paste and run the contents of `supabase/migrations/025_platform_admin_rls.sql`
-2. After running, verify policies exist by running:
-   ```sql
-   SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
-   FROM pg_policies
-   WHERE tablename IN ('divisions', 'schools', 'division_pricing')
-   ORDER BY tablename, policyname;
-   ```
-   You should see `platform_admin_divisions_all`, `platform_admin_schools_all`, `read_pricing_authenticated`, and `platform_admin_pricing_all` alongside the existing policies from migration 007.
-
----
-
-## Stripe billing for School & Division Plans
-
-- [x] Run migration 022 (`stripe_school_division`) in Supabase SQL Editor — **completed**
-- [x] Run migration 023 (`audio_normalization`) in Supabase SQL Editor — **completed**
-- [ ] Create Stripe Products and Prices for School Plan and Division Plans:
-  - **School Plan**: Create a product "School Plan" with a recurring annual price (e.g., $500/year). Save the Price ID as `STRIPE_SCHOOL_PRICE_ID` in Vercel env vars.
-  - **Division Plans**: Create products for each enrolment band (Small $250, Medium $500, Large $1,000, Metro $2,000/year). Save each Price ID in the `division_pricing` table — update the seed data in migration 022 with actual Stripe Price IDs after creation.
-- [ ] Add `STRIPE_SCHOOL_PRICE_ID` to Vercel environment variables (both Preview and Production)
-- [ ] Configure Stripe webhook endpoint in Stripe Dashboard to point at `https://app.audioproctor.com/api/stripe-webhook` with these events:
-  - `checkout.session.completed`
-  - `customer.subscription.deleted`
-  - `customer.subscription.updated`
-  - `invoice.payment_succeeded`
-- [ ] Test the full flow: log in as a school admin → purchase School Plan → verify tier upgrade → check Stripe dashboard for subscription

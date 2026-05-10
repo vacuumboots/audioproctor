@@ -176,7 +176,6 @@ For extension dev: open Chrome → `chrome://extensions` → Developer mode → 
 7. **Never `git add -A` without checking what's staged.** Temp scripts containing hardcoded Supabase connection strings were accidentally committed via `git add -A` (incident: 2026-05-09, see `docs/security/`). Use `git add <specific files>` or `git add -p`. Check `git diff --cached` before committing.
 8. **When deleting a `_lib` module, grep the entire codebase for require() references first.** Deleting `_lib/schedule-onboarding.js` broke `api/admin.js` and `api/stripe-webhook.js` because their require() calls were not cleaned up. The result: 500 errors on every admin API call, discovered by a user report hours later.
 9. **Rotating Supabase credentials breaks Vercel until manually updated.** The `SUPABASE_SERVICE_ROLE_KEY` lives in three places: Supabase, Vercel env vars (all three environments), and `.env.local`. Rotating it in Supabase immediately breaks the other two. After rotation, update Vercel via `vercel env rm`/`vercel env add`, update `.env.local`, then force a redeploy with `vercel redeploy`. See `docs/OPERATIONS.md` section 8 for the full procedure.
-10. **The legacy `app/js/dashboard.js` and `app/js/admin.js` files exist on disk but are NOT loaded.** They are dead code kept for reference. The modular files (dashboard-state.js, admin-state.js, etc.) are the active code. Do not edit the legacy files and assume the changes will take effect.
 
 ## If you need to make schema changes
 
