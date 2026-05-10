@@ -41,12 +41,8 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - [x] **Rate limiting on the session API** — 10 failed code lookups per IP per hour
   returns 429. Failed attempts (not found + expired) are logged; successful lookups
   are not.
-- [ ] **Domain restriction on Google login** — optionally limit sign-in to a specific
-  school email domain (e.g. `@yourschool.ca`)
 - [x] **Signed URL refresh** — if a student's session expires mid-test (>1 hour), show
   a graceful error rather than silent failure
-- [ ] **Supabase backups enabled** — enable Point in Time Recovery in Supabase →
-  Project Settings → Database → Point in Time Recovery
 - [x] **Enforce free tier upload limits server-side** — `check_upload_quota()` Supabase
   RLS policy blocks a 4th upload at the database layer. API returns HTTP 403 if limit
   is reached. Cannot be bypassed by calling the API directly.
@@ -68,7 +64,8 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
   uploads per hour per `teacher_id` at the database layer.
 - [ ] **Abuse prevention — anomaly monitoring** — monitor the `uploads` table weekly
   for anomalous patterns: high upload counts from a single account, large file sizes,
-  non-.mp3 file extensions that slipped through.
+  non-.mp3 file extensions that slipped through. Deferred: requires a cron endpoint
+  (11/12 Vercel function slots used).
 - [x] **Marketing site copy audit** — "5 active uploads" → "3 uploads per calendar
   month" on homepage pricing card. FOIP → ATIA on privacy page. Pilot program section
   removed from contact page.
@@ -234,9 +231,6 @@ recorded. All events are anonymous by design.
 - [x] **Completion rate indicator** — green ≥80%, amber ≥60%, red <60% shown inline
   on each upload row
 - [x] **Replay signal** — replay count shown on each upload row
-- [ ] **Timeline view** — when during the audio did most pauses and replays occur,
-  shown as a simple bar chart over the waveform. Deferred — requires per-position
-  event data and a client-side chart renderer.
 - [x] **Teacher "Insights" tab** — aggregated view below the uploads table:
   total sessions, completion rate, total replays, most-used assessment
 - [x] **Export session data as CSV** — "Export CSV" button in the Insights card;
@@ -262,8 +256,6 @@ recorded. All events are anonymous by design.
 
 - [x] **School list** — all schools in the division with per-school teacher count
   and total session count (`/division-admin.html`)
-- [ ] **Add school** — school creation is handled by platform admin (`/admin.html`).
-  Division Admin can view and manage schools attached to their division.
 - [x] **Remove school from division** — detaches a school from the division. School
   and its teachers revert to unattached free tier. Division Admin cannot delete
   school accounts, only detach them.
@@ -390,13 +382,11 @@ The `invitations` table and token generation shipped in Stage 4. Completed in St
 - [ ] **Store listing assets** — branded screenshots, a short demo video (screen
   recording of the teacher upload flow and student player), and a concise description
   written for IT admins, not teachers.
-- [ ] **Attestation automation** — the `RELEASE_SOURCE_OF_TRUTH.md` attestation log is
-  currently maintained manually: compute subtree split SHA, build artifact, hash it,
-  record in markdown. If a step is skipped or a hash is copied wrong, the chain breaks
-  silently. Automate as a GitHub Action that runs on extension changes: compute the
-  subtree SHA, build the artifact, verify the hash, and either auto-populate the
-  attestation row or fail the workflow if it doesn't match. Extends the existing
-  `sync-extension.yml` workflow.
+- [ ] **Attestation automation + publish chain review** — audit the full extension
+  release pipeline end-to-end: version numbering conventions, the subtree split
+  attestation model (`RELEASE_SOURCE_OF_TRUTH.md`), and the Chrome Web Store publish
+  step (currently manual). Goal: identify breakage points, then automate what makes
+  sense. Extends the existing `sync-extension.yml` workflow.
 
 ---
 
@@ -405,13 +395,6 @@ The `invitations` table and token generation shipped in Stage 4. Completed in St
 - [x] **IT deployment guide (PDF)** — step-by-step document for Google Workspace
   admins covering force-install by Store ID, scoping to student OUs, and smoke
   testing. Lives at `docs/it-pilot-deployment-guide.md` and can be rendered to PDF.
-- [ ] **Managed extension configuration** — define any policy schema the extension
-  accepts (e.g. pre-configured division ID so the extension knows which division it
-  belongs to without the teacher typing anything). Makes division-wide deployment
-  truly zero-touch for teachers.
-- [ ] **Google Workspace Marketplace listing (stretch goal)** — makes AudioProctor
-  discoverable to Google Workspace admins directly inside their Admin Console. Higher
-  bar to publish but significantly increases visibility with exactly the right audience.
 
 ---
 
@@ -494,6 +477,10 @@ The `invitations` table and token generation shipped in Stage 4. Completed in St
 ---
 
 ### Onboarding & Communication
+
+Note: Division onboarding email code was built (v1.3.0, commit c074960) then pruned
+(commit 8148d63) to stay under the Vercel Hobby 12-function limit. Both sequences
+below require a cron endpoint. Deferred until Vercel Pro upgrade or off-platform cron.
 
 - [ ] **Onboarding email sequence — Division** — triggered on first paid activation:
   - Day 0: Welcome + IT deployment guide PDF + Division Admin setup checklist
