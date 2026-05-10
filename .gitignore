@@ -13,3 +13,7 @@ extension.zip
 _debug_mock.js
 _verify.js
 supabase/.temp/
+# Temporary debugging / migration runner scripts — credential leak risk
+check_db*.js
+supabase/migrations/run-*.mjs
+supabase/migrations/run-*.js
