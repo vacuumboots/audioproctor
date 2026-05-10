@@ -73,6 +73,8 @@ Then manually confirm:
 - `CHANGELOG.md` updated for user-facing changes
 - `docs/release-checklist.md` completed
 - `RELEASE_SOURCE_OF_TRUTH.md` updated if extension changed
+- `README.md` — verify file structure, feature list, and tier model match reality
+- `docs/ROADMAP.md` — verify recently shipped items are checked off
 - `.hermes/plans/` statuses updated if shipment scope changed
 
 ## 5) Extension sync workflow checks

@@ -359,7 +359,13 @@ code, .monospace {
 .action-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* ─── Uploads table scroll guard ───────────────────────────────── */
+#uploads-container {
+  overflow-x: auto;
 }
 
 /* ─── Notification / Error banner ──────────────────────────────── */

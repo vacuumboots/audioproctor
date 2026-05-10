@@ -106,9 +106,7 @@ STRIPE_PRICE_ID=
 │   ├── admin.js                # Platform admin operations (service role)
 │   ├── request-access.js       # Store teacher access request + notify admin
 │   ├── accept-invite.js        # Validate + accept invitation tokens
-│   ├── stripe-checkout.js      # Create Stripe Checkout Session (Teacher Premium)
-│   ├── stripe-checkout-school.js   # Create Stripe Checkout Session (School Plan)
-│   ├── stripe-checkout-division.js # Create Stripe Checkout Session (Division Plan)
+│   ├── stripe-checkout.js      # Unified Stripe Checkout Session (Teacher Premium, School, Division)
 │   ├── stripe-webhook.js       # Handle Stripe subscription events
 │   ├── trigger-normalize.js    # Audio normalization via ffmpeg (staging → 32kbps mono MP3)
 │   ├── contact.js              # Contact/demo request form handler
@@ -172,7 +170,7 @@ STRIPE_PRICE_ID=
 Teacher submits `/request-access` form → stored in `teacher_requests` → admin notified by email → admin approves in `/admin.html` → invitation link generated → teacher clicks link → `accept-invite.html` attaches them to their org via `/api/accept-invite`.
 
 ### Stripe billing
-Teacher Premium: `/api/stripe-checkout.js` creates a Checkout Session. School Plan: `/api/stripe-checkout-school.js`. Division Plan: `/api/stripe-checkout-division.js` with enrolment band pricing from `division_pricing` table. `/api/stripe-webhook.js` handles subscription lifecycle events (created, updated, deleted) and updates tier accordingly.
+Teacher Premium: `/api/stripe-checkout.js` creates a Checkout Session for any tier (teacher, school, or division) by inspecting the caller's profile. School/Division tiers use enrolment band pricing from `division_pricing` table. `/api/stripe-webhook.js` handles subscription lifecycle events (created, updated, deleted) and updates tier accordingly.
 
 ### Exit word verification
 Both the dashboard (`dashboard-access-codes.js`) and extension (`player.js`) use identical `hashWord()` — SHA-256 via Web Crypto API, input lowercased and trimmed before hashing.

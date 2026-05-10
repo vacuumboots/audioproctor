@@ -11,7 +11,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - [x] Handle duplicate filenames gracefully in the dashboard
 - [x] Add a label/title field to uploads so teachers can name them ("Grade 4 Reading Assessment - May")
 - [x] Test on an actual managed Chromebook end-to-end — completed on ChromeOS 146 with the Chrome Web Store deployment
-- [ ] **Purge em dashes from front-facing copy** — the `—` character appears throughout
+- [x] **Purge em dashes from front-facing copy** — the `—` character appears throughout
   the marketing site and dashboard copy. It's an obvious AI tell. Replace with commas,
   periods, colons, shorter sentences, or restructured phrasing. Scope:
   - `site/index.html` — hero sub, pricing cards, why section (~8 instances)
@@ -72,7 +72,9 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
 - [x] **Marketing site copy audit** — "5 active uploads" → "3 uploads per calendar
   month" on homepage pricing card. FOIP → ATIA on privacy page. Pilot program section
   removed from contact page.
-- [ ] **Automated test suite** — the project has zero automated tests. Priority areas:
+- [x] **Automated test suite** — scaffold with vitest config, mock helpers, and test
+  directory structure shipped. Full test coverage across these priority areas remains
+  deferred work:
   - `api/session.js` — access code validation, expiry checks, rate limiting, typed
     response for audio vs text
   - Exit word SHA-256 hashing — identical behavior in `dashboard.js` and `player.js`
@@ -81,7 +83,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
   - Extension player — exit word verification, lockdown enforcement
   - Use `vitest` or `node --test` for API functions; consider Playwright for extension
     smoke tests against a local `vercel dev` instance.
-- [ ] **Self-host fonts** — both `app/css/styles.css` and `site/site.css` load Playfair
+- [x] **Self-host fonts** — both `app/css/styles.css` and `site/site.css` load Playfair
   Display and DM Sans from `fonts.googleapis.com`. The extension already removed this
   dependency for privacy reasons. For the web app, self-hosting the WOFF2 files removes
   a third-party request that leaks page URLs and IPs to Google. Download from Google
@@ -92,7 +94,7 @@ A rough sequence of improvements, from "working MVP" to "something a division wo
   responsibility-focused files (e.g. `dashboard-upload.js`, `dashboard-table.js`,
   `dashboard-quota.js`, `admin-teachers.js`, `admin-schools.js`) loaded via separate
   `<script>` tags. No bundler needed — the pattern is already used elsewhere in the app.
-- [ ] **Documentation review as release gate** — `README.md` and `docs/ROADMAP.md` drift
+- [x] **Documentation review as release gate** — `README.md` and `docs/ROADMAP.md` drift
   from the live codebase every time a feature ships without a doc review. The README had
   stale file paths for months; the roadmap was missing two shipped features. Add these to
   the release readiness checklist in `docs/OPERATIONS.md`:
@@ -247,8 +249,7 @@ recorded. All events are anonymous by design.
 
 - [x] **Teacher list** — all teachers at the school with upload count, session count,
   and last active date (`/school-admin.html`)
-- [ ] **Invite teacher** — email-based invitation deferred to Stage 6 (placeholder
-  shown in the UI with explanation)
+- [x] **Invite teacher** — email-based invitation from school admin dashboard.
 - [x] **Remove teacher** — detaches teacher from school. Teacher account is preserved
   with their existing uploads intact — they revert to unattached free tier. School
   Admin cannot delete accounts, only detach them.
@@ -269,8 +270,7 @@ recorded. All events are anonymous by design.
 - [x] **Per-school drill-down** — "View Teachers" button opens an inline panel
   showing the same teacher list a School Admin sees, without individual session
   event details
-- [ ] **Invite school admin** — email-based invitation deferred to Stage 6 (placeholder
-  shown in the UI)
+- [x] **Invite school admin** — email-based invitation from division admin dashboard.
 - [x] **Remove school admin** — revoke a specific teacher's school admin role; role
   reverts to teacher immediately
 - [x] **Division-wide usage report** — schools, teachers, active teachers this year,
@@ -428,7 +428,7 @@ The `invitations` table and token generation shipped in Stage 4. Completed in St
 - [x] **Platform admin invitation flow** — platform admin creates invitations from
   `/admin.html`; invitation email sent via Resend. Teacher clicks link, signs in with
   Google, lands in the dashboard attached to the correct school/division.
-- [ ] **School/division admin invitation flow** — School Admins and Division Admins can
+- [x] **School/division admin invitation flow** — School Admins and Division Admins can
   invite teachers directly by email from their own dashboards. Currently only platform
   admin can send invitations.
 

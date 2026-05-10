@@ -343,6 +343,15 @@ function handleEditorInput() {
   if (!editor) return;
 
   const text = editor.innerText || '';
+
+  // If all images have been removed, clear any CORS/stripped-image warning
+  if (editor.querySelectorAll('img').length === 0) {
+    const notice = document.getElementById('upload-notice');
+    if (notice && notice.classList.contains('notice--error')) {
+      hideUploadNotice();
+    }
+  }
+
   const imageCount = pendingImages.length;
 
   if (text.length === 0 && imageCount === 0) {
