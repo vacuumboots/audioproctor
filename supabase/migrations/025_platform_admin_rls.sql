@@ -1,5 +1,5 @@
--- ─── Migration 023: Platform admin RLS for divisions and schools ─────────────────
--- Run in Supabase SQL editor AFTER migration 022.
+-- ─── Migration 025: Platform admin RLS for divisions and schools ─────────────────
+-- Run in Supabase SQL editor AFTER migration 024 (onboarding emails).
 --
 -- Context: migration 007 already enables RLS on divisions and schools with
 -- read policies for teachers, school_admins, and division_admins. But there

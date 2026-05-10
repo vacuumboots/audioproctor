@@ -6,12 +6,6 @@ function generateCodeString() {
   return letters + '-' + digits;
 }
 
-function generateShortCodeString() {
-  const letters = [0,1].map(() => randomChar(CODE_LETTERS)).join('');
-  const digits  = [0,1].map(() => randomChar(CODE_DIGITS)).join('');
-  return letters + digits;
-}
-
 async function generateAccessCode(format, customCode) {
   if (format === 'custom') {
     const code = (customCode || '').toUpperCase().trim();
@@ -24,11 +18,10 @@ async function generateAccessCode(format, customCode) {
     return code;
   }
 
-  const generator = format === 'short' ? generateShortCodeString : generateCodeString;
   let code;
   let attempts = 0;
   do {
-    code = generator();
+    code = generateCodeString();
     attempts++;
     if (attempts > 20) throw new Error('Could not generate a unique access code. Please try again.');
   } while (await checkCodeExists(code));
