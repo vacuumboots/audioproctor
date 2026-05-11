@@ -63,8 +63,7 @@ Use this set before pushing demo-critical changes.
 
 ```bash
 git status --short
-node --check app/js/dashboard.js
-node --check app/js/admin.js
+node --check app/js/*.js
 node --check extension/popup.js
 node --check extension/player.js
 ```
