@@ -208,7 +208,7 @@ AudioProctor is available on the Chrome Web Store:
 
 The eventual deployment model: managed Chromebooks receive AudioProctor through **Google Admin Console** by force-installing the Chrome Web Store listing by Store ID. Currently the extension is publicly available on the Chrome Web Store — teachers can install it manually or share the link with students. Force-install via Google Admin is not yet active for any school or division.
 
-**Planned:** The extension will be locked to ChromeOS only. Non-Chromebook devices will see a message directing users to a managed Chromebook. This is foundational to the security model: assessments should only run on division-controlled devices. See `docs/ROADMAP.md` Parking Lot for implementation details.
+**Planned:** The extension will be locked to ChromeOS only. Windows, Mac, and Linux users will be blocked with a message directing them to a Chromebook. This closes the gap created by the public Chrome Web Store listing: any student on any OS can install it today, and the lock must be enforced in-extension. Managed Chromebooks get additional security via Google Admin, but the OS lock applies universally. See `docs/ROADMAP.md` Parking Lot for implementation details.
 
 Verified smoke-test status: the core 5-minute managed Chromebook smoke test has been completed successfully on ChromeOS 146.
 

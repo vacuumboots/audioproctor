@@ -570,19 +570,18 @@ below require a cron endpoint. Deferred until Vercel Pro upgrade or off-platform
 ## Parking Lot
 *Interesting ideas that need more thought before committing to.*
 
-- **Chromebook-only extension lock** — restrict the extension to launch only on
-  ChromeOS devices. Non-Chromebook users (Windows, Mac, Linux) see a clear
-  message directing them to use a managed Chromebook. This is foundational to the
-  product's security model: assessments should only be accessible on devices the
-  division controls. Implementation options:
-  - Manifest V3 platform detection (`chrome.runtime.getPlatformInfo()` returning
-    `"chromeos"` or `"cros"`)
-  - Managed policy enforcement via Google Admin Console (force-install scoped to
-    student OUs, which are always Chromebooks)
-  - If both checks pass, launch. If not, show a one-time dismissal message:
-    "AudioProctor requires a managed Chromebook. Ask your teacher or IT
-    administrator for help."
-  - Consider a bypass token for teacher testing on non-Chromebook devices (gated
+- **Chromebook-only extension lock** — restrict the extension to ChromeOS only.
+  Windows, Mac, and Linux users should not be able to launch assessments. Since
+  the extension is publicly listed on the Chrome Web Store, any student on any OS
+  could install it — the lock must be enforced in the extension itself.
+  Implementation:
+  - `chrome.runtime.getPlatformInfo()` returns `"chromeos"` for ChromeOS devices.
+    Block on all other platforms (`"win"`, `"mac"`, `"linux"`, etc.).
+  - On block: show a one-time message: "AudioProctor requires a Chromebook. Ask
+    your teacher or IT administrator for help."
+  - Managed Chromebooks get additional security via Google Admin force-install
+    and policy enforcement, but the OS lock applies universally — managed or not.
+  - Consider a bypass token for teacher testing on non-ChromeOS devices (gated
     behind a platform admin flag, never exposed to students)
 - Video file support (MP4) for ASL interpretation tracks
 - Offline mode — pre-download audio to the extension for no-internet testing
