@@ -2,6 +2,67 @@
 
 All notable changes to AudioProctor are documented in this file.
 
+## [1.3.1] - 2026-05-09
+
+Maintenance release: code cleanup, bug fixes, and documentation overhaul.
+
+### Changed
+- **Access code format simplified:** removed "Short" (AB12) option. Standard
+  (ABC-123) and Custom only.
+- **Stripe checkout unified:** 3 separate endpoints merged into one
+  (`stripe-checkout.js` routes internally by caller's profile). Freed 2 Vercel
+  function slots.
+- Paste hint added above text editor: "Paste your assessment text, or paste
+  images directly alongside the text."
+- Chrome Web Store link added to homepage hero and teacher dashboard top bar.
+- Self-hosted fonts confirmed in place — zero Google Fonts CDN requests.
+
+### Fixed
+- Admin API returning 500 errors — stale `require('./_lib/schedule-onboarding')`
+  crashed before any route handler ran. Module was deleted in the onboarding
+  cron removal but `admin.js` and `stripe-webhook.js` still referenced it.
+- CORS stripped-image warning now auto-clears when all images are removed from
+  the editor.
+- Uploads table action-row overflow — buttons now wrap instead of spilling out.
+
+### Removed
+- Onboarding email cron system (3 files: `_lib/onboarding-emails.js`,
+  `_lib/schedule-onboarding.js`, `send-onboarding-emails.js`). Code was built in
+  v1.3.0 but deleted to stay under the Vercel Hobby 12-function limit. Will be
+  re-implemented when function budget allows.
+- Legacy `app/js/dashboard.js` (1,786 lines) and `app/js/admin.js` (1,114
+  lines) — dead code, not loaded by any HTML page. The modular files are the
+  active code.
+- Temp debug scripts `_debug_mock.js` and `_verify.js`.
+- `CLAUDE.md` — `AGENTS.md` is the canonical AI guidance file.
+- `oversights.md` — all 16 items resolved by the kanban run.
+
+### Documentation
+- `AGENTS.md` rewritten with lessons from kanban run: Vercel function limit,
+  credential leak prevention, require() cleanup when deleting modules, key
+  rotation procedure, `.gitignore` temp-script patterns.
+- `docs/ROADMAP.md` sweep: 6 items removed, 6 checked off, onboarding email
+  deferral note, anomaly monitoring deferral note, attestation broadened to
+  full publish chain review.
+- `docs/OPERATIONS.md` added doc review gate to release checklist and Supabase
+  key rotation runbook (section 8).
+- `docs/security/2026-05-09-credential-leak.md` — full incident report.
+- `README.md` refreshed: fixed stale file references, updated deployment model
+  (extension not yet force-installed), added inline image mention, documented
+  both access request paths.
+- `USERSTEPS.md` deduplicated (had 3 Pending sections), migrations marked done.
+- `ROADMAP.md` Parking Lot: documented Chromebook-only extension lock (block
+  Windows/Mac/Linux, allow all ChromeOS).
+- `.gitignore` patterns added for `check_db*.js` and `run-*.mjs`.
+
+### Security
+- Supabase service_role key rotated after credential leak via temp script
+  committed with `git add -A`. See `docs/security/2026-05-09-credential-leak.md`.
+
+### Test status
+- All 93 tests pass across 5 test files (unit: session, event, admin, exit-word;
+  extension: player).
+
 ## [1.3.0] - 2026-05-08
 
 Feature release adding audio normalization, image paste from Google Docs and web pages, Stripe school/division billing, and the modular dashboard refactor.
