@@ -251,7 +251,7 @@ async function handleUpload() {
     // ─── Audio: upload original file to staging path ─────────────
     // The original file (WAV or MP3) is uploaded to a staging prefix.
     // A server-side process (Vercel function ffmpeg) will transcode it
-    // to 32kbps mono MP3 and move it to the final path.
+    // (32kbps for free tier, 128kbps for non-free) and move to final path.
     if (assessmentType === 'audio') {
       // Determine content type from the actual file
       const contentType = isWavFile(uploadFile) ? 'audio/wav' : 'audio/mpeg';
@@ -320,7 +320,8 @@ async function handleUpload() {
 
     // ─── Trigger audio normalization (only for audio assessments) ──
     if (assessmentType === 'audio' && uploadId) {
-      showProgress(92, 'Normalizing audio (32kbps mono MP3)…');
+      const quality = (currentTier !== 'free') ? '128kbps' : '32kbps';
+      showProgress(92, `Normalizing audio (${quality} mono MP3)…`);
 
       // Call the Vercel trigger function (native ffmpeg transcoding)
       const controller = new AbortController();
@@ -398,7 +399,8 @@ async function handleUpload() {
       pendingImages.forEach(img => URL.revokeObjectURL(img.url));
       pendingImages = [];
     }
-    document.getElementById('file-hint').textContent = 'Max 50 MB · MP3 or WAV. Audio is transcoded to 32kbps mono MP3 on the server.';
+    const quality = (currentTier !== 'free') ? '128kbps' : '32kbps';
+    document.getElementById('file-hint').textContent = `Max 50 MB · MP3 or WAV. Audio is transcoded to ${quality} mono MP3 on the server.`;
     document.getElementById('text-hint').textContent = 'Paste text and images · Max 2 MB per image';
     document.getElementById('assessment-type').value = 'audio';
     selectAssessmentType('audio');

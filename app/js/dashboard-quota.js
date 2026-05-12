@@ -20,7 +20,7 @@ if (new URLSearchParams(window.location.search).get('upgraded') === '1') {
   history.replaceState(null, '', window.location.pathname);
   const banner = document.createElement('div');
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--ink);color:var(--paper);text-align:center;padding:0.6rem;font-size:0.85rem;z-index:999;';
-  banner.textContent = 'Welcome to Teacher Premium! Your account has been upgraded.';
+  banner.textContent = 'Welcome to Teacher Premium! Higher quality audio and unlimited uploads are now active.';
   document.body.prepend(banner);
   setTimeout(() => banner.remove(), 6000);
 }
@@ -93,11 +93,11 @@ async function loadQuota() {
       if (daysLeft <= 7) {
         trialBanner.style.background = 'var(--light-accent)';
         trialBanner.style.borderColor = 'var(--accent)';
-        trialBannerText.innerHTML = `<strong style="color:var(--accent);">Trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong> — Upgrade to keep unlimited uploads.`;
+        trialBannerText.innerHTML = `<strong style="color:var(--accent);">Trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong> — Upgrade to keep unlimited uploads and higher quality audio.`;
       } else {
         trialBanner.style.background = '#f0f8f0';
         trialBanner.style.borderColor = '#4a7c59';
-        trialBannerText.innerHTML = `<strong style="color:#4a7c59;">Trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong> — Upgrade to keep unlimited uploads.`;
+        trialBannerText.innerHTML = `<strong style="color:#4a7c59;">Trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong> — Upgrade to keep unlimited uploads and higher quality audio.`;
       }
       trialBannerBtn.textContent = 'Upgrade Now';
       trialBannerBtn.onclick = startUpgrade;
@@ -122,7 +122,7 @@ async function loadQuota() {
         document.getElementById('btn-request-premium')?.addEventListener('click', () => openRequestModal('premium_trial'));
       } else {
         ctaEl.innerHTML = `
-          <span>You're on the Free plan — 3 uploads/month, 50 MB storage.</span>
+          <span>You're on the Free plan — 3 uploads/month, 50 MB storage, 32kbps audio.</span>
           <button id="btn-upgrade" style="margin-left:1rem; padding:0.3rem 0.9rem; border:1px solid var(--ink); background:var(--ink); color:var(--paper); font-family:inherit; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">Upgrade to Premium →</button>
         `;
         ctaEl.classList.remove('hidden');

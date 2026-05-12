@@ -3,11 +3,12 @@
 // POST /api/trigger-normalize  { upload_id: "uuid" }
 //
 // Called by the dashboard after the staging upload succeeds.
-// Uses native ffmpeg (ffmpeg-static) to transcode to 32kbps mono MP3.
+// Uses native ffmpeg (ffmpeg-static) to transcode to 32kbps (free tier) or
+// 128kbps (premium, school, division) mono MP3.
 // Flow:
 //   1. Verify auth — user must own the upload
 //   2. Download from staging path in Supabase Storage
-//   3. Transcode to 32kbps mono MP3 at 22050 Hz
+//   3. Transcode to 32kbps (free) or 128kbps (non-free) mono MP3 at 22050 Hz
 //   4. Upload normalized file to final path
 //   5. Update DB (storage_path, processing_status, file_size_mb)
 //   6. Delete staging file
@@ -74,6 +75,10 @@ module.exports = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to process this upload' });
     }
 
+    // Determine user's effective tier for bitrate selection
+    const { data: tierData } = await supabase.rpc('get_effective_tier', { p_user_id: user.id });
+    const tier = tierData || 'free';
+
     if (upload.assessment_type !== 'audio') {
       return res.status(400).json({ error: 'Not an audio assessment' });
     }
@@ -137,12 +142,13 @@ module.exports = async (req, res) => {
     const buffer = Buffer.from(await stagingData.arrayBuffer());
     fs.writeFileSync(inputPath, buffer);
 
-    // 5. Run ffmpeg — 32kbps mono MP3 at 22050 Hz
+    // 5. Run ffmpeg — 32kbps for free tier, 128kbps for non-free, mono MP3 at 22050 Hz
     // Using libmp3lame encoder for best compatibility at low bitrates.
     // Note: input has no extension — ffmpeg auto-detects format from headers.
+    const bitrate = (tier !== 'free') ? '128k' : '32k';
     await execFileAsync(ffmpegPath, [
       '-i', inputPath,
-      '-b:a', '32k',
+      '-b:a', bitrate,
       '-ac', '1',
       '-ar', '22050',
       '-codec:a', 'libmp3lame',
