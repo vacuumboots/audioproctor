@@ -64,7 +64,7 @@ Key function: `get_effective_tier(user_id)` resolves the actual tier via cascade
 id, teacher_id, filename, label, storage_path, access_code, exit_word, exit_word_hash, expires_at, file_size_mb,
 assessment_type, text_content, text_char_count, image_count, processing_status
 ```
-Audio: uploaded to Supabase Storage bucket `audio-files` at staging path `staging/{userId}/{accessCode}.mp3`. Server-side ffmpeg transcodes to 32kbps mono MP3 and moves to final path `{teacher_id}/{access_code}.mp3`. `processing_status`: pending → processing → ready/failed. Text assessments skip the pipeline (always `ready`).
+Audio: uploaded to Supabase Storage bucket `audio-files` at staging path `staging/{userId}/{accessCode}.mp3`. Server-side ffmpeg transcodes to 128kbps mono MP3 (non-free tiers) or 32kbps (free) via `get_effective_tier()` and moves to final path `{teacher_id}/{access_code}.mp3`. `processing_status`: pending → processing → ready/failed. Text assessments skip the pipeline (always `ready`).
 Text: `text_content` stores HTML (may include `<img data-apimg-idx="N">` placeholders for inline images).
 Images: stored in `assessment-images` bucket at `{teacher_id}/{access_code}/img_N.ext`. Session API resolves placeholders to signed URLs.
 
@@ -157,7 +157,7 @@ For extension dev: open Chrome → `chrome://extensions` → Developer mode → 
 - ✅ Session analytics (per-upload and platform-wide)
 - ✅ Text assessment mode with chrome.tts read-aloud, voice selection, paragraph navigation, font size/fullwidth controls, inline image support
 - ✅ Inline images in text assessments — paste images in editor, stored in `assessment-images` bucket, rendered in extension player
-- ✅ Audio normalization — server-side ffmpeg transcoding to 32kbps mono MP3
+- ✅ Audio normalization — server-side ffmpeg transcoding to 128kbps (non-free tiers) or 32kbps (free) mono MP3
 - ✅ Self-hosted fonts — zero Google Fonts CDN requests
 - ✅ Modular JS — dashboard.js and admin.js split into responsibility-focused files
 - ✅ Access code format simplified — standard + custom only

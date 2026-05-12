@@ -2,6 +2,13 @@
 
 All notable changes to AudioProctor are documented in this file.
 
+## [Unreleased]
+
+### Changed
+- Non-free tiers (premium, school, division) now get 128kbps mono MP3 audio encoding instead of 32kbps.
+  Free tier remains at 32kbps. Server-side ffmpeg transcoding in trigger-normalize.js branches on
+  get_effective_tier().
+
 ## [1.3.1] - 2026-05-09
 
 Maintenance release: code cleanup, bug fixes, and documentation overhaul.

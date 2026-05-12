@@ -114,7 +114,7 @@ STRIPE_PRICE_ID=
 │   ├── accept-invite.js        # Validate + accept invitation tokens
 │   ├── stripe-checkout.js      # Unified Stripe Checkout Session (Teacher Premium, School, Division)
 │   ├── stripe-webhook.js       # Handle Stripe subscription events
-│   ├── trigger-normalize.js    # Audio normalization via ffmpeg (staging → 32kbps mono MP3)
+│   ├── trigger-normalize.js    # Audio normalization via ffmpeg — free: 32kbps, non-free: 128kbps mono MP3
 │   ├── contact.js              # Contact/demo request form handler
 │   └── _lib/email.js           # Shared Resend helper
 │
@@ -167,7 +167,7 @@ STRIPE_PRICE_ID=
 ## Key flows
 
 ### Teacher upload
-`dashboard-upload.js handleUpload()` — validates quota and storage cap client-side (enforced server-side via RLS), uploads audio files to Supabase Storage staging path (or wraps text in `<p>` tags with inline images for text assessments), inserts row to `uploads` with `processing_status`. For audio, triggers `/api/trigger-normalize` which transcodes to 32kbps mono MP3 via ffmpeg and moves to final path. For text, images are uploaded to `assessment-images` bucket and replaced with `data-apimg-idx` placeholders in the stored HTML.
+`dashboard-upload.js handleUpload()` — validates quota and storage cap client-side (enforced server-side via RLS), uploads audio files to Supabase Storage staging path (or wraps text in `<p>` tags with inline images for text assessments), inserts row to `uploads` with `processing_status`. For audio, triggers `/api/trigger-normalize` which transcodes to 128kbps mono MP3 (non-free tiers) or 32kbps (free) via ffmpeg and moves to final path. For text, images are uploaded to `assessment-images` bucket and replaced with `data-apimg-idx` placeholders in the stored HTML.
 
 ### Student access (extension)
 `popup.js` → `GET /api/session?code=ABC-123` → stores typed session data in `chrome.storage.session` → opens `player.html` in a fullscreen popup window → `player.js` branches on `assessmentType`:

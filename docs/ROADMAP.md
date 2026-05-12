@@ -692,3 +692,10 @@ through the platform admin dashboard. Not advertised publicly.
   before you reply.
 
 - **Privacy Policy and Terms of Service** — no pricing mention needed.
+
+---
+
+### Premium Audio Quality
+
+- [x] **Premium audio quality** — non-free tiers (premium/school/division) get 128kbps mono MP3
+  encoding; free tier stays at 32kbps. Server-side in trigger-normalize.js.
