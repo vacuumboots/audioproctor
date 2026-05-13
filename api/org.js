@@ -10,6 +10,8 @@
 //   GET  ?action=division-schools         — list schools in caller's division with stats
 //   GET  ?action=division-report          — division-wide usage summary
 //   GET  ?action=division-activity        — weekly session counts for assessment window chart
+//   GET  ?action=school-uploads           — list uploads for teachers in caller's school (paginated)
+//   GET  ?action=division-uploads        — list uploads for all teachers in caller's division (paginated)
 //   POST ?action=detach-teacher           — body: { userId } — remove teacher from school
 //   POST ?action=detach-school            — body: { schoolId } — remove school from division
 //   POST ?action=remove-school-admin      — body: { userId } — revert school_admin role to teacher
@@ -447,6 +449,79 @@ module.exports = async (req, res) => {
       }
 
       return res.status(200).json(result);
+    }
+
+    if (action === 'school-uploads') {
+      if (!isSchoolAdmin) return res.status(403).json({ error: 'Forbidden' });
+      const schoolId = profile.school_id;
+      if (!schoolId) return res.status(400).json({ error: 'Not attached to a school' });
+
+      const { type, limit, offset } = req.query;
+      const pageLimit = Math.min(parseInt(limit) || 50, 200);
+      const pageOffset = parseInt(offset) || 0;
+
+      // Get teacher IDs in this school
+      const { data: schoolTeachers } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('school_id', schoolId);
+
+      const teacherIds = (schoolTeachers || []).map(t => t.id);
+      if (!teacherIds.length) return res.status(200).json({ uploads: [], total: 0, offset: 0, limit: pageLimit });
+
+      let query = supabase
+        .from('uploads')
+        .select('id, teacher_id, access_code, filename, label, assessment_type, file_size_mb, processing_status, created_at, expires_at', { count: 'exact' })
+        .in('teacher_id', teacherIds)
+        .order('created_at', { ascending: false })
+        .range(pageOffset, pageOffset + pageLimit - 1);
+
+      if (type) query = query.eq('assessment_type', type);
+
+      const { data: uploads, count: total, error } = await query;
+      if (error) return res.status(500).json({ error: 'Could not load uploads' });
+
+      return res.status(200).json({ uploads, total, offset: pageOffset, limit: pageLimit });
+    }
+
+    if (action === 'division-uploads') {
+      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      const divisionId = profile.division_id;
+      if (!divisionId) return res.status(400).json({ error: 'Not attached to a division' });
+
+      const { type, limit, offset } = req.query;
+      const pageLimit = Math.min(parseInt(limit) || 50, 200);
+      const pageOffset = parseInt(offset) || 0;
+
+      // Get schools in this division, then teachers in those schools
+      const { data: divSchools } = await supabase
+        .from('schools')
+        .select('id')
+        .eq('division_id', divisionId);
+      const schoolIds = (divSchools || []).map(s => s.id);
+
+      // Teachers in division schools OR directly in division
+      const { data: divTeachers } = await supabase
+        .from('profiles')
+        .select('id')
+        .or(`division_id.eq.${divisionId}${schoolIds.length ? ',school_id.in.(' + schoolIds.join(',') + ')' : ''}`);
+
+      const teacherIds = (divTeachers || []).map(t => t.id);
+      if (!teacherIds.length) return res.status(200).json({ uploads: [], total: 0, offset: 0, limit: pageLimit });
+
+      let query = supabase
+        .from('uploads')
+        .select('id, teacher_id, access_code, filename, label, assessment_type, file_size_mb, processing_status, created_at, expires_at', { count: 'exact' })
+        .in('teacher_id', teacherIds)
+        .order('created_at', { ascending: false })
+        .range(pageOffset, pageOffset + pageLimit - 1);
+
+      if (type) query = query.eq('assessment_type', type);
+
+      const { data: uploads, count: total, error } = await query;
+      if (error) return res.status(500).json({ error: 'Could not load uploads' });
+
+      return res.status(200).json({ uploads, total, offset: pageOffset, limit: pageLimit });
     }
 
     return res.status(400).json({ error: 'Unknown action' });
