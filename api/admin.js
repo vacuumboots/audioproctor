@@ -12,6 +12,8 @@
 //   POST ?action=set-tier          — body: { entityType, entityId, tier }
 //   POST ?action=set-notes         — body: { entityType, entityId, notes }
 //   POST ?action=invite            — body: { email, role, schoolId?, divisionId? }
+//   GET  ?action=list-teacher-uploads — list all uploads with metadata (paginated)
+//   GET  ?action=get-upload-content&uploadId= — signed audio URL or resolved text HTML
 //   POST ?action=assign-role       — body: { teacher_id, role, school_id?, division_id? }
 //   POST ?action=attach-teacher    — body: { userId, schoolId?, divisionId? }
 
@@ -356,6 +358,137 @@ module.exports = async (req, res) => {
           .sort((a, b) => b.sessions - a.sessions),
         weeklyActivity,
       });
+    }
+
+    if (action === 'list-teacher-uploads') {
+      // ─── List all teacher uploads with metadata ────────────────
+      const { teacherId, schoolId, divisionId, type, limit, offset } = req.query;
+      const pageLimit = Math.min(parseInt(limit) || 50, 200);
+      const pageOffset = parseInt(offset) || 0;
+
+      let query = supabase
+        .from('uploads')
+        .select(`
+          id, teacher_id, access_code, filename, label, assessment_type,
+          file_size_mb, storage_path, text_content, text_char_count, image_count,
+          processing_status, created_at, expires_at
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(pageOffset, pageOffset + pageLimit - 1);
+
+      if (teacherId)  query = query.eq('teacher_id', teacherId);
+      if (type)       query = query.eq('assessment_type', type);
+
+      const { data: uploads, count: total, error } = await query;
+      if (error) return res.status(500).json({ error: 'Could not load uploads' });
+
+      const teacherIds = [...new Set((uploads || []).map(u => u.teacher_id))];
+      const { data: teachers } = await supabase
+        .from('profiles')
+        .select('id, school_id, division_id')
+        .in('id', teacherIds.length ? teacherIds : ['none']);
+
+      const teacherMap = {};
+      (teachers || []).forEach(t => { teacherMap[t.id] = t; });
+
+      const schoolIds = [...new Set((teachers || []).map(t => t.school_id).filter(Boolean))];
+      const divisionIds = [...new Set((teachers || []).map(t => t.division_id).filter(Boolean))];
+
+      const [{ data: schools }, { data: divisions }] = await Promise.all([
+        schoolIds.length ? supabase.from('schools').select('id, name').in('id', schoolIds) : { data: [] },
+        divisionIds.length ? supabase.from('divisions').select('id, name').in('id', divisionIds) : { data: [] },
+      ]);
+
+      const schoolMap = {}; (schools || []).forEach(s => { schoolMap[s.id]  = s.name; });
+      const divMap    = {}; (divisions || []).forEach(d => { divMap[d.id]    = d.name; });
+
+      const rows = (uploads || []).map(u => {
+        const t = teacherMap[u.teacher_id] || {};
+        return {
+          id:               u.id,
+          teacherId:        u.teacher_id,
+          accessCode:       u.access_code,
+          filename:         u.filename,
+          label:            u.label,
+          assessmentType:   u.assessment_type,
+          fileSizeMb:       u.file_size_mb,
+          textCharCount:    u.text_char_count,
+          imageCount:       u.image_count,
+          processingStatus: u.processing_status,
+          createdAt:        u.created_at,
+          expiresAt:        u.expires_at,
+          schoolName:       schoolMap[t.school_id] || null,
+          divisionName:     divMap[t.division_id] || null,
+        };
+      });
+
+      if (schoolId) {
+        return res.status(200).json({
+          uploads: rows.filter(r => {
+            const t = teacherMap[r.teacherId] || {};
+            return t.school_id === schoolId;
+          }),
+          total: rows.length, offset: pageOffset, limit: pageLimit,
+        });
+      }
+      if (divisionId) {
+        return res.status(200).json({
+          uploads: rows.filter(r => {
+            const t = teacherMap[r.teacherId] || {};
+            return t.division_id === divisionId;
+          }),
+          total: rows.length, offset: pageOffset, limit: pageLimit,
+        });
+      }
+      return res.status(200).json({ uploads: rows, total, offset: pageOffset, limit: pageLimit });
+    }
+
+    if (action === 'get-upload-content') {
+      const { uploadId } = req.query;
+      if (!uploadId) return res.status(400).json({ error: 'Missing uploadId' });
+
+      const { data: upload, error: fetchErr } = await supabase
+        .from('uploads')
+        .select('id, teacher_id, storage_path, access_code, assessment_type, text_content, image_count')
+        .eq('id', uploadId)
+        .single();
+
+      if (fetchErr || !upload) return res.status(404).json({ error: 'Upload not found' });
+
+      if (upload.assessment_type === 'audio') {
+        const { data: signed, error: signErr } = await supabase
+          .storage.from('audio-files')
+          .createSignedUrl(upload.storage_path, 3600);
+        if (signErr || !signed) return res.status(500).json({ error: 'Could not generate audio link' });
+        return res.status(200).json({ assessmentType: 'audio', signedUrl: signed.signedUrl });
+      }
+
+      let resolvedHtml = upload.text_content || '';
+      if (upload.image_count > 0) {
+        const teacherId  = upload.teacher_id;
+        const accessCode = upload.access_code;
+        const signedUrls = [];
+        for (let i = 0; i < upload.image_count; i++) {
+          let found = false;
+          for (const ext of ['png', 'jpg', 'webp']) {
+            const imgPath = `${teacherId}/${accessCode}/img_${i}.${ext}`;
+            const { data: signed, error: signErr } = await supabase
+              .storage.from('assessment-images')
+              .createSignedUrl(imgPath, 3600);
+            if (!signErr && signed) { signedUrls[i] = signed.signedUrl; found = true; break; }
+          }
+          if (!found) signedUrls[i] = '';
+        }
+        resolvedHtml = resolvedHtml.replace(
+          /<img[^>]*data-apimg-idx="(\d+)"[^>]*>/g,
+          (match, idx) => {
+            const url = signedUrls[parseInt(idx)] || '';
+            if (!url) return '';
+            return `<img src="${url.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" style="max-width:100%;height:auto;">`;
+          }
+        );
+      }
+      return res.status(200).json({ assessmentType: 'text', html: resolvedHtml });
     }
 
     return res.status(400).json({ error: 'Unknown action' });
