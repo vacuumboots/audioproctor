@@ -23,6 +23,57 @@ const Stripe = require('stripe');
 const { Resend }       = require('resend');
 const { sendEmail }    = require('./_lib/email');
 
+// ─── Shared: return signed audio URL or resolved text HTML for a single upload ──
+async function handleGetUploadContent(uploadId, supabase, res) {
+  const { data: upload, error: fetchErr } = await supabase
+    .from('uploads')
+    .select('id, teacher_id, storage_path, access_code, assessment_type, text_content, image_count')
+    .eq('id', uploadId)
+    .single();
+
+  if (fetchErr || !upload) {
+    return res.status(404).json({ error: 'Upload not found' });
+  }
+
+  if (upload.assessment_type === 'audio') {
+    const { data: signed, error: signErr } = await supabase
+      .storage.from('audio-files')
+      .createSignedUrl(upload.storage_path, 3600);
+    if (signErr || !signed) {
+      return res.status(500).json({ error: 'Could not generate audio link' });
+    }
+    return res.status(200).json({ assessment_type: 'audio', signed_url: signed.signedUrl });
+  }
+
+  // Text assessment — resolve inline image placeholders
+  let resolvedHtml = upload.text_content || '';
+  if (upload.image_count > 0) {
+    const teacherId  = upload.teacher_id;
+    const accessCode = upload.access_code;
+    const signedUrls = [];
+    for (let i = 0; i < upload.image_count; i++) {
+      let found = false;
+      for (const ext of ['png', 'jpg', 'webp']) {
+        const imgPath = `${teacherId}/${accessCode}/img_${i}.${ext}`;
+        const { data: signed, error: signErr } = await supabase
+          .storage.from('assessment-images')
+          .createSignedUrl(imgPath, 3600);
+        if (!signErr && signed) { signedUrls[i] = signed.signedUrl; found = true; break; }
+      }
+      if (!found) signedUrls[i] = '';
+    }
+    resolvedHtml = resolvedHtml.replace(
+      /<img[^>]*data-apimg-idx="(\d+)"[^>]*>/g,
+      (match, idx) => {
+        const url = signedUrls[parseInt(idx)] || '';
+        if (!url) return '';
+        return `<img src="${url.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" style="max-width:100%;height:auto;">`;
+      }
+    );
+  }
+  return res.status(200).json({ assessment_type: 'text', text_content: resolvedHtml });
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin',  'https://app.audioproctor.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -456,7 +507,13 @@ module.exports = async (req, res) => {
       const schoolId = profile.school_id;
       if (!schoolId) return res.status(400).json({ error: 'Not attached to a school' });
 
-      const { type, limit, offset } = req.query;
+      const { uploadId, type, limit, offset } = req.query;
+
+      // If uploadId provided, return single upload content (signed URL or text HTML)
+      if (uploadId) {
+        return await handleGetUploadContent(uploadId, supabase, res);
+      }
+
       const pageLimit = Math.min(parseInt(limit) || 50, 200);
       const pageOffset = parseInt(offset) || 0;
 
@@ -469,6 +526,15 @@ module.exports = async (req, res) => {
       const teacherIds = (schoolTeachers || []).map(t => t.id);
       if (!teacherIds.length) return res.status(200).json({ uploads: [], total: 0, offset: 0, limit: pageLimit });
 
+      // Fetch teacher emails
+      let teacherEmails = {};
+      try {
+        const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        if (authUsers?.users) {
+          authUsers.users.forEach(u => { teacherEmails[u.id] = u.email; });
+        }
+      } catch (_) { /* non-fatal */ }
+
       let query = supabase
         .from('uploads')
         .select('id, teacher_id, access_code, filename, label, assessment_type, file_size_mb, processing_status, created_at, expires_at', { count: 'exact' })
@@ -481,7 +547,13 @@ module.exports = async (req, res) => {
       const { data: uploads, count: total, error } = await query;
       if (error) return res.status(500).json({ error: 'Could not load uploads' });
 
-      return res.status(200).json({ uploads, total, offset: pageOffset, limit: pageLimit });
+      // Enrich with teacher email
+      const enriched = (uploads || []).map(u => ({
+        ...u,
+        teacher_email: teacherEmails[u.teacher_id] || null,
+      }));
+
+      return res.status(200).json({ uploads: enriched, total, offset: pageOffset, limit: pageLimit });
     }
 
     if (action === 'division-uploads') {
@@ -489,25 +561,48 @@ module.exports = async (req, res) => {
       const divisionId = profile.division_id;
       if (!divisionId) return res.status(400).json({ error: 'Not attached to a division' });
 
-      const { type, limit, offset } = req.query;
+      const { uploadId, type, limit, offset } = req.query;
+
+      // If uploadId provided, return single upload content
+      if (uploadId) {
+        return await handleGetUploadContent(uploadId, supabase, res);
+      }
+
       const pageLimit = Math.min(parseInt(limit) || 50, 200);
       const pageOffset = parseInt(offset) || 0;
 
       // Get schools in this division, then teachers in those schools
       const { data: divSchools } = await supabase
         .from('schools')
-        .select('id')
+        .select('id, name')
         .eq('division_id', divisionId);
       const schoolIds = (divSchools || []).map(s => s.id);
+
+      // Build school name map
+      const schoolNameMap = {};
+      (divSchools || []).forEach(s => { schoolNameMap[s.id] = s.name; });
 
       // Teachers in division schools OR directly in division
       const { data: divTeachers } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, school_id')
         .or(`division_id.eq.${divisionId}${schoolIds.length ? ',school_id.in.(' + schoolIds.join(',') + ')' : ''}`);
 
       const teacherIds = (divTeachers || []).map(t => t.id);
       if (!teacherIds.length) return res.status(200).json({ uploads: [], total: 0, offset: 0, limit: pageLimit });
+
+      // Map teacher_id -> school_id
+      const teacherSchoolMap = {};
+      (divTeachers || []).forEach(t => { teacherSchoolMap[t.id] = t.school_id; });
+
+      // Fetch teacher emails
+      let teacherEmails = {};
+      try {
+        const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        if (authUsers?.users) {
+          authUsers.users.forEach(u => { teacherEmails[u.id] = u.email; });
+        }
+      } catch (_) { /* non-fatal */ }
 
       let query = supabase
         .from('uploads')
@@ -521,7 +616,17 @@ module.exports = async (req, res) => {
       const { data: uploads, count: total, error } = await query;
       if (error) return res.status(500).json({ error: 'Could not load uploads' });
 
-      return res.status(200).json({ uploads, total, offset: pageOffset, limit: pageLimit });
+      // Enrich with teacher email and school name
+      const enriched = (uploads || []).map(u => {
+        const tSchoolId = teacherSchoolMap[u.teacher_id];
+        return {
+          ...u,
+          teacher_email: teacherEmails[u.teacher_id] || null,
+          school_name: schoolNameMap[tSchoolId] || null,
+        };
+      });
+
+      return res.status(200).json({ uploads: enriched, total, offset: pageOffset, limit: pageLimit });
     }
 
     return res.status(400).json({ error: 'Unknown action' });

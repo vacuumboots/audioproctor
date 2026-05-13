@@ -20,6 +20,43 @@ let contentPage         = 0;
 let contentOpts         = null;
 const CONTENT_PER_PAGE  = 50;
 
+// ─── Field name normalization ─────────────────────────────────────
+// Normalizes common camelCase API responses to snake_case so the
+// frontend consistently accesses e.g. u.assessment_type, u.created_at.
+function normalizeRow(r) {
+  if (!r || typeof r !== 'object') return r;
+  const map = {
+    assessmentType:   'assessment_type',
+    fileSizeMb:       'file_size_mb',
+    createdAt:        'created_at',
+    expiresAt:        'expires_at',
+    teacherEmail:     'teacher_email',
+    teacherName:      'teacher_name',
+    schoolName:       'school_name',
+    divisionName:     'division_name',
+    accessCode:       'access_code',
+    processingStatus: 'processing_status',
+    textCharCount:    'text_char_count',
+    imageCount:       'image_count',
+    signedUrl:        'signed_url',
+    textContent:      'text_content',
+  };
+  const n = { ...r };
+  for (const [camel, snake] of Object.entries(map)) {
+    if (camel in n && !(snake in n)) {
+      n[snake] = n[camel];
+      delete n[camel];
+    }
+  }
+  return n;
+}
+
+function normalizeUploads(data) {
+  if (Array.isArray(data)) return data.map(normalizeRow);
+  if (data && Array.isArray(data.uploads)) return data.uploads.map(normalizeRow);
+  return [];
+}
+
 // ─── Init ─────────────────────────────────────────────────────────
 
 async function initContentBrowser(opts) {
@@ -35,7 +72,7 @@ async function initContentBrowser(opts) {
 
   try {
     const data = await contentOpts.apiFn(contentOpts.listAction);
-    contentUploads = Array.isArray(data) ? data : (data.uploads || []);
+    contentUploads = normalizeUploads(data);
     applyFilters();
     renderPanel(container);
   } catch (err) {
@@ -217,10 +254,13 @@ async function toggleInlineViewer(uploadId, rowId, rowEl) {
       const data = await contentOpts.apiFn(contentOpts.contentAction, 'GET', null,
         `&uploadId=${encodeURIComponent(uploadId)}`);
 
-      if (data.assessment_type === 'text' || data.text_content) {
-        contentDiv.innerHTML = buildTextViewer(data);
+      // Normalize response field names (camelCase → snake_case safety net)
+      const normData = normalizeRow(data);
+
+      if (normData.assessment_type === 'text' || normData.text_content) {
+        contentDiv.innerHTML = buildTextViewer(normData);
       } else {
-        contentDiv.innerHTML = buildAudioPlayer(data);
+        contentDiv.innerHTML = buildAudioPlayer(normData);
       }
       contentDiv.dataset.loaded = '1';
     } catch (err) {

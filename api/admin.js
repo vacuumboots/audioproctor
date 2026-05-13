@@ -388,6 +388,17 @@ module.exports = async (req, res) => {
         .select('id, school_id, division_id')
         .in('id', teacherIds.length ? teacherIds : ['none']);
 
+      // Fetch teacher emails from auth
+      let teacherEmails = {};
+      if (teacherIds.length) {
+        try {
+          const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+          if (authUsers?.users) {
+            authUsers.users.forEach(u => { teacherEmails[u.id] = u.email; });
+          }
+        } catch (_) { /* non-fatal — email column will show '—' */ }
+      }
+
       const teacherMap = {};
       (teachers || []).forEach(t => { teacherMap[t.id] = t; });
 
@@ -406,41 +417,37 @@ module.exports = async (req, res) => {
         const t = teacherMap[u.teacher_id] || {};
         return {
           id:               u.id,
-          teacherId:        u.teacher_id,
-          accessCode:       u.access_code,
+          teacher_id:       u.teacher_id,
+          teacher_email:    teacherEmails[u.teacher_id] || null,
+          school_name:      schoolMap[t.school_id] || null,
+          division_name:    divMap[t.division_id] || null,
+          access_code:      u.access_code,
           filename:         u.filename,
           label:            u.label,
-          assessmentType:   u.assessment_type,
-          fileSizeMb:       u.file_size_mb,
-          textCharCount:    u.text_char_count,
-          imageCount:       u.image_count,
-          processingStatus: u.processing_status,
-          createdAt:        u.created_at,
-          expiresAt:        u.expires_at,
-          schoolName:       schoolMap[t.school_id] || null,
-          divisionName:     divMap[t.division_id] || null,
+          assessment_type:  u.assessment_type,
+          file_size_mb:     u.file_size_mb,
+          text_char_count:  u.text_char_count,
+          image_count:      u.image_count,
+          processing_status: u.processing_status,
+          created_at:       u.created_at,
+          expires_at:       u.expires_at,
         };
       });
 
+      let filtered = rows;
       if (schoolId) {
-        return res.status(200).json({
-          uploads: rows.filter(r => {
-            const t = teacherMap[r.teacherId] || {};
-            return t.school_id === schoolId;
-          }),
-          total: rows.length, offset: pageOffset, limit: pageLimit,
+        filtered = rows.filter(r => {
+          const t = teacherMap[r.teacher_id] || {};
+          return t.school_id === schoolId;
         });
       }
       if (divisionId) {
-        return res.status(200).json({
-          uploads: rows.filter(r => {
-            const t = teacherMap[r.teacherId] || {};
-            return t.division_id === divisionId;
-          }),
-          total: rows.length, offset: pageOffset, limit: pageLimit,
+        filtered = rows.filter(r => {
+          const t = teacherMap[r.teacher_id] || {};
+          return t.division_id === divisionId;
         });
       }
-      return res.status(200).json({ uploads: rows, total, offset: pageOffset, limit: pageLimit });
+      return res.status(200).json({ uploads: filtered, total, offset: pageOffset, limit: pageLimit });
     }
 
     if (action === 'get-upload-content') {
@@ -460,7 +467,7 @@ module.exports = async (req, res) => {
           .storage.from('audio-files')
           .createSignedUrl(upload.storage_path, 3600);
         if (signErr || !signed) return res.status(500).json({ error: 'Could not generate audio link' });
-        return res.status(200).json({ assessmentType: 'audio', signedUrl: signed.signedUrl });
+        return res.status(200).json({ assessment_type: 'audio', signed_url: signed.signedUrl });
       }
 
       let resolvedHtml = upload.text_content || '';
@@ -488,7 +495,7 @@ module.exports = async (req, res) => {
           }
         );
       }
-      return res.status(200).json({ assessmentType: 'text', html: resolvedHtml });
+      return res.status(200).json({ assessment_type: 'text', text_content: resolvedHtml });
     }
 
     return res.status(400).json({ error: 'Unknown action' });
