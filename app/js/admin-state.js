@@ -42,7 +42,7 @@ async function initAdmin(user) {
 
 // ─── API helper ───────────────────────────────────────────────────
 
-async function adminApi(action, method = 'GET', body = null) {
+async function adminApi(action, method = 'GET', body = null, extraParams = '') {
   const opts = {
     method,
     headers: {
@@ -52,7 +52,7 @@ async function adminApi(action, method = 'GET', body = null) {
   };
   if (body) opts.body = JSON.stringify(body);
 
-  const res  = await fetch(`${ADMIN_API}?action=${action}`, opts);
+  const res  = await fetch(`${ADMIN_API}?action=${action}${extraParams}`, opts);
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || `API error ${res.status}`);
   return data;
