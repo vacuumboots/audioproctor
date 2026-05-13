@@ -46,7 +46,22 @@ async function getSession() {
 
 // Ensures a profiles row exists for this teacher.
 // Called silently on every authenticated page load.
-async function ensureProfile(userId) {
+// First checks /api/check-access to verify email is allowlisted.
+async function ensureProfile(userId, accessToken) {
+  // Check email allowlist before creating profile
+  try {
+    const checkRes = await fetch('/api/check-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    });
+    const { allowed, reason } = await checkRes.json();
+    if (!allowed) {
+      return { allowed: false, reason };
+    }
+  } catch (_) {
+    // Network error — let through (fail open)
+  }
+
   const { data } = await supabaseClient
     .from('profiles')
     .select('id')
@@ -63,6 +78,7 @@ async function ensureProfile(userId) {
       expires_at: expiresAt
     });
   }
+  return { allowed: true };
 }
 
 // Returns the teacher's effective tier, resolving division → school → teacher → free.
@@ -88,12 +104,25 @@ async function getEffectiveTier(userId) {
 
 // Call at the top of any protected page.
 // Returns the current user, or redirects to login.html if not signed in.
+// If email is not allowlisted, shows error and signs out.
 async function requireAuth() {
   const session = await getSession();
   if (!session) {
     window.location.href = '/login.html';
     return null;
   }
-  await ensureProfile(session.user.id);
+  const result = await ensureProfile(session.user.id, session.access_token);
+  if (result && result.allowed === false) {
+    // Email not allowlisted — show error and sign out
+    document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui,sans-serif;">
+      <div style="max-width:420px;text-align:center;padding:2rem;">
+        <h1 style="font-size:1.4rem;margin-bottom:1rem;">Access Restricted</h1>
+        <p style="color:#666;line-height:1.6;">${result.reason || 'Your email is not authorized for this instance.'}</p>
+        <p style="color:#999;font-size:0.85rem;margin-top:1.5rem;">Signed out. Close this page to return to the login screen.</p>
+      </div>
+    </div>`;
+    await supabaseClient.auth.signOut();
+    return null;
+  }
   return session.user;
 }

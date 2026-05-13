@@ -104,6 +104,14 @@
 
     <h1 style="font-size:1.6rem; line-height:1.2; margin-bottom:1.5rem;" id="division-name-title">—</h1>
 
+    <div class="admin-tabs">
+      <button class="admin-tab admin-tab--active" onclick="divisionSwitchTab('overview', this)">Overview</button>
+      <button class="admin-tab" onclick="divisionSwitchTab('content', this)">Content</button>
+    </div>
+
+    <!-- Overview panel -->
+    <div id="panel-overview" class="admin-panel admin-panel--active">
+
     <!-- Stats -->
     <div class="stats-row">
       <div class="stat-box">
@@ -168,10 +176,22 @@
         <div id="drill-down-container">
           <div class="empty-state"><p class="label">Loading…</p></div>
         </div>
+      </div><!-- /drill-down-panel -->
+    </div><!-- /card (schools) -->
+
+    </div><!-- /panel-overview -->
+
+    <!-- Content panel -->
+    <div id="panel-content" class="admin-panel">
+      <div class="section-toolbar">
+        <p class="label">Division Teacher Uploads</p>
+      </div>
+      <div id="content-container">
+        <div class="empty-state"><p class="label">Loading…</p></div>
       </div>
     </div>
 
-  </div>
+  </div><!-- /page-container -->
 
   <!-- Invite Teacher modal -->
   <div id="invite-teacher-modal" class="modal-overlay hidden">
@@ -201,12 +221,22 @@
   <script src="/js/supabase-client.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/division-admin.js"></script>
+  <script src="/js/content-browser.js"></script>
+  <script src="/js/division-admin-content.js"></script>
   <script>
+    function divisionSwitchTab(name, btn) {
+      document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('admin-panel--active'));
+      document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('admin-tab--active'));
+      document.getElementById(`panel-${name}`).classList.add('admin-panel--active');
+      btn.classList.add('admin-tab--active');
+    }
+
     (async () => {
       const user = await requireAuth();
       if (!user) return;
       document.getElementById('admin-email').textContent = user.email;
       await initDivisionAdmin(user);
+      await initDivisionContent();
     })();
   </script>
 
