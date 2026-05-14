@@ -40,6 +40,10 @@ No build step. No bundler. No framework. Files are served as-is.
 | `app/js/admin-entities.js` | CRUD for divisions/schools/teachers + setTier/setRole/extend/deactivate/delete |
 | `app/js/admin-requests.js` | loadRequests, loadInvitations, approve/reject/resend |
 | `app/js/admin-demo.js` | Demo panel, view-as modal, seed demo data |
+| `app/js/admin-content.js` | Platform admin content browser init |
+| `app/js/content-browser.js` | Shared content browser — table, inline audio player, text viewer, filtering, pagination |
+| `app/js/school-admin-content.js` | School admin content browser init |
+| `app/js/division-admin-content.js` | Division admin content browser init |
 | `app/js/auth.js` | Supabase auth helpers, `ensureProfile()`, `getEffectiveTier()` |
 | `app/js/supabase-client.js` | Single Supabase client init for the browser |
 | `extension/` | Chrome extension Manifest V3: popup + player + options |
@@ -94,20 +98,21 @@ Analytics. `session_events` tracks code_entered, playback_started, playback_comp
 | `event.js` | `POST /api/event` | Logs anonymous session events from the extension (CORS: `*`). |
 | `account.js` | `POST /api/account` | Profile update + self-service account deletion. |
 | `admin.js` | `GET/POST /api/admin?action=...` | Platform admin operations. Requires `platform_admin` role. Uses service role key. |
-| `org.js` | `GET/POST /api/org?action=...` | School/division admin ops. Actions: `school-teachers`, `school-report`, `school-detail`, `division-schools`, `division-report`, `division-activity`, `detach-teacher`, `detach-school`, `attach-school`, `remove-school-admin`, `invite-teacher`. |
+| `org.js` | `GET/POST /api/org?action=...` | School/division admin ops. Actions: `school-uploads`, `division-uploads`, `school-teachers`, `school-report`, `school-detail`, `division-schools`, `division-report`, `division-activity`, `detach-teacher`, `detach-school`, `attach-school`, `remove-school-admin`, `invite-teacher`. |
 | `request-access.js` | `POST /api/request-access` | Stores teacher access request from the marketing site form. Notifies admin via Resend. |
 | `accept-invite.js` | `GET /api/accept-invite?token=...` | Validates invitation token, attaches teacher to org, sends welcome email. |
 | `stripe-checkout.js` | `POST /api/stripe-checkout` | Unified Stripe Checkout Session for any tier (teacher, school, division). Routes internally by inspecting caller's profile. School/division uses enrolment band pricing from `division_pricing` table. |
 | `stripe-webhook.js` | `POST /api/stripe-webhook` | Validates Stripe sig, updates tiers. Raw body required (`bodyParser: false` in vercel.json). |
 | `trigger-normalize.js` | `POST /api/trigger-normalize` | Audio normalization via native ffmpeg. Verifies ownership, idempotent, moves from staging to final path. |
+| `check-access.js` | `POST /api/check-access` | Email allowlist gate. Checks user email against `ALLOWED_EMAIL_PATTERN` env var. Existing users grandfathered. |
 | `contact.js` | `POST /api/contact` | Contact/demo request form via Resend. |
 
-`admin.js` actions: `overview`, `divisions`, `schools`, `teachers`, `audit-log`, `login-link`, `list-invitations`, `list-requests`, `platform-analytics`, `set-tier`, `set-expires`, `set-notes`, `set-role`, `attach-teacher`, `reassign-teacher`, `create-division`, `create-school`, `approve-request`, `reject-request`, `invite`, `resend-invite`, `seed-demo`, `delete-teacher`, `delete-school`, `delete-division`, `toggle-deactivation`, `cancel-subscription` (cancels school/division Stripe sub with proration).
+`admin.js` actions: `list-teacher-uploads`, `get-upload-content`, `overview`, `divisions`, `schools`, `teachers`, `audit-log`, `login-link`, `list-invitations`, `list-requests`, `platform-analytics`, `set-tier`, `set-expires`, `set-notes`, `set-role`, `attach-teacher`, `reassign-teacher`, `create-division`, `create-school`, `approve-request`, `reject-request`, `invite`, `resend-invite`, `seed-demo`, `delete-teacher`, `delete-school`, `delete-division`, `toggle-deactivation`, `cancel-subscription` (cancels school/division Stripe sub with proration).
 
 ## Vercel function limit
 
-**The Hobby plan allows 12 serverless functions.** The project currently uses 11:
-`session`, `event`, `account`, `admin`, `org`, `request-access`, `accept-invite`, `stripe-checkout`, `stripe-webhook`, `trigger-normalize`, `contact`.
+**The Hobby plan allows 12 serverless functions.** The project currently uses 12 (at the limit):
+`session`, `event`, `account`, `admin`, `org`, `request-access`, `accept-invite`, `stripe-checkout`, `stripe-webhook`, `trigger-normalize`, `check-access`, `contact`.
 
 Any new `api/*.js` file counts toward the limit. The onboarding email cron (3 files) was deleted in commit 8148d63 to free slots. The 3 Stripe checkout endpoints were merged into one for the same reason. Before adding a new endpoint, consider whether an existing one can handle the action via a query parameter.
 
@@ -117,7 +122,7 @@ Any new `api/*.js` file counts toward the limit. The onboarding email cron (3 fi
 - **Design system:** Editorial print aesthetic. Borders not shadows. `1px solid var(--ink)`. No border-radius. Fonts: Playfair Display (headings), DM Sans (body). Labels are `0.7rem`, `letter-spacing: 0.14em`, uppercase. Fonts are self-hosted in `app/fonts/` — no Google Fonts CDN requests.
 - **Stripe billing:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` (Teacher Premium). Additional tier price IDs are configured in the `division_pricing` DB table. All tiers use the single `stripe-checkout.js` endpoint. Env vars in Vercel dashboard + `.env.local` for local dev.
 - **Exit word hashing:** SHA-256 of lowercased+trimmed input. Used identically in `app/js/dashboard-access-codes.js` (upload) and `extension/player.js` (verification).
-- **Auth:** Google OAuth via Supabase Auth. Redirects to `https://app.audioproctor.com/dashboard.html`. `ensureProfile()` creates the `profiles` row on first login with `tier='premium'` and `expires_at` 30 days out.
+- **Auth:** Google OAuth via Supabase Auth. Redirects to `https://app.audioproctor.com/dashboard.html`. `ensureProfile()` calls `/api/check-access` to verify email against `ALLOWED_EMAIL_PATTERN` (when set), then creates the `profiles` row on first login with `tier='premium'` and `expires_at` 30 days out. Existing users are grandfathered through the email gate.
 - **Access codes:** Standard format (`ABC-123`) or custom (3–20 alphanumeric, teacher-defined). Short format was removed.
 
 ## How to run locally

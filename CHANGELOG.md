@@ -4,6 +4,19 @@ All notable changes to AudioProctor are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Email allowlisting via `api/check-access.js` — new signups are gated against
+  `ALLOWED_EMAIL_PATTERN` env var (regex). Existing users grandfathered. No
+  pattern set = open to everyone.
+- Admin content access API — `admin.js` adds `list-teacher-uploads` (paginated,
+  with teacher/school/division metadata) and `get-upload-content` (signed audio
+  URL or resolved text HTML). `org.js` adds `school-uploads` and `division-uploads`
+  scoped to the admin's org.
+- Admin content browser — shared `content-browser.js` renders teacher upload
+  tables with inline audio player and text viewer, filtering by teacher/school/type,
+  and pagination. Wired into admin.html, school-admin.html, and division-admin.html
+  via thin role-specific modules.
+
 ### Changed
 - Non-free tiers (premium, school, division) now get 128kbps mono MP3 audio encoding instead of 32kbps.
   Free tier remains at 32kbps. Server-side ffmpeg transcoding in trigger-normalize.js branches on

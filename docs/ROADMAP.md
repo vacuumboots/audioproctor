@@ -699,3 +699,22 @@ through the platform admin dashboard. Not advertised publicly.
 
 - [x] **Premium audio quality** — non-free tiers (premium/school/division) get 128kbps mono MP3
   encoding; free tier stays at 32kbps. Server-side in trigger-normalize.js.
+
+### Email Allowlisting
+
+- [x] **Email allowlist gate** — `api/check-access.js` blocks signups from emails not matching
+  `ALLOWED_EMAIL_PATTERN` (configurable regex). Existing users are grandfathered. When no pattern
+  is set, the gate is open (fail-open, backward compatible). Client-side in `auth.js` shows
+  an "Access Restricted" page on denial.
+
+### Admin Oversight & Content Browser
+
+- [x] **Admin content access API** — `admin.js` adds `list-teacher-uploads` (paginated, with
+  teacher/school/division metadata) and `get-upload-content` (signed audio URL or resolved text
+  HTML with images). `org.js` adds `school-uploads` and `division-uploads` scoped to the admin's
+  org role. All use the service role key — no RLS bypass.
+- [x] **Admin content browser UI** — shared `content-browser.js` renders teacher upload tables
+  with inline HTML5 audio player and text viewer. Filtering by teacher name, school, and
+  assessment type. Pagination at 50/page. Wired into admin.html, school-admin.html, and
+  division-admin.html via thin role-specific init modules (admin-content.js,
+  school-admin-content.js, division-admin-content.js).

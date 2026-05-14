@@ -99,8 +99,12 @@ STRIPE_PRICE_ID=
 │       ├── admin-entities.js    # CRUD for divisions/schools/teachers, tier/role/extend/deactivate
 │       ├── admin-requests.js    # loadRequests, loadInvitations, approve/reject/resend
 │       ├── admin-demo.js        # Demo panel, view-as modal, seed demo data
+│       ├── admin-content.js     # Platform admin content browser init
+│       ├── content-browser.js   # Shared content browser (table, player, viewer)
 │       ├── school-admin.js     # School admin UI
+│       ├── school-admin-content.js  # School admin content browser init
 │       ├── division-admin.js   # Division admin UI
+│       ├── division-admin-content.js  # Division admin content browser init
 │       ├── settings.js         # Settings page
 │       └── player.js           # Web player (fallback)
 │
@@ -115,8 +119,11 @@ STRIPE_PRICE_ID=
 │   ├── stripe-checkout.js      # Unified Stripe Checkout Session (Teacher Premium, School, Division)
 │   ├── stripe-webhook.js       # Handle Stripe subscription events
 │   ├── trigger-normalize.js    # Audio normalization via ffmpeg — free: 32kbps, non-free: 128kbps mono MP3
+│   ├── check-access.js         # Email allowlist gate — blocks signups not matching ALLOWED_EMAIL_PATTERN
 │   ├── contact.js              # Contact/demo request form handler
-│   └── _lib/email.js           # Shared Resend helper
+│   └── _lib/
+│       ├── email.js            # Shared Resend helper
+│       └── signed-url.js       # Signed URL generation for audio + image resolution
 │
 ├── extension/                  # Chrome Extension (Manifest V3)
 │   ├── manifest.json
