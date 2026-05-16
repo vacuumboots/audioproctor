@@ -516,7 +516,7 @@ below require a cron endpoint. Deferred until Vercel Pro upgrade or off-platform
 ---
 
 ## Project Health
-*What's working, what's not, and how to keep it working. Last reviewed April 2026.*
+*What's working, what's not, and how to keep it working. Last reviewed May 15, 2026.*
 
 ### What works well
 
@@ -559,11 +559,12 @@ below require a cron endpoint. Deferred until Vercel Pro upgrade or off-platform
    .hermes/plans, ask before moving files" gives the agent enough structure to work
    independently without guessing. Fast corrections with evidence ("actually, the
    self-serve signup works") keep the agent aligned.
-5. **The `AGENTS.md` file should reference files that exist.** It currently references
-   `CLAUDE.md` which is not in the repo. Keep it updated or remove the reference.
-6. **Docs subdirectories would help at scale.** The `docs/` folder has 14 files with no
-   subdirectories. As it grows, grouping by concern (operations/, testing/, pilot/) would
-   help both humans and AI agents find the right document faster.
+5. **The `AGENTS.md` file should reference files that exist.** Resolved in v1.3.1:
+   `CLAUDE.md` deleted, `AGENTS.md` no longer references it. Keeping this principle
+   active — stale file references drift back quickly.
+6. **Docs subdirectories are partially in place.** Three subdirectories
+   (security/, test-runs/, plans/) group related docs. 9 files remain at root —
+   consider operations/ and pilot/ groupings to keep navigation clean as docs grow.
 
 ---
 
