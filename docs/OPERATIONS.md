@@ -174,3 +174,7 @@ The `publish-extension.yml` workflow can fail if Chrome Web Store credentials ar
 On a fresh clone, `npm install` runs `postinstall` which symlinks `scripts/pre-push` into `.git/hooks/pre-push`. No manual setup needed. To verify: `ls -la .git/hooks/pre-push` should show a symlink to `../../scripts/pre-push`.
 
 The hook is also verified in CI — if the script is missing or broken, CI catches it.
+
+### Checking the gate history
+
+To see how many times the gate has blocked or passed: `git reflog | grep -c 'pre-push'` shows local gate runs.
