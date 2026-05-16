@@ -130,3 +130,47 @@ breaks the other two until they're manually updated.
 - Any endpoint using the service role client
 
 See `docs/security/2026-05-09-credential-leak.md` for the full incident record.
+
+## 9) CI and automated gates
+
+### What runs automatically
+
+| Trigger | What runs | Blocks merge? |
+|---|---|---|
+| PR to `dev` or `main` | `.github/workflows/ci.yml` — 93 vitest tests, syntax check on all JS, pre-push doc gate | Yes — PR shows red X |
+| `git push` (local) | `scripts/pre-push` — 9 doc drift checks | Yes — push rejected |
+| Push to `main` touching `extension/manifest.json` | `.github/workflows/publish-extension.yml` — upload + publish to Chrome Web Store | No — runs after push |
+
+### When CI fails
+
+1. Click the red X on the PR to see which step failed.
+2. **Tests failed**: Run `npm test` locally, fix the test or the code, push again.
+3. **Syntax check failed**: The failing file is named in the log. Fix the syntax error.
+4. **Doc gate failed**: Read the ✗ messages in the CI log — they tell you exactly which file to update (AGENTS.md, CHANGELOG.md, etc.). Same gate as your local pre-push hook.
+
+### When the pre-push gate blocks you
+
+The gate prints ✗ items with specific instructions. Common fixes:
+
+- *"AGENTS.md lists X migrations, Y on disk"* → update the migration list
+- *"X user-facing commit(s) without CHANGELOG entry"* → add entries to `[Unreleased]`
+- *"Migration staged, AGENTS.md not updated"* → add the migration to the file map
+- *"stale reference: path/to/file"* → the file was deleted or renamed; update AGENTS.md
+
+Skip the gate once with `git push --no-verify`. Only do this when the gate is wrong, not when you're in a hurry. If the gate has a bug, fix `scripts/pre-push`.
+
+### When auto-publish fails
+
+The `publish-extension.yml` workflow can fail if Chrome Web Store credentials are expired or the upload is rejected (version already exists, package invalid). 
+
+1. Go to the Actions tab → find the failed `Publish Extension` run.
+2. Read the error in the `Upload to Chrome Web Store` or `Publish to Chrome Web Store` step.
+3. If credentials expired: rotate in Google Cloud Console, update `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, and `CHROME_REFRESH_TOKEN` in repo secrets.
+4. Re-run the workflow manually via `workflow_dispatch` (with `bump: skip` to use the existing version).
+5. If the version already exists on the store: bump manually in a new PR, merge, and auto-publish will fire again.
+
+### How the hook auto-installs
+
+On a fresh clone, `npm install` runs `postinstall` which symlinks `scripts/pre-push` into `.git/hooks/pre-push`. No manual setup needed. To verify: `ls -la .git/hooks/pre-push` should show a symlink to `../../scripts/pre-push`.
+
+The hook is also verified in CI — if the script is missing or broken, CI catches it.
