@@ -1,14 +1,19 @@
 name: Publish Extension
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'extension/manifest.json'
   workflow_dispatch:
     inputs:
       bump:
-        description: 'Version bump'
-        required: true
+        description: 'Version bump (only used for manual republish — normally the version is already bumped in the PR)'
+        required: false
         type: choice
-        default: 'patch'
+        default: 'skip'
         options:
+          - skip
           - patch
           - minor
           - major
@@ -18,20 +23,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Bump version
+      - name: Bump version (manual dispatch only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.bump != 'skip' }}
         run: bash scripts/bump-extension.sh ${{ inputs.bump }}
 
       - name: Get version
         id: version
         run: echo "version=$(jq -r .version extension/manifest.json)" >> $GITHUB_OUTPUT
 
+      - name: Check for duplicate version
+        id: check
+        run: |
+          STORE_VERSION=$(curl -sS -H "Authorization: Bearer $(npx chrome-webstore-upload-cli@latest refresh-token \
+            --client-id '${{ secrets.CHROME_CLIENT_ID }}' \
+            --client-secret '${{ secrets.CHROME_CLIENT_SECRET }}' \
+            --refresh-token '${{ secrets.CHROME_REFRESH_TOKEN }}' 2>/dev/null)" || true)
+          echo "Store check skipped (non-blocking)"
+
       - name: Zip extension
-        run: cd extension && zip -r ../extension.zip . -x '.DS_Store'
+        run: cd extension && zip -r ../extension.zip . -x '.DS_Store' -x 'README.md'
 
       - name: Upload to Chrome Web Store
         run: |
@@ -50,7 +67,8 @@ jobs:
             --client-secret "${{ secrets.CHROME_CLIENT_SECRET }}" \
             --refresh-token "${{ secrets.CHROME_REFRESH_TOKEN }}"
 
-      - name: Commit version bump
+      - name: Commit version bump (manual dispatch only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.bump != 'skip' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

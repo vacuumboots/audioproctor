@@ -1,6 +1,9 @@
 # AudioProctor Extension Release Checklist
 
-Use this runbook for any change that touches `extension/**`.
+> **Merged into [`docs/DEFINITION-OF-DONE.md`](DEFINITION-OF-DONE.md).**  
+> This file is kept for historical reference. Use DEFINITION-OF-DONE.md for all releases.
+
+## Historical content follows
 
 ## Purpose
 This checklist separates three different release milestones so they do not get conflated:

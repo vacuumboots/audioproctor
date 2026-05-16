@@ -53,6 +53,8 @@ No build step. No bundler. No framework. Files are served as-is.
 | `supabase/migrations/` | Sequential SQL migrations (004–025). Run manually in Supabase SQL Editor. |
 | `site/` | Marketing pages (about, contact, privacy, terms) |
 | `vercel.json` | URL rewrites: `/about` → `site/about.html`, `/css/*` → `app/css/*` etc. |
+| `scripts/pre-push` | Doc gate: blocks push if AGENTS.md, CHANGELOG.md, ROADMAP.md, or USERSTEPS.md have drifted from the codebase. Runs automatically on every `git push`. Skip with `git push --no-verify`. |
+| `docs/DEFINITION-OF-DONE.md` | Single release checklist. Section 1-5, web and extension rows. Run top to bottom before every release. |
 
 ## Database schema (the tables that matter)
 
@@ -181,6 +183,7 @@ For extension dev: open Chrome → `chrome://extensions` → Developer mode → 
 7. **Never `git add -A` without checking what's staged.** Temp scripts containing hardcoded Supabase connection strings were accidentally committed via `git add -A` (incident: 2026-05-09, see `docs/security/`). Use `git add <specific files>` or `git add -p`. Check `git diff --cached` before committing.
 8. **When deleting a `_lib` module, grep the entire codebase for require() references first.** Deleting `_lib/schedule-onboarding.js` broke `api/admin.js` and `api/stripe-webhook.js` because their require() calls were not cleaned up. The result: 500 errors on every admin API call, discovered by a user report hours later.
 9. **Rotating Supabase credentials breaks Vercel until manually updated.** The `SUPABASE_SERVICE_ROLE_KEY` lives in three places: Supabase, Vercel env vars (all three environments), and `.env.local`. Rotating it in Supabase immediately breaks the other two. After rotation, update Vercel via `vercel env rm`/`vercel env add`, update `.env.local`, then force a redeploy with `vercel redeploy`. See `docs/OPERATIONS.md` section 8 for the full procedure.
+10. **The pre-push doc gate blocks pushes when documentation drifts.** `scripts/pre-push` runs 9 checks on every `git push` — stale file references in AGENTS.md, migration count mismatches, API count mismatches, staged migrations/APIs without AGENTS.md updates, ROADMAP drift, CHANGELOG gaps, and stale `require()` references. When it fails, read the ✗ messages — they tell you exactly which file to fix. Skip with `git push --no-verify` only when the gate is wrong, not when you're in a hurry. **The hook auto-installs via `npm run postinstall` (runs after `npm install`).** On a fresh clone, just run `npm install` and the gate is active.
 
 ## If you need to make schema changes
 
@@ -203,7 +206,9 @@ Manual steps for the human operator live in `USERSTEPS.md`. When implementation 
 
 ## Key docs
 
+- `docs/DEFINITION-OF-DONE.md` — single release checklist (web + extension). Run top to bottom before every release.
 - `docs/ROADMAP.md` — staged product roadmap with checked-off items
-- `docs/OPERATIONS.md` — release runbook, attestation, rollback, key rotation
+- `docs/OPERATIONS.md` — release runbook: attestation, rollback, key rotation (procedural commands)
 - `docs/security/` — security incident reports
+- `scripts/pre-push` — pre-push doc gate (9 automated drift checks, runs on every push)
 - `.gitignore` — includes patterns to prevent credential-containing scripts (`check_db*.js`, `run-*.mjs`)

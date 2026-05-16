@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Syntax check JS
+        run: |
+          find api app extension -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Doc gate
+        run: bash scripts/pre-push

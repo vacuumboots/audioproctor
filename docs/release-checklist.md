@@ -1,6 +1,9 @@
 # AudioProctor Release Checklist
 
-Use this checklist before shipping to `main` and before demos.
+> **Merged into [`docs/DEFINITION-OF-DONE.md`](DEFINITION-OF-DONE.md).**  
+> This file is kept for historical reference. Use DEFINITION-OF-DONE.md for all releases.
+
+## Historical content follows
 
 ## 1) Code and behavior validation
 - [ ] Run syntax checks for touched JS files (`node --check <file>`).

@@ -3,7 +3,9 @@
   "version": "1.3.0",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "postinstall": "ln -sf ../../scripts/pre-push .git/hooks/pre-push 2>/dev/null || true",
+    "setup": "ln -sf ../../scripts/pre-push .git/hooks/pre-push && echo 'Hook installed. Doc gate active on next push.'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",

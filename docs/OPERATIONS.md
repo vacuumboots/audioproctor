@@ -59,22 +59,17 @@ Procedure:
 4. Produce final verdict: Pilot ready Yes/No.
 
 ## 4) Release readiness sweep
-Use this set before pushing demo-critical changes.
+
+**Checklist moved to [`docs/DEFINITION-OF-DONE.md`](DEFINITION-OF-DONE.md).**  
+Run through that file before every release.
+
+Quick syntax check (still useful for fast local validation):
 
 ```bash
-git status --short
 node --check app/js/*.js
 node --check extension/popup.js
 node --check extension/player.js
 ```
-
-Then manually confirm:
-- `CHANGELOG.md` updated for user-facing changes
-- `docs/release-checklist.md` completed
-- `RELEASE_SOURCE_OF_TRUTH.md` updated if extension changed
-- `README.md` — verify file structure, feature list, and tier model match reality
-- `docs/ROADMAP.md` — verify recently shipped items are checked off
-- `.hermes/plans/` statuses updated if shipment scope changed
 
 ## 5) Extension sync workflow checks
 Workflow file:
@@ -104,12 +99,9 @@ git push --force origin main
 Use only for urgent production recovery. Capture incident notes in changelog/docs afterward.
 
 ## 7) Definition of done for extension-impacting changes
-A change that touches `extension/**` is not done until:
-- [ ] code merged to `main`
-- [ ] public mirror matches private extension subtree
-- [ ] attestation row updated in `RELEASE_SOURCE_OF_TRUTH.md`
-- [ ] managed Chromebook run sheet updated (for behavior-affecting changes)
-- [ ] changelog entry added
+
+**Moved to [`docs/DEFINITION-OF-DONE.md`](DEFINITION-OF-DONE.md).**  
+See the "Extension only" rows in each section of that file.
 
 ## 8) Supabase key rotation
 

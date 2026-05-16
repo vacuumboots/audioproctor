@@ -1,0 +1,165 @@
+#!/bin/bash
+# AudioProctor pre-push doc gate
+# Blocks push if documentation has drifted from the codebase.
+# Install: ln -s ../../scripts/pre-push .git/hooks/pre-push
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+HAS_ERRORS=0
+HAS_WARNINGS=0
+
+echo ""
+echo -e "${GREEN}━━━ AudioProctor Doc Gate ━━━${NC}"
+echo ""
+
+# ── 1. AGENTS.md file map: stale path references ────────────────────
+# File map is a markdown table: | `path` | description |
+echo "  AGENTS.md file map references..."
+while IFS= read -r line; do
+    cell=$(echo "$line" | sed -n 's/^| *`\([^`]*\)` *|.*/\1/p')
+    [ -z "$cell" ] && continue
+    # Skip non-path entries
+    if [[ "$cell" == http* ]]; then continue; fi
+    if [[ "$cell" == *" "* ]]; then continue; fi
+    if [[ "$cell" != *"/"* ]] && [[ "$cell" != *"."* ]]; then continue; fi
+    # Only check known project prefixes
+    if [[ "$cell" == app/* ]] || [[ "$cell" == api/* ]] || \
+       [[ "$cell" == extension/* ]] || [[ "$cell" == supabase/* ]] || \
+       [[ "$cell" == docs/* ]] || [[ "$cell" == site/* ]] || \
+       [[ "$cell" == scripts/* ]] || [[ "$cell" == archive/* ]] || \
+       [[ "$cell" == *.md ]] || [[ "$cell" == *.json ]] || [[ "$cell" == *.html ]]; then
+        if [ ! -e "$cell" ]; then
+            echo -e "    ${RED}✗${NC} stale: $cell"
+            HAS_ERRORS=1
+        fi
+    fi
+done < <(grep -E '^\| `' AGENTS.md)
+
+# ── 2. Migration range in AGENTS.md matches reality ─────────────────
+echo "  Migration range in AGENTS.md..."
+HIGHEST_MIG=$(ls -1 supabase/migrations/ 2>/dev/null | sort -n | tail -1 | grep -o '^[0-9]*' || echo "0")
+DOC_RANGE=$(grep -o 'migrations ([0-9]*–[0-9]*' AGENTS.md 2>/dev/null | grep -o '[0-9][0-9]*' | tail -1 || echo "0")
+# Fallback: also check for bare "004–025" pattern
+if [ "$DOC_RANGE" = "0" ]; then
+    DOC_RANGE=$(grep -o 'migrations/0[0-9]*' AGENTS.md 2>/dev/null | grep -o '[0-9]*' | sort -n | tail -1 || echo "0")
+fi
+if [ "$HIGHEST_MIG" != "$DOC_RANGE" ] && [ "$HIGHEST_MIG" != "0" ] && [ "$DOC_RANGE" != "0" ]; then
+    echo -e "    ${YELLOW}⚠${NC}  Highest migration is $HIGHEST_MIG, AGENTS.md says $DOC_RANGE"
+    HAS_WARNINGS=1
+fi
+
+# ── 3. API endpoint count in AGENTS.md matches reality ──────────────
+echo "  API endpoint count..."
+ACTUAL_APIS=$(ls -1 api/*.js 2>/dev/null | grep -v '/_' | wc -l | tr -d ' ')
+DOC_APIS=$(grep -o 'currently uses [0-9]*' AGENTS.md 2>/dev/null | grep -o '[0-9]*' || echo "0")
+
+if [ "$ACTUAL_APIS" != "$DOC_APIS" ] && [ "$DOC_APIS" != "0" ]; then
+    echo -e "    ${RED}✗${NC} AGENTS.md says $DOC_APIS functions, $ACTUAL_APIS in api/"
+    echo "      Update count in AGENTS.md (search 'Vercel function limit')"
+    HAS_ERRORS=1
+fi
+
+# ── 4. Staged migration → AGENTS.md must be staged too ──────────────
+echo "  Staged: migration → AGENTS.md..."
+STAGED_MIGS=$(git diff --cached --name-only 2>/dev/null | grep 'supabase/migrations/' || true)
+if [ -n "$STAGED_MIGS" ]; then
+    if ! git diff --cached --name-only 2>/dev/null | grep -q 'AGENTS.md'; then
+        echo -e "    ${RED}✗${NC} Migration staged, AGENTS.md not updated"
+        echo "      $(echo "$STAGED_MIGS" | tr '\n' ' ')"
+        HAS_ERRORS=1
+    fi
+fi
+
+# ── 5. New API endpoint → AGENTS.md must be staged too ──────────────
+echo "  Staged: new API → AGENTS.md..."
+STAGED_NEW=$(git diff --cached --diff-filter=A --name-only 2>/dev/null | grep '^api/[^_].*\.js$' || true)
+if [ -n "$STAGED_NEW" ]; then
+    if ! git diff --cached --name-only 2>/dev/null | grep -q 'AGENTS.md'; then
+        echo -e "    ${RED}✗${NC} New API endpoint, AGENTS.md not updated"
+        echo "      $(echo "$STAGED_NEW" | tr '\n' ' ')"
+        HAS_ERRORS=1
+    fi
+fi
+
+# ── 6. New migration file → USERSTEPS.md consideration ──────────────
+echo "  Staged: migration → USERSTEPS.md..."
+if [ -n "$STAGED_MIGS" ]; then
+    if ! git diff --cached --name-only 2>/dev/null | grep -q 'USERSTEPS.md'; then
+        echo -e "    ${YELLOW}⚠${NC}  Migration staged — does it need a USERSTEPS.md entry?"
+        HAS_WARNINGS=1
+    fi
+fi
+
+# ── 7. ROADMAP: unchecked items that look shipped ───────────────────
+echo "  ROADMAP drift..."
+UNCHECKED=$(grep -n '^\- \[ \]' docs/ROADMAP.md 2>/dev/null || true)
+if [ -n "$UNCHECKED" ]; then
+    while IFS= read -r line; do
+        lineno=$(echo "$line" | cut -d: -f1)
+        text=$(echo "$line" | cut -d: -f2- | sed 's/- \[ \] //' | tr '[:upper:]' '[:lower:]')
+        terms=$(echo "$text" | sed 's/[^a-z0-9 ]//g' | tr -s ' ' | \
+                awk '{for(i=1;i<=NF&&i<=3;i++) if(length($i)>5) print $i}' | \
+                tr '\n' '|' | sed 's/|$//')
+        if [ -n "$terms" ] && [ ${#terms} -gt 8 ]; then
+            if git log --oneline -100 --grep="$terms" 2>/dev/null | head -1 | grep -q .; then
+                echo -e "    ${YELLOW}⚠${NC}  ROADMAP:$lineno unchecked, but commits mention this"
+                echo "        $text"
+                HAS_WARNINGS=1
+            fi
+        fi
+    done <<< "$UNCHECKED"
+fi
+
+# ── 8. CHANGELOG: user-facing commits without entry ─────────────────
+echo "  CHANGELOG freshness..."
+LAST_CL=$(git log --oneline -1 -- CHANGELOG.md 2>/dev/null | cut -d' ' -f1)
+if [ -n "$LAST_CL" ]; then
+    USER_FACING=$(git log "${LAST_CL}..HEAD" --oneline --no-merges -- app/ extension/ api/ 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$USER_FACING" -gt 0 ]; then
+        if ! git diff --cached --name-only 2>/dev/null | grep -q 'CHANGELOG.md'; then
+            echo -e "    ${RED}✗${NC} $USER_FACING user-facing commit(s) without CHANGELOG entry"
+            HAS_ERRORS=1
+        fi
+    fi
+fi
+
+# ── 9. Deleted JS file still required elsewhere ─────────────────────
+echo "  Stale require() references..."
+STAGED_DEL=$(git diff --cached --diff-filter=D --name-only 2>/dev/null | grep '\.js$' || true)
+if [ -n "$STAGED_DEL" ]; then
+    while IFS= read -r deleted; do
+        base=$(basename "$deleted" .js)
+        refs=$(grep -rl "require.*${base}" api/ app/ 2>/dev/null || true)
+        if [ -n "$refs" ]; then
+            echo -e "    ${RED}✗${NC} $deleted deleted, still required by:"
+            echo "$refs" | while IFS= read -r f; do echo "        $f"; done
+            HAS_ERRORS=1
+        fi
+    done <<< "$STAGED_DEL"
+fi
+
+# ── Summary ─────────────────────────────────────────────────────────
+echo ""
+if [ "$HAS_ERRORS" -gt 0 ]; then
+    echo -e "${RED}━━━ DOC GATE FAILED ━━━${NC}"
+    echo ""
+    echo "Fix the ✗ items, then commit and push again."
+    echo "  Skip once:   git push --no-verify"
+    echo ""
+    exit 1
+elif [ "$HAS_WARNINGS" -gt 0 ]; then
+    echo -e "${YELLOW}━━━ DOC GATE: warnings only (push allowed) ━━━${NC}"
+    echo ""
+else
+    echo -e "${GREEN}━━━ DOC GATE PASSED ━━━${NC}"
+    echo ""
+fi
+
+exit 0
