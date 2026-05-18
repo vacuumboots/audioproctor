@@ -183,13 +183,13 @@
         <div style="display:flex; align-items:center; gap:1.5rem;">
           <span id="tier-badge" class="tier-badge hidden"></span>
           <span id="user-email" class="label"></span>
-          <a id="admin-nav-link" href="/admin.html" class="btn btn--ghost btn--small hidden">Admin</a>
-          <a id="school-admin-nav-link" href="/school-admin.html" class="btn btn--ghost btn--small hidden">School Admin</a>
-          <a id="div-admin-nav-link" href="/division-admin.html" class="btn btn--ghost btn--small hidden">Division Admin</a>
-          <a href="https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj" target="_blank" rel="noopener" class="btn btn--ghost btn--small">Extension</a>
-          <a href="/settings.html" class="btn btn--ghost btn--small">Settings</a>
+          <a id="admin-nav-link" href="/admin.html" class="btn btn--ghost btn--small hidden"></a>
+          <a id="school-admin-nav-link" href="/school-admin.html" class="btn btn--ghost btn--small hidden"></a>
+          <a id="div-admin-nav-link" href="/division-admin.html" class="btn btn--ghost btn--small hidden"></a>
+          <a id="nav-extension" href="https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj" target="_blank" rel="noopener" class="btn btn--ghost btn--small"></a>
+          <a id="nav-settings" href="/settings.html" class="btn btn--ghost btn--small"></a>
           <span class="lang-toggle" id="lang-toggle"></span>
-          <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
+          <button id="btn-signout" class="btn btn--ghost btn--small" onclick="handleSignOut()"></button>
         </div>
       </div>
     </div>
@@ -208,33 +208,33 @@
     <!-- Upload Card -->
     <div class="card">
       <div class="card__header">
-        <p class="label">New Assessment</p>
+        <p id="upload-card-header" class="label"></p>
       </div>
 
       <div id="upload-notice" class="notice hidden"></div>
 
       <div class="form-group">
-        <label class="label">Assessment Type</label>
+        <label id="assessment-type-label" class="label"></label>
         <div class="type-toggle" id="assessment-type-toggle">
-          <button type="button" class="type-toggle__btn type-toggle__btn--active" data-type="audio" onclick="selectAssessmentType('audio')">Audio</button>
-          <button type="button" class="type-toggle__btn" data-type="text" onclick="selectAssessmentType('text')">Text</button>
+          <button id="btn-toggle-audio" type="button" class="type-toggle__btn type-toggle__btn--active" data-type="audio" onclick="selectAssessmentType('audio')"></button>
+          <button id="btn-toggle-text" type="button" class="type-toggle__btn" data-type="text" onclick="selectAssessmentType('text')"></button>
         </div>
         <input type="hidden" id="assessment-type" value="audio">
       </div>
 
       <div class="form-group">
-        <label class="label" for="label-input">Assessment Label <span style="font-weight:300; text-transform:none; letter-spacing:0;">(optional, shown to students in the extension)</span></label>
+        <label class="label" for="label-input" id="assessment-label-label"><span id="assessment-label-text"></span> <span id="label-optional-hint" style="font-weight:300; text-transform:none; letter-spacing:0;"></span></label>
         <input
           type="text"
           id="label-input"
           class="input-field"
-          placeholder="e.g. Grade 4 Reading, May 2026"
+          placeholder=""
           maxlength="120"
         >
       </div>
 
       <div id="audio-input-group" class="form-group">
-        <label class="label" for="file-input">Audio File (MP3 or WAV)</label>
+        <label id="audio-file-label" class="label" for="file-input"></label>
         <input
           type="file"
           id="file-input"
@@ -242,51 +242,51 @@
           accept=".mp3,audio/mpeg,.wav,audio/wav,audio/x-wav"
           onchange="handleFileSelect(this)"
         >
-        <span id="file-hint" class="label text-muted">Max 50 MB · MP3 or WAV. Audio is transcoded to 32kbps mono MP3 on the server.</span>
+        <span id="file-hint" class="label text-muted"></span>
       </div>
 
       <div id="text-input-group" class="form-group hidden">
-        <label class="label">Assessment Text</label>
-        <p style="font-size:0.85rem; color:var(--muted); line-height:1.5; margin-bottom:0.6rem;">Paste your assessment text, or paste images directly alongside the text. Screenshots work best for images from web pages.</p>
+        <label id="assessment-text-label" class="label"></label>
+        <p id="text-mode-hint" style="font-size:0.85rem; color:var(--muted); line-height:1.5; margin-bottom:0.6rem;"></p>
         <div
           id="text-content-editor"
           class="text-editor"
           contenteditable="true"
-          placeholder="Paste the passage or assessment text here…"
+          placeholder=""
         ></div>
-        <span id="text-hint" class="label text-muted">Paste text and images · Max 2 MB per image</span>
+        <span id="text-hint" class="label text-muted"></span>
       </div>
 
       <!-- Advanced Options — premium only, hidden for free tier -->
       <div id="advanced-options" class="hidden" style="margin-top:1.25rem; border-top: 1px solid var(--warm-mid); padding-top:1.25rem;">
-        <p class="label" style="margin-bottom:1rem;">Advanced Options</p>
+        <p id="advanced-options-label" class="label" style="margin-bottom:1rem;"></p>
 
         <div class="form-group">
-          <label class="label" for="exit-word-mode">Exit Word</label>
+          <label id="exit-word-label-section" class="label" for="exit-word-mode"></label>
           <select id="exit-word-mode" class="input-field" onchange="toggleCustomExitWord()">
-            <option value="random-short">Random — short word (default)</option>
-            <option value="random-long">Random — long word</option>
-            <option value="random-phrase">Random — two-word phrase</option>
-            <option value="random-pin">Random — numeric PIN</option>
-            <option value="custom">Custom — I'll type my own</option>
+            <option id="opt-ew-random-short" value="random-short"></option>
+            <option id="opt-ew-random-long" value="random-long"></option>
+            <option id="opt-ew-random-phrase" value="random-phrase"></option>
+            <option id="opt-ew-random-pin" value="random-pin"></option>
+            <option id="opt-ew-custom" value="custom"></option>
           </select>
         </div>
         <div id="custom-exit-word-group" class="form-group hidden">
-          <label class="label" for="custom-exit-word">Your Exit Word or Phrase</label>
-          <input type="text" id="custom-exit-word" class="input-field" placeholder="e.g. willow" maxlength="60">
+          <label id="custom-exit-word-label" class="label" for="custom-exit-word"></label>
+          <input type="text" id="custom-exit-word" class="input-field" placeholder="" maxlength="60">
         </div>
 
         <div class="form-group">
-          <label class="label" for="code-format">Access Code Format</label>
+          <label id="code-format-label" class="label" for="code-format"></label>
           <select id="code-format" class="input-field" onchange="toggleCustomCode()">
-            <option value="standard">Standard — ABC-123 (default)</option>
-            <option value="custom">Custom — I'll type my own</option>
+            <option id="opt-cf-standard" value="standard"></option>
+            <option id="opt-cf-custom" value="custom"></option>
           </select>
         </div>
         <div id="custom-code-group" class="form-group hidden">
-          <label class="label" for="custom-code">Your Access Code</label>
-          <input type="text" id="custom-code" class="input-field input-field--code" placeholder="e.g. SCIENCE7" maxlength="20">
-          <span class="label text-muted" style="text-transform:none; letter-spacing:0; font-size:0.8rem;">Letters and numbers only. Students will enter this exactly.</span>
+          <label id="custom-code-label" class="label" for="custom-code"></label>
+          <input type="text" id="custom-code" class="input-field input-field--code" placeholder="" maxlength="20">
+          <span id="custom-code-hint" class="label text-muted" style="text-transform:none; letter-spacing:0; font-size:0.8rem;"></span>
         </div>
       </div>
 
@@ -294,7 +294,7 @@
         <div class="upload-progress__bar">
           <div class="upload-progress__fill" id="progress-fill"></div>
         </div>
-        <span class="upload-progress__label" id="progress-label">Uploading…</span>
+        <span class="upload-progress__label" id="progress-label"></span>
       </div>
 
       <button
@@ -303,19 +303,18 @@
         onclick="handleUpload()"
         disabled
       >
-        Upload Assessment
       </button>
     </div>
 
     <!-- Uploads List -->
     <div class="card mt-4">
       <div class="card__header">
-        <p class="label">Your Uploads</p>
+        <p id="your-uploads-label" class="label"></p>
       </div>
 
       <div id="uploads-container">
         <div class="empty-state">
-          <p class="label">No assessments uploaded yet</p>
+          <p id="empty-state-text" class="label"></p>
         </div>
       </div>
     </div>
@@ -323,14 +322,14 @@
     <!-- Insights (paid tiers only) -->
     <div id="insights-card" class="card mt-4 hidden">
       <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
-        <p class="label">Insights</p>
+        <p id="insights-title" class="label"></p>
         <div style="display:flex; align-items:center; gap:1rem;">
-          <span class="label text-muted" style="text-transform:none; letter-spacing:0; font-size:0.72rem;">Data refreshes every 15 min</span>
-          <button id="btn-export-csv" class="btn btn--ghost btn--small" onclick="exportCsv()">Export CSV</button>
+          <span id="insights-refresh-note" class="label text-muted" style="text-transform:none; letter-spacing:0; font-size:0.72rem;"></span>
+          <button id="btn-export-csv" class="btn btn--ghost btn--small" onclick="exportCsv()"></button>
         </div>
       </div>
       <div id="insights-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p id="insights-loading-label" class="label"></p></div>
       </div>
     </div>
 
@@ -339,14 +338,14 @@
   <!-- Edit Label modal -->
   <div id="edit-label-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <p class="label" style="margin-bottom:0.75rem;">Rename Assessment</p>
+      <p id="rename-assessment-title" class="label" style="margin-bottom:0.75rem;"></p>
       <div class="form-group">
-        <label class="label" for="edit-label-input">Label</label>
+        <label class="label" for="edit-label-input" id="edit-label-modal-label"></label>
         <input type="text" id="edit-label-input" class="input-field" maxlength="120">
       </div>
       <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
-        <button class="btn btn--primary" onclick="saveEditLabel()">Save</button>
-        <button class="btn btn--ghost" onclick="document.getElementById('edit-label-modal').classList.add('hidden')">Cancel</button>
+        <button id="btn-rename-save" class="btn btn--primary" onclick="saveEditLabel()"></button>
+        <button id="btn-rename-cancel" class="btn btn--ghost" onclick="document.getElementById('edit-label-modal').classList.add('hidden')"></button>
       </div>
     </div>
   </div>
@@ -354,15 +353,15 @@
   <!-- Edit Expiry modal -->
   <div id="edit-expiry-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <p class="label" style="margin-bottom:0.75rem;">Edit Expiry</p>
+      <p id="edit-expiry-title" class="label" style="margin-bottom:0.75rem;"></p>
       <div class="form-group">
-        <label class="label" for="expiry-date-input">Expiry Date &amp; Time</label>
+        <label class="label" for="expiry-date-input" id="expiry-date-label"></label>
         <input type="datetime-local" id="expiry-date-input" class="input-field">
       </div>
       <div style="display:flex; gap:0.75rem; margin-top:0.5rem; flex-wrap:wrap;">
-        <button class="btn btn--primary" onclick="saveExpiryDate()">Save Date</button>
-        <button class="btn btn--ghost" onclick="extendSevenDays()">Extend 7 Days</button>
-        <button class="btn btn--ghost" onclick="document.getElementById('edit-expiry-modal').classList.add('hidden')">Cancel</button>
+        <button id="btn-save-date" class="btn btn--primary" onclick="saveExpiryDate()"></button>
+        <button id="btn-extend-7" class="btn btn--ghost" onclick="extendSevenDays()"></button>
+        <button id="btn-cancel-expiry" class="btn btn--ghost" onclick="document.getElementById('edit-expiry-modal').classList.add('hidden')"></button>
       </div>
     </div>
   </div>
@@ -370,53 +369,48 @@
   <!-- First-login modal: shown once until teacher enters their division name -->
   <div id="first-login-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <p class="label" style="margin-bottom:0.75rem;">One quick thing</p>
-      <h2>What division or school do you work for?</h2>
-      <p style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;">This helps us understand how AudioProctor is being used across Alberta.</p>
+      <p id="first-login-title" class="label" style="margin-bottom:0.75rem;"></p>
+      <h2 id="first-login-question"></h2>
+      <p id="first-login-description" style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;"></p>
       <!-- Honeypot — hidden from real users, filled by bots -->
       <input type="text" id="division-honeypot" style="display:none;" tabindex="-1" autocomplete="off">
       <div class="form-group">
         <div class="autocomplete-wrap">
           <input type="hidden" id="division-id-input" value="">
-          <input type="text" id="division-name-input" class="input-field" placeholder="Search for your division or school…" maxlength="120" autocomplete="off">
+          <input type="text" id="division-name-input" class="input-field" placeholder="" maxlength="120" autocomplete="off">
           <div id="division-autocomplete-dropdown" class="autocomplete-dropdown"></div>
         </div>
-        <p id="division-fallback-note" class="hidden" style="font-size:0.8rem; color:var(--muted); font-style:italic; margin-top:0.25rem;">
-          Can't find your division? You can still type it in — an admin will link it later.
-        </p>
+        <p id="division-fallback-note" class="hidden" style="font-size:0.8rem; color:var(--muted); font-style:italic; margin-top:0.25rem;"></p>
       </div>
       <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:1.25rem;">
         <input type="checkbox" id="tos-checkbox" style="margin-top:0.2rem; flex-shrink:0;" onchange="document.getElementById('btn-continue').disabled = !this.checked;">
-        <label for="tos-checkbox" style="font-size:0.85rem; color:var(--muted); line-height:1.5; cursor:pointer;">
-          I agree to the <a href="/site/terms.html" target="_blank" style="color:var(--ink);">Terms of Service</a>
-          and <a href="/site/privacy.html" target="_blank" style="color:var(--ink);">Privacy Policy</a>.
-        </label>
+        <label for="tos-checkbox" id="tos-label" style="font-size:0.85rem; color:var(--muted); line-height:1.5; cursor:pointer;"></label>
       </div>
-      <button id="btn-continue" class="btn btn--primary" onclick="submitDivisionSetup()" disabled>Continue</button>
+      <button id="btn-continue" class="btn btn--primary" onclick="submitDivisionSetup()" disabled></button>
     </div>
   </div>
 
   <!-- Request Premium / School / Division Modal -->
   <div id="request-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <p class="label" style="margin-bottom:0.75rem;">Request Access</p>
-      <h2 id="request-modal-title">Request Premium Access</h2>
-      <p style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;">Submit a request to the platform admin. You'll be notified by email when it's reviewed.</p>
+      <p id="request-modal-header" class="label" style="margin-bottom:0.75rem;"></p>
+      <h2 id="request-modal-title"></h2>
+      <p id="request-modal-desc" style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;"></p>
       <div class="form-group">
-        <label class="label" for="request-type-select">Request Type</label>
+        <label class="label" for="request-type-select" id="request-type-label"></label>
         <select id="request-type-select" class="input-field" onchange="updateRequestModalTitle()">
-          <option value="premium_trial">Premium Trial Extension</option>
-          <option value="school_plan">School Plan</option>
-          <option value="division_plan">Division Plan</option>
+          <option id="opt-rt-premium" value="premium_trial"></option>
+          <option id="opt-rt-school" value="school_plan"></option>
+          <option id="opt-rt-division" value="division_plan"></option>
         </select>
       </div>
       <div class="form-group">
-        <label class="label" for="request-message">Message <span style="font-weight:300; text-transform:none; letter-spacing:0;">(optional)</span></label>
-        <textarea id="request-message" class="input-field" rows="3" placeholder="Tell us about your school or division…" maxlength="500"></textarea>
+        <label class="label" for="request-message" id="request-message-label"><span id="request-message-text"></span> <span id="request-message-optional" style="font-weight:300; text-transform:none; letter-spacing:0;"></span></label>
+        <textarea id="request-message" class="input-field" rows="3" placeholder="" maxlength="500"></textarea>
       </div>
       <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
-        <button class="btn btn--primary" onclick="submitRequest()">Submit Request</button>
-        <button class="btn btn--ghost" onclick="document.getElementById('request-modal').classList.add('hidden')">Cancel</button>
+        <button id="btn-request-submit" class="btn btn--primary" onclick="submitRequest()"></button>
+        <button id="btn-request-cancel" class="btn btn--ghost" onclick="document.getElementById('request-modal').classList.add('hidden')"></button>
       </div>
     </div>
   </div>
@@ -440,6 +434,113 @@
   <script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
   <script defer src="/_vercel/speed-insights/script.js"></script>
   <script>
+    // ─── i18n: populate translated text ──────────────────────────────
+    function applyDashboardI18n() {
+      document.title = 'AudioProctor \u2014 ' + t('dashboard.uploadAssessment');
+      // Top bar nav
+      var el = document.getElementById('admin-nav-link');
+      if (el) el.textContent = t('nav.admin');
+      el = document.getElementById('school-admin-nav-link');
+      if (el) el.textContent = t('nav.schoolAdmin');
+      el = document.getElementById('div-admin-nav-link');
+      if (el) el.textContent = t('nav.divisionAdmin');
+      el = document.getElementById('nav-extension');
+      if (el) el.textContent = t('nav.extension');
+      el = document.getElementById('nav-settings');
+      if (el) el.textContent = t('nav.settings');
+      el = document.getElementById('btn-signout');
+      if (el) el.textContent = t('auth.signOut');
+
+      // Upload card
+      document.getElementById('upload-card-header').textContent = t('dashboard.uploadAssessment');
+      document.getElementById('assessment-type-label').textContent = t('dashboard.assessmentType');
+      document.getElementById('btn-toggle-audio').textContent = t('dashboard.typeAudio');
+      document.getElementById('btn-toggle-text').textContent = t('dashboard.typeText');
+      document.getElementById('assessment-label-text').textContent = t('dashboard.label');
+      document.getElementById('label-optional-hint').textContent = t('dashboard.labelHint');
+      document.getElementById('label-input').placeholder = t('dashboard.labelPlaceholder');
+      document.getElementById('audio-file-label').textContent = t('dashboard.audioLabel');
+      document.getElementById('file-hint').textContent = t('dashboard.audioHint', { bitrate: '32kbps' });
+      document.getElementById('assessment-text-label').textContent = t('dashboard.textLabel');
+      document.getElementById('text-mode-hint').textContent = t('dashboard.textModeHint');
+      document.getElementById('text-content-editor').setAttribute('placeholder', t('dashboard.textPlaceholder'));
+      document.getElementById('text-hint').textContent = t('dashboard.textHint');
+      document.getElementById('advanced-options-label').textContent = t('dashboard.advancedOptions.title');
+      document.getElementById('exit-word-label-section').textContent = t('dashboard.exitWordModeLabel');
+      document.getElementById('opt-ew-random-short').textContent = t('dashboard.exitWordRandomShort');
+      document.getElementById('opt-ew-random-long').textContent = t('dashboard.exitWordRandomLong');
+      document.getElementById('opt-ew-random-phrase').textContent = t('dashboard.exitWordRandomPhrase');
+      document.getElementById('opt-ew-random-pin').textContent = t('dashboard.exitWordRandomPin');
+      document.getElementById('opt-ew-custom').textContent = t('dashboard.exitWordCustom');
+      document.getElementById('custom-exit-word-label').textContent = t('dashboard.customExitWordLabel');
+      document.getElementById('custom-exit-word').placeholder = t('dashboard.exitWordPlaceholder');
+      document.getElementById('code-format-label').textContent = t('dashboard.codeFormatLabel');
+      document.getElementById('opt-cf-standard').textContent = t('dashboard.codeFormatStandard');
+      document.getElementById('opt-cf-custom').textContent = t('dashboard.codeFormatCustom');
+      document.getElementById('custom-code-label').textContent = t('dashboard.customCodeLabel');
+      document.getElementById('custom-code').placeholder = t('dashboard.accessCodePlaceholder');
+      document.getElementById('custom-code-hint').textContent = t('dashboard.customCodeHint');
+      document.getElementById('progress-label').textContent = t('dashboard.uploading');
+      document.getElementById('btn-upload').textContent = t('dashboard.uploadButton');
+
+      // Uploads list
+      document.getElementById('your-uploads-label').textContent = t('dashboard.tableHeaders.assessment');
+      document.getElementById('empty-state-text').textContent = t('dashboard.noUploads');
+
+      // Insights
+      document.getElementById('insights-title').textContent = t('dashboard.insightsTitle');
+      document.getElementById('insights-refresh-note').textContent = t('dashboard.insightsRefresh');
+      document.getElementById('btn-export-csv').textContent = t('dashboard.exportCSV');
+      document.getElementById('insights-loading-label').textContent = t('common.loading');
+
+      // Edit label modal
+      document.getElementById('rename-assessment-title').textContent = t('dashboard.renameAssessment');
+      document.getElementById('edit-label-modal-label').textContent = t('dashboard.renameLabel');
+      document.getElementById('btn-rename-save').textContent = t('common.save');
+      document.getElementById('btn-rename-cancel').textContent = t('common.cancel');
+
+      // Edit expiry modal
+      document.getElementById('edit-expiry-title').textContent = t('dashboard.extendExpiry');
+      document.getElementById('expiry-date-label').textContent = t('dashboard.extendLabel');
+      document.getElementById('btn-save-date').textContent = t('common.save') + ' ' + t('dashboard.expiry');
+      document.getElementById('btn-extend-7').textContent = t('dashboard.extendDays7');
+      document.getElementById('btn-cancel-expiry').textContent = t('common.cancel');
+
+      // First-login modal
+      document.getElementById('first-login-title').textContent = t('dashboard.firstLogin.title');
+      document.getElementById('first-login-question').textContent = t('dashboard.firstLogin.question');
+      document.getElementById('first-login-description').textContent = t('dashboard.firstLogin.description');
+      document.getElementById('division-name-input').placeholder = t('dashboard.firstLogin.placeholder');
+      document.getElementById('division-fallback-note').textContent = t('dashboard.firstLogin.fallbackNote');
+      // TOS label: built with innerHTML because it contains links
+      var tosLabel = document.getElementById('tos-label');
+      if (tosLabel) {
+        tosLabel.innerHTML = t('dashboard.firstLogin.tosAgreement', {
+          tosLink: '<a href="/site/terms.html" target="_blank" style="color:var(--ink);">' + t('common.termsOfService') + '</a>',
+          privacyLink: '<a href="/site/privacy.html" target="_blank" style="color:var(--ink);">' + t('common.privacyPolicy') + '</a>'
+        });
+      }
+      document.getElementById('btn-continue').textContent = t('dashboard.firstLogin.continue');
+
+      // Request modal
+      document.getElementById('request-modal-header').textContent = t('dashboard.requestAccess.title');
+      document.getElementById('request-modal-desc').textContent = t('dashboard.requestAccess.description');
+      document.getElementById('request-type-label').textContent = t('dashboard.requestAccess.typeLabel');
+      document.getElementById('opt-rt-premium').textContent = t('dashboard.requestAccess.premiumTrial');
+      document.getElementById('opt-rt-school').textContent = t('dashboard.requestAccess.schoolPlan');
+      document.getElementById('opt-rt-division').textContent = t('dashboard.requestAccess.divisionPlan');
+      document.getElementById('request-message-text').textContent = t('dashboard.requestAccess.messageLabel');
+      document.getElementById('request-message-optional').textContent = t('dashboard.requestAccess.messageOptional');
+      document.getElementById('request-message').placeholder = t('dashboard.requestAccess.placeholder');
+      document.getElementById('btn-request-submit').textContent = t('dashboard.requestAccess.submit');
+      document.getElementById('btn-request-cancel').textContent = t('common.cancel');
+
+      // Refresh title (may have been set by dynamic updateRequestModalTitle)
+      if (window.updateRequestModalTitle) updateRequestModalTitle();
+    }
+    window.i18nReady.then(applyDashboardI18n);
+    window.addEventListener('localechanged', applyDashboardI18n);
+
     (async () => {
       const user = await requireAuth();
       document.getElementById('user-email').textContent = user.email;
