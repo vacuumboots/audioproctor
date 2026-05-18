@@ -3,47 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy — AudioProctor</title>
+  <title id="page-title">Privacy Policy — AudioProctor</title>
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/site/site.css">
+  <script src="/site/js/i18n.js"></script>
 </head>
 <body>
 
 <div id="site-nav"></div>
 
+<!-- EN | FR toggle -->
+<div style="max-width:1100px; margin:0 auto; padding:0.75rem 2rem 0; display:flex; justify-content:flex-end;">
+  <span class="lang-toggle" id="lang-toggle"></span>
+</div>
+
 <div class="site-section" style="border-top: var(--border);">
   <div class="site-container">
-    <span class="section-label">Legal</span>
-    <h1 class="section-headline">Privacy Policy</h1>
-    <p class="label" style="margin-top:0.5rem;">Last updated: March 31, 2026</p>
+    <span class="section-label" id="section-label">Legal</span>
+    <h1 class="section-headline" id="page-headline">Privacy Policy</h1>
+    <p class="label" style="margin-top:0.5rem;" id="last-updated">Last updated: March 31, 2026</p>
 
-    <div class="prose" style="margin-top:2.5rem;">
+    <!-- ⚠️ Translator review notice (only shown for non-English locales) -->
+    <p id="legal-notice" class="label" style="margin-top:1rem; color:var(--accent); display:none;"></p>
 
-      <h2>What we collect</h2>
-      <p>AudioProctor collects two categories of data: teacher account information and anonymous session analytics.</p>
-      <p><strong>Teacher account information</strong>: your email address when you sign in with Google, and the display name and school or division name you choose to provide. This information is associated with your account and your uploaded audio files.</p>
-      <p><strong>Anonymous session analytics</strong>: when a student uses an access code to play an audio assessment, AudioProctor records a log of playback events for that session. These events include: code entered, playback started, playback paused, playback resumed, playback completed, audio replayed, exit word used, and session expired. Each event records its type, the time it occurred, and, for pause and replay events, the position in the audio (in seconds). No student identity is attached to any event at any level.</p>
+    <div class="prose" style="margin-top:2.5rem;" id="prose-content">
 
-      <h2>What we do not collect about students</h2>
-      <p>Students using AudioProctor are anonymous to the system. We do not collect student names, student IDs, Alberta Student Numbers (ASNs), device identifiers, IP addresses, or any information that could identify an individual student. Session events cannot be linked to a specific student. They record only that an event occurred, not who caused it. The same access code can be used by multiple students; AudioProctor does not distinguish between them.</p>
+      <h2 id="s-whatWeCollectTitle" data-en="What we collect">What we collect</h2>
+      <p id="s-whatWeCollectBody1" data-en="AudioProctor collects two categories of data: teacher account information and anonymous session analytics.">AudioProctor collects two categories of data: teacher account information and anonymous session analytics.</p>
+      <p id="s-whatWeCollectBody2" data-en="<strong>Teacher account information</strong>: your email address when you sign in with Google, and the display name and school or division name you choose to provide. This information is associated with your account and your uploaded audio files."><strong>Teacher account information</strong>: your email address when you sign in with Google, and the display name and school or division name you choose to provide. This information is associated with your account and your uploaded audio files.</p>
+      <p id="s-whatWeCollectBody3" data-en="<strong>Anonymous session analytics</strong>: when a student uses an access code to play an audio assessment, AudioProctor records a log of playback events for that session. These events include: code entered, playback started, playback paused, playback resumed, playback completed, audio replayed, exit word used, and session expired. Each event records its type, the time it occurred, and, for pause and replay events, the position in the audio (in seconds). No student identity is attached to any event at any level."><strong>Anonymous session analytics</strong>: when a student uses an access code to play an audio assessment, AudioProctor records a log of playback events for that session. These events include: code entered, playback started, playback paused, playback resumed, playback completed, audio replayed, exit word used, and session expired. Each event records its type, the time it occurred, and, for pause and replay events, the position in the audio (in seconds). No student identity is attached to any event at any level.</p>
 
-      <h2>How teacher data is used</h2>
-      <p>Your email address is used solely to associate your uploaded audio files and session analytics with your account. It is not shared with third parties, not used for marketing, and not sold. Session analytics, visible to you through the teacher dashboard, are also available in aggregate form to your school or division administrator if your account is attached to one. Division administrators see only school-level totals; they cannot view individual session events.</p>
+      <h2 id="s-noStudentDataTitle" data-en="What we do not collect about students">What we do not collect about students</h2>
+      <p id="s-noStudentDataBody" data-en="Students using AudioProctor are anonymous to the system. We do not collect student names, student IDs, Alberta Student Numbers (ASNs), device identifiers, IP addresses, or any information that could identify an individual student. Session events cannot be linked to a specific student. They record only that an event occurred, not who caused it. The same access code can be used by multiple students; AudioProctor does not distinguish between them.">Students using AudioProctor are anonymous to the system. We do not collect student names, student IDs, Alberta Student Numbers (ASNs), device identifiers, IP addresses, or any information that could identify an individual student. Session events cannot be linked to a specific student. They record only that an event occurred, not who caused it. The same access code can be used by multiple students; AudioProctor does not distinguish between them.</p>
 
-      <h2>Data storage</h2>
-      <p>Audio files, account data, and session analytics are stored with Supabase on infrastructure located in North America. All data in transit is encrypted via TLS. Audio files are stored in private buckets and are never publicly accessible.</p>
+      <h2 id="s-teacherDataTitle" data-en="How teacher data is used">How teacher data is used</h2>
+      <p id="s-teacherDataBody" data-en="Your email address is used solely to associate your uploaded audio files and session analytics with your account. It is not shared with third parties, not used for marketing, and not sold. Session analytics, visible to you through the teacher dashboard, are also available in aggregate form to your school or division administrator if your account is attached to one. Division administrators see only school-level totals; they cannot view individual session events.">Your email address is used solely to associate your uploaded audio files and session analytics with your account. It is not shared with third parties, not used for marketing, and not sold. Session analytics, visible to you through the teacher dashboard, are also available in aggregate form to your school or division administrator if your account is attached to one. Division administrators see only school-level totals; they cannot view individual session events.</p>
 
-      <h2>Data retention</h2>
-      <p>Audio files expire automatically based on the expiry window set at upload and are deleted at that time. Session analytics associated with an audio file are deleted when that file is deleted. If you delete your account, all audio files, session analytics, and account data are deleted immediately and permanently. You may delete your account at any time from the Settings page.</p>
+      <h2 id="s-storageTitle" data-en="Data storage">Data storage</h2>
+      <p id="s-storageBody" data-en="Audio files, account data, and session analytics are stored with Supabase on infrastructure located in North America. All data in transit is encrypted via TLS. Audio files are stored in private buckets and are never publicly accessible.">Audio files, account data, and session analytics are stored with Supabase on infrastructure located in North America. All data in transit is encrypted via TLS. Audio files are stored in private buckets and are never publicly accessible.</p>
 
-      <h2>Third-party services</h2>
-      <p>AudioProctor uses Google OAuth for authentication. Google's privacy policy governs that interaction. We do not use third-party advertising networks. Vercel hosts the application infrastructure; Supabase stores data; Resend delivers transactional emails.</p>
+      <h2 id="s-retentionTitle" data-en="Data retention">Data retention</h2>
+      <p id="s-retentionBody" data-en="Audio files expire automatically based on the expiry window set at upload and are deleted at that time. Session analytics associated with an audio file are deleted when that file is deleted. If you delete your account, all audio files, session analytics, and account data are deleted immediately and permanently. You may delete your account at any time from the Settings page.">Audio files expire automatically based on the expiry window set at upload and are deleted at that time. Session analytics associated with an audio file are deleted when that file is deleted. If you delete your account, all audio files, session analytics, and account data are deleted immediately and permanently. You may delete your account at any time from the Settings page.</p>
 
-      <h2>FOIPPA and ATIA</h2>
-      <p>AudioProctor is designed for use in Alberta school divisions subject to the Freedom of Information and Protection of Privacy Act (FOIPPA) and the Access to Information Act (ATIA). No student personal information is collected or stored. The anonymous session analytics described above do not constitute personal information as defined under FOIPPA because they cannot be used, alone or in combination with other information held by AudioProctor, to identify a specific individual. Teacher email addresses are processed under the authority of the school division's existing Google Workspace agreement. Divisions with specific data governance requirements are invited to contact us to discuss a data processing agreement.</p>
+      <h2 id="s-thirdPartyTitle" data-en="Third-party services">Third-party services</h2>
+      <p id="s-thirdPartyBody" data-en="AudioProctor uses Google OAuth for authentication. Google's privacy policy governs that interaction. We do not use third-party advertising networks. Vercel hosts the application infrastructure; Supabase stores data; Resend delivers transactional emails.">AudioProctor uses Google OAuth for authentication. Google's privacy policy governs that interaction. We do not use third-party advertising networks. Vercel hosts the application infrastructure; Supabase stores data; Resend delivers transactional emails.</p>
 
-      <h2>Contact</h2>
-      <p>Questions about this policy: <a href="mailto:hello@audioproctor.com" style="color:var(--ink);">hello@audioproctor.com</a></p>
+      <h2 id="s-foipaTitle" data-en="FOIPPA and ATIA">FOIPPA and ATIA</h2>
+      <p id="s-foipaBody" data-en="AudioProctor is designed for use in Alberta school divisions subject to the Freedom of Information and Protection of Privacy Act (FOIPPA) and the Access to Information Act (ATIA). No student personal information is collected or stored. The anonymous session analytics described above do not constitute personal information as defined under FOIPPA because they cannot be used, alone or in combination with other information held by AudioProctor, to identify a specific individual. Teacher email addresses are processed under the authority of the school division's existing Google Workspace agreement. Divisions with specific data governance requirements are invited to contact us to discuss a data processing agreement.">AudioProctor is designed for use in Alberta school divisions subject to the Freedom of Information and Protection of Privacy Act (FOIPPA) and the Access to Information Act (ATIA). No student personal information is collected or stored. The anonymous session analytics described above do not constitute personal information as defined under FOIPPA because they cannot be used, alone or in combination with other information held by AudioProctor, to identify a specific individual. Teacher email addresses are processed under the authority of the school division's existing Google Workspace agreement. Divisions with specific data governance requirements are invited to contact us to discuss a data processing agreement.</p>
+
+      <h2 id="s-contactTitle" data-en="Contact">Contact</h2>
+      <p id="s-contactBody" data-en="Questions about this policy: <a href=\"mailto:hello@audioproctor.com\" style=\"color:var(--ink);\">hello@audioproctor.com</a>">Questions about this policy: <a href="mailto:hello@audioproctor.com" style="color:var(--ink);">hello@audioproctor.com</a></p>
 
     </div>
   </div>
@@ -51,6 +60,123 @@
 
 <div id="site-footer"></div>
 <script src="/site/nav.js"></script>
+
+<!-- i18n render -->
+<script>
+(function () {
+  'use strict';
+
+  var EMAIL = 'hello@audioproctor.com';
+
+  function renderPrivacy() {
+    if (typeof window.t !== 'function') return;
+
+    // Title and meta
+    var titleEl = document.getElementById('page-title');
+    var title = window.t('privacy.metaTitle');
+    if (title) titleEl.textContent = title;
+
+    // Page content
+    setText('section-label', window.t('privacy.sectionLabel'));
+    setText('page-headline', window.t('privacy.pageTitle'));
+    setText('last-updated', window.t('privacy.lastUpdated'));
+
+    // Translator review notice (only visible in non-English locales)
+    var legalNotice = document.getElementById('legal-notice');
+    var legalNote = window.t('privacy.legalNote');
+    if (legalNote && legalNote !== 'privacy.legalNote') {
+      legalNotice.textContent = legalNote;
+      legalNotice.style.display = 'block';
+    } else {
+      legalNotice.style.display = 'none';
+    }
+
+    // Section content
+    setHtml('s-whatWeCollectTitle', window.t('privacy.sections.whatWeCollectTitle'));
+    setHtml('s-whatWeCollectBody1', window.t('privacy.sections.whatWeCollectBody1'));
+    setHtml('s-whatWeCollectBody2', window.t('privacy.sections.whatWeCollectBody2'));
+    setHtml('s-whatWeCollectBody3', window.t('privacy.sections.whatWeCollectBody3'));
+
+    setHtml('s-noStudentDataTitle', window.t('privacy.sections.noStudentDataTitle'));
+    setHtml('s-noStudentDataBody', window.t('privacy.sections.noStudentDataBody'));
+
+    setHtml('s-teacherDataTitle', window.t('privacy.sections.teacherDataTitle'));
+    setHtml('s-teacherDataBody', window.t('privacy.sections.teacherDataBody'));
+
+    setHtml('s-storageTitle', window.t('privacy.sections.storageTitle'));
+    setHtml('s-storageBody', window.t('privacy.sections.storageBody'));
+
+    setHtml('s-retentionTitle', window.t('privacy.sections.retentionTitle'));
+    setHtml('s-retentionBody', window.t('privacy.sections.retentionBody'));
+
+    setHtml('s-thirdPartyTitle', window.t('privacy.sections.thirdPartyTitle'));
+    setHtml('s-thirdPartyBody', window.t('privacy.sections.thirdPartyBody'));
+
+    setHtml('s-foipaTitle', window.t('privacy.sections.foipaTitle'));
+    setHtml('s-foipaBody', window.t('privacy.sections.foipaBody'));
+
+    setHtml('s-contactTitle', window.t('privacy.sections.contactTitle'));
+    // Contact body: wrap email in mailto link
+    var contactBody = window.t('privacy.sections.contactBody') || '';
+    var contactEl = document.getElementById('s-contactBody');
+    if (contactEl) {
+      contactEl.innerHTML = contactBody.replace(
+        EMAIL,
+        '<a href="mailto:' + EMAIL + '" style="color:var(--ink);">' + EMAIL + '</a>'
+      );
+    }
+  }
+
+  function setText(id, value) {
+    var el = document.getElementById(id);
+    if (el && value) el.textContent = value;
+  }
+
+  function setHtml(id, value) {
+    var el = document.getElementById(id);
+    if (el && value) el.innerHTML = value;
+  }
+
+  // ── EN | FR Toggle ──
+  function initToggle() {
+    var container = document.getElementById('lang-toggle');
+    if (!container) return;
+
+    function renderToggle() {
+      var current = window.getLocale();
+      var isEn = current === 'en';
+      container.innerHTML =
+        '<button class="lang-btn' + (isEn ? ' active' : '') + '" data-lang="en" aria-label="English">EN</button>' +
+        '<span class="lang-sep">|</span>' +
+        '<button class="lang-btn' + (!isEn ? ' active' : '') + '" data-lang="fr" aria-label="Fran\u00e7ais">FR</button>';
+
+      container.querySelectorAll('.lang-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var lang = btn.getAttribute('data-lang');
+          if (lang === window.getLocale()) return;
+          window.setLocale(lang).then(function () {
+            renderToggle();
+            renderPrivacy();
+          });
+        });
+      });
+    }
+
+    renderToggle();
+  }
+
+  // ── Init ──
+  window.i18nReady.then(function () {
+    renderPrivacy();
+    initToggle();
+  });
+
+  window.addEventListener('localechanged', function () {
+    renderPrivacy();
+  });
+})();
+</script>
+
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
