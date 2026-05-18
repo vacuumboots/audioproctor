@@ -18,14 +18,14 @@ function formatExpiry(expiresAt) {
   const expires = new Date(expiresAt);
   const diff    = expires - now;
 
-  if (diff < 0) return { text: 'Expired', expired: true };
+  if (diff < 0) return { text: t('dashboard.expired'), expired: true };
 
   const days  = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-  if (days > 0)  return { text: `${days}d left`, expired: false };
-  if (hours > 0) return { text: `${hours}h left`, expired: false };
-  return { text: 'Expiring soon', expired: false };
+  if (days > 0)  return { text: t('dashboard.expiryDays', { days, plural: days > 1 ? 's' : '' }), expired: false };
+  if (hours > 0) return { text: t('dashboard.expiryHours', { hours, plural: hours > 1 ? 's' : '' }), expired: false };
+  return { text: t('dashboard.expirySoon'), expired: false };
 }
 
 function formatDuration(seconds) {
