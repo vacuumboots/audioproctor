@@ -3,108 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AudioProctor — Audio and text accommodation for assessments</title>
-  <meta name="description" content="A Chrome extension and teacher dashboard that delivers audio and text accommodation for assessed students on managed Chromebooks. Built for Alberta schools.">
+  <title id="page-title">AudioProctor — Audio and text accommodation for assessments</title>
+  <meta name="description" id="page-desc" content="A Chrome extension and teacher dashboard that delivers audio and text accommodation for assessed students on managed Chromebooks. Built for Alberta schools.">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/site/site.css">
+  <script src="/site/js/i18n.js"></script>
 </head>
 <body>
 
 <div id="site-nav"></div>
 
-<!-- ── Hero ── -->
+<!-- ════════ Hero ════════ -->
 <div class="site-section hero" style="border-top: none;">
   <div class="site-container">
-    <span class="hero__eyebrow">Built for Alberta schools</span>
-    <h1 class="hero__headline">Audio and text accommodation for provincial assessments.</h1>
-    <p class="hero__sub">A Chrome extension and teacher dashboard that delivers audio and text support for assessed students on managed Chromebooks, without storing any student data.</p>
+    <span class="hero__eyebrow" data-i18n="index.hero.eyebrow">Built for Alberta schools</span>
+    <h1 class="hero__headline" data-i18n="index.hero.headline">Audio and text accommodation for provincial assessments.</h1>
+    <p class="hero__sub" data-i18n="index.hero.subtitle">A Chrome extension and teacher dashboard that delivers audio and text support for assessed students on managed Chromebooks, without storing any student data.</p>
     <div class="hero__ctas">
-      <a href="/contact" class="btn btn--primary">Schedule a Demo</a>
-      <a href="https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj" class="btn btn--ghost" target="_blank" rel="noopener">Get the Extension</a>
-      <a href="#how-it-works" class="hero__cta-link">How it works &darr;</a>
+      <a href="/contact" class="btn btn--primary" data-i18n="index.hero.scheduleDemo">Schedule a Demo</a>
+      <a href="https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj" class="btn btn--ghost" target="_blank" rel="noopener" data-i18n="index.hero.getExtension">Get the Extension</a>
+      <a href="#how-it-works" class="hero__cta-link" data-i18n="index.hero.howItWorks">How it works &darr;</a>
     </div>
   </div>
 </div>
 
-<!-- ── How It Works ── -->
+<!-- ════════ How It Works ════════ -->
 <div class="site-section" id="how-it-works">
   <div class="site-container">
-    <span class="section-label">How it works</span>
-    <h2 class="section-headline">Three steps. No IT ticket required.</h2>
+    <span class="section-label" data-i18n="index.howItWorks.label">How it works</span>
+    <h2 class="section-headline" data-i18n="index.howItWorks.headline">Three steps. No IT ticket required.</h2>
     <div class="three-col">
       <div class="three-col__item">
         <span class="three-col__number">01</span>
-        <p class="three-col__title">Teacher uploads</p>
-        <p class="three-col__body">Sign in with your school Google account, upload an audio file or paste assessment text, and get a short access code and exit word. Takes under a minute.</p>
+        <p class="three-col__title" data-i18n="index.howItWorks.step1Title">Teacher uploads</p>
+        <p class="three-col__body" data-i18n="index.howItWorks.step1Body">Sign in with your school Google account, upload an audio file or paste assessment text, and get a short access code and exit word. Takes under a minute.</p>
       </div>
       <div class="three-col__item">
         <span class="three-col__number">02</span>
-        <p class="three-col__title">Student enters the code</p>
-        <p class="three-col__body">The student types the access code into the AudioProctor extension on their Chromebook. A locked fullscreen player opens for audio, or a read-aloud text reader for text assessments.</p>
+        <p class="three-col__title" data-i18n="index.howItWorks.step2Title">Student enters the code</p>
+        <p class="three-col__body" data-i18n="index.howItWorks.step2Body">The student types the access code into the AudioProctor extension on their Chromebook. A locked fullscreen player opens for audio, or a read-aloud text reader for text assessments.</p>
       </div>
       <div class="three-col__item">
         <span class="three-col__number">03</span>
-        <p class="three-col__title">Teacher unlocks to exit</p>
-        <p class="three-col__body">When the assessment is done, the teacher reads the exit word aloud. The student types it in, the player closes, and the Chromebook returns to normal.</p>
+        <p class="three-col__title" data-i18n="index.howItWorks.step3Title">Teacher unlocks to exit</p>
+        <p class="three-col__body" data-i18n="index.howItWorks.step3Body">When the assessment is done, the teacher reads the exit word aloud. The student types it in, the player closes, and the Chromebook returns to normal.</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ── Why AudioProctor ── -->
+<!-- ════════ Why AudioProctor ════════ -->
 <div class="site-section">
   <div class="site-container">
-    <span class="section-label">Why AudioProctor</span>
-    <h2 class="section-headline">Designed around a real gap in how assessments work.</h2>
+    <span class="section-label" data-i18n="index.why.label">Why AudioProctor</span>
+    <h2 class="section-headline" data-i18n="index.why.headline">Designed around a real gap in how assessments work.</h2>
     <div class="three-col">
       <div class="three-col__item">
-        <div class="value-col__title">No student data collected</div>
-        <p class="three-col__body">Students are anonymous to the system. No names, no student IDs, no device identifiers. This isn't just a policy. It's structural. There's no place in the database to store student information.</p>
+        <div class="value-col__title" data-i18n="index.why.feature1Title">No student data collected</div>
+        <p class="three-col__body" data-i18n="index.why.feature1Body">Students are anonymous to the system. No names, no student IDs, no device identifiers. This isn't just a policy. It's structural. There's no place in the database to store student information.</p>
       </div>
       <div class="three-col__item">
-        <div class="value-col__title">Deployed by IT, not installed by teachers</div>
-        <p class="three-col__body">The Chrome extension is force-installed via Google Admin Console. Every Chromebook in the division gets it automatically. Teachers never touch a settings page.</p>
+        <div class="value-col__title" data-i18n="index.why.feature2Title">Deployed by IT, not installed by teachers</div>
+        <p class="three-col__body" data-i18n="index.why.feature2Body">The Chrome extension is force-installed via Google Admin Console. Every Chromebook in the division gets it automatically. Teachers never touch a settings page.</p>
       </div>
       <div class="three-col__item">
-        <div class="value-col__title">Built for how assessments actually work</div>
-        <p class="three-col__body">Supports both audio and text-based accommodations in a single tool. The access code model, the lockdown player, and the exit word were all designed around the real friction of delivering accommodations in the classroom.</p>
+        <div class="value-col__title" data-i18n="index.why.feature3Title">Built for how assessments actually work</div>
+        <p class="three-col__body" data-i18n="index.why.feature3Body">Supports both audio and text-based accommodations in a single tool. The access code model, the lockdown player, and the exit word were all designed around the real friction of delivering accommodations in the classroom.</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ── Pricing ── -->
+<!-- ════════ Pricing ════════ -->
 <div class="site-section" id="pricing">
   <div class="site-container">
-    <span class="section-label">Pricing</span>
-    <h2 class="section-headline">Pricing that fits how schools actually work.</h2>
-    <p class="section-intro">Whether you're a single teacher, a school spending from a minibudget, or a division deploying to every Chromebook at once, there's a tier for how you actually make decisions.</p>
+    <span class="section-label" data-i18n="index.pricing.label">Pricing</span>
+    <h2 class="section-headline" data-i18n="index.pricing.headline">Pricing that fits how schools actually work.</h2>
+    <p class="section-intro" data-i18n="index.pricing.intro">Whether you're a single teacher, a school spending from a minibudget, or a division deploying to every Chromebook at once, there's a tier for how you actually make decisions.</p>
 
     <div class="pricing-grid">
 
       <!-- Free -->
       <div class="pricing-tier">
-        <span class="pricing-tier__name">Free — Individual Teacher</span>
-        <div class="pricing-tier__price">$0</div>
-        <p class="pricing-tier__price-note">Always free. No credit card.</p>
-        <ul class="pricing-tier__features">
+        <span class="pricing-tier__name" data-i18n="index.pricing.free.name">Free — Individual Teacher</span>
+        <div class="pricing-tier__price" data-i18n="index.pricing.free.price">$0</div>
+        <p class="pricing-tier__price-note" data-i18n="index.pricing.free.priceNote">Always free. No credit card.</p>
+        <ul class="pricing-tier__features" data-i18n-features="index.pricing.free.features">
           <li>1 teacher account</li>
           <li>3 uploads per calendar month</li>
           <li>7-day expiry (no override)</li>
           <li>Randomly assigned exit words and access codes</li>
           <li>No analytics</li>
         </ul>
-        <p class="pricing-tier__tagline">Enough to run real assessments and decide if AudioProctor is right for your school.</p>
+        <p class="pricing-tier__tagline" data-i18n="index.pricing.free.tagline">Enough to run real assessments and decide if AudioProctor is right for your school.</p>
         <div style="margin-top:1.5rem;">
-          <a href="https://app.audioproctor.com" class="btn btn--ghost">Sign in to get started</a>
+          <a href="https://app.audioproctor.com" class="btn btn--ghost" data-i18n="index.pricing.free.cta">Sign in to get started</a>
         </div>
       </div>
 
       <!-- Teacher Premium -->
       <div class="pricing-tier">
-        <span class="pricing-tier__name">Teacher Premium</span>
-        <p class="pricing-tier__price-note">1-month free trial included</p>
-        <ul class="pricing-tier__features">
+        <span class="pricing-tier__name" data-i18n="index.pricing.premium.name">Teacher Premium</span>
+        <p class="pricing-tier__price-note" data-i18n="index.pricing.premium.priceNote">1-month free trial included</p>
+        <ul class="pricing-tier__features" data-i18n-features="index.pricing.premium.features">
           <li>1 teacher account</li>
           <li>Unlimited uploads</li>
           <li>Higher quality audio (128kbps encoding)</li>
@@ -112,34 +113,34 @@
           <li>Custom exit words and access codes</li>
           <li>Basic session analytics and CSV export</li>
         </ul>
-        <p class="pricing-tier__tagline">For teachers whose school or division isn't on a plan yet.</p>
+        <p class="pricing-tier__tagline" data-i18n="index.pricing.premium.tagline">For teachers whose school or division isn't on a plan yet.</p>
         <div style="margin-top:1.5rem;">
-          <a href="https://app.audioproctor.com/login.html" class="btn btn--ghost">Sign in to get started</a>
+          <a href="https://app.audioproctor.com/login.html" class="btn btn--ghost" data-i18n="index.pricing.premium.cta">Sign in to get started</a>
         </div>
       </div>
 
       <!-- School -->
       <div class="pricing-tier">
-        <span class="pricing-tier__name">School</span>
-        <p class="pricing-tier__price-note">Contact us for pricing</p>
-        <ul class="pricing-tier__features">
+        <span class="pricing-tier__name" data-i18n="index.pricing.school.name">School</span>
+        <p class="pricing-tier__price-note" data-i18n="index.pricing.school.priceNote">Contact us for pricing</p>
+        <ul class="pricing-tier__features" data-i18n-features="index.pricing.school.features">
           <li>All Teacher Premium features</li>
           <li>Up to 50 teacher accounts</li>
           <li>School admin role: invite and remove teachers</li>
           <li>School-wide usage report</li>
           <li>Single annual invoice or credit card</li>
         </ul>
-        <p class="pricing-tier__tagline">For principals spending from a school minibudget.</p>
+        <p class="pricing-tier__tagline" data-i18n="index.pricing.school.tagline">For principals spending from a school minibudget.</p>
         <div style="margin-top:1.5rem;">
-          <a href="/contact" class="btn btn--ghost">Request a quote</a>
+          <a href="/contact" class="btn btn--ghost" data-i18n="index.pricing.school.cta">Request a quote</a>
         </div>
       </div>
 
       <!-- Division -->
       <div class="pricing-tier pricing-tier--featured">
-        <span class="pricing-tier__name">Division — Annual Contract</span>
-        <p class="pricing-tier__price-note">Contact us for pricing</p>
-        <ul class="pricing-tier__features">
+        <span class="pricing-tier__name" data-i18n="index.pricing.division.name">Division — Annual Contract</span>
+        <p class="pricing-tier__price-note" data-i18n="index.pricing.division.priceNote">Contact us for pricing</p>
+        <ul class="pricing-tier__features" data-i18n-features="index.pricing.division.features">
           <li>Unlimited teacher accounts across all schools</li>
           <li>All features including analytics and customization</li>
           <li>Division admin role and school grouping</li>
@@ -148,31 +149,92 @@
           <li>Priority support and onboarding call</li>
           <li>Single annual invoice to the division office</li>
         </ul>
+        <p class="pricing-tier__tagline" data-i18n="index.pricing.division.tagline">For divisions deploying to every Chromebook at once.</p>
         <div style="margin-top:1.5rem;">
-          <a href="/contact" class="btn btn--primary" style="background:var(--paper);color:var(--ink);border-color:var(--paper);">Request a pilot</a>
+          <a href="/contact" class="btn btn--primary" style="background:var(--paper);color:var(--ink);border-color:var(--paper);" data-i18n="index.pricing.division.cta">Request a pilot</a>
         </div>
       </div>
 
     </div>
 
-    <p class="pricing-footnote">All prices in CAD. Division pricing is by annual invoice. Teacher Premium and School tiers are self-serve via credit card (coming soon: <a href="/contact" style="color:var(--muted);">contact us</a> to purchase in the meantime).</p>
+    <p class="pricing-footnote" data-i18n-footnote></p>
 
   </div>
 </div>
 
-<!-- ── CTA band ── -->
+<!-- ════════ CTA band ════════ -->
 <div class="cta-band">
   <div class="site-container">
-    <span class="section-label" style="color:var(--warm-mid);">Get in touch</span>
-    <h2 class="section-headline">See it in your division.</h2>
-    <p class="section-intro">A 20-minute demo covers the teacher upload flow, the student experience, and the IT deployment process from the Google Admin Console. No slides.</p>
-    <a href="/contact" class="btn btn--primary">Schedule a Demo</a>
+    <span class="section-label" style="color:var(--warm-mid);" data-i18n="index.ctaBand.label">Get in touch</span>
+    <h2 class="section-headline" data-i18n="index.ctaBand.headline">See it in your division.</h2>
+    <p class="section-intro" data-i18n="index.ctaBand.subtitle">A 20-minute demo covers the teacher upload flow, the student experience, and the IT deployment process from the Google Admin Console. No slides.</p>
+    <a href="/contact" class="btn btn--primary" data-i18n="index.ctaBand.button">Schedule a Demo</a>
   </div>
 </div>
 
 <div id="site-footer"></div>
 
 <script src="/site/nav.js"></script>
+
+<!-- ── i18n rendering ── -->
+<script>
+(function () {
+  'use strict';
+
+  function renderPage() {
+    var t = window.t || function (k) { return k; };
+
+    // Document title
+    var titleEl = document.getElementById('page-title');
+    if (titleEl) titleEl.textContent = t('index.metaTitle');
+
+    // Meta description
+    var descEl = document.getElementById('page-desc');
+    if (descEl) descEl.setAttribute('content', t('index.metaDescription'));
+
+    // Simple text replacements via data-i18n
+    var els = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < els.length; i++) {
+      var key = els[i].getAttribute('data-i18n');
+      els[i].textContent = t(key);
+    }
+
+    // Pricing features arrays via data-i18n-features
+    var featureLists = document.querySelectorAll('[data-i18n-features]');
+    for (var i = 0; i < featureLists.length; i++) {
+      var list = featureLists[i];
+      var featureKey = list.getAttribute('data-i18n-features');
+      var features = window.resolveKey ? window.resolveKey(featureKey) : null;
+      if (features && Array.isArray(features)) {
+        list.innerHTML = features.map(function (f) {
+          return '<li>' + f + '</li>';
+        }).join('');
+      }
+    }
+
+    // Pricing footnote — needs a link inside the translated text
+    var footnoteEl = document.querySelector('[data-i18n-footnote]');
+    if (footnoteEl) {
+      footnoteEl.innerHTML = t('index.pricing.footnote', {
+        contactUrl: '<a href="/contact" style="color:var(--muted);">' + t('common.learnMore') + '</a>'
+      });
+    }
+  }
+
+  // Render on initial load
+  if (window.i18nReady) {
+    window.i18nReady.then(renderPage);
+  } else {
+    renderPage();
+  }
+
+  // Re-render on locale change
+  window.addEventListener('localechanged', function () {
+    renderPage();
+  });
+})();
+</script>
+
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
