@@ -36,6 +36,7 @@ Check off items as you complete them.
 - [x] Run migration 023 (`audio_normalization`) in Supabase SQL Editor
 - [x] Run migration 024 (`onboarding_emails`) in Supabase SQL Editor
 - [x] Run migration 025 (`platform_admin_rls`) in Supabase SQL Editor
+- [x] Run migration 026 (`alberta_schools`) in Supabase SQL Editor — 91 divisions + 2,318 schools
 - [x] Rotate Supabase `service_role` key after credential leak (2026-05-09)
 - [x] Update `SUPABASE_SERVICE_ROLE_KEY` in Vercel env vars (all 3 environments)
 - [x] Update `.env.local` with new service role key

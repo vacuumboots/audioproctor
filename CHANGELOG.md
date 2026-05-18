@@ -5,6 +5,12 @@ All notable changes to AudioProctor are documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Alberta schools and divisions pre-populated** — migration 026 inserts 91 divisions
+  and 2,318 schools from Alberta Education's 2024/2025 enrolment data. Includes all
+  public, separate (Catholic), charter, francophone, and provincial authorities plus a
+  synthetic "Alberta Independent Schools" division grouping 316 private schools.
+  Deterministic UUIDs make the migration idempotent. Source: Alberta Open Government
+  Portal.
 - Email allowlisting via `api/check-access.js` — new signups are gated against
   `ALLOWED_EMAIL_PATTERN` env var (regex). Existing users grandfathered. No
   pattern set = open to everyone.

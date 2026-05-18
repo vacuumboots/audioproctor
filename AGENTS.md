@@ -50,7 +50,7 @@ No build step. No bundler. No framework. Files are served as-is.
 | `extension/popup.js` | Validates access code, calls `/api/session`, stores in `chrome.storage.session` |
 | `extension/player.js` | Fullscreen audio player + text assessment with TTS read-aloud (voice selection, speed, paragraph navigation, inline images) |
 | `extension/lib/sanitize.js` | Minimal HTML sanitizer for text assessment content |
-| `supabase/migrations/` | Sequential SQL migrations (004–025). Run manually in Supabase SQL Editor. |
+| `supabase/migrations/` | Sequential SQL migrations (004–026). Run manually in Supabase SQL Editor. |
 | `site/` | Marketing pages (about, contact, privacy, terms) |
 | `vercel.json` | URL rewrites: `/about` → `site/about.html`, `/css/*` → `app/css/*` etc. |
 | `scripts/pre-push` | Doc gate: blocks push if AGENTS.md, CHANGELOG.md, ROADMAP.md, or USERSTEPS.md have drifted from the codebase. Runs automatically on every `git push`. Skip with `git push --no-verify`. |

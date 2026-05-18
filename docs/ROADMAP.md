@@ -168,6 +168,9 @@ recorded. All events are anonymous by design.
 - [x] **Update `ensureProfile()`** — added `getEffectiveTier()` to `js/auth.js`;
   `loadQuota()` and `handleUpload()` in `dashboard.js` now use it instead of
   reading `profiles.tier` directly.
+- [x] **Alberta schools and divisions pre-populated** — migration 026 seeds 91
+  divisions and 2,318 schools from Alberta Education enrolment data. Admin dropdowns
+  are immediately usable for attaching teachers to real schools/divisions.
 
 ---
 
