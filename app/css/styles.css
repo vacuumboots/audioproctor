@@ -158,6 +158,37 @@ code, .monospace {
   justify-content: space-between;
 }
 
+/* ─── Language Toggle ────────────────────────────────────────────── */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+.lang-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+.lang-btn.active {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.lang-btn:hover { color: var(--ink); }
+.lang-sep {
+  color: var(--muted);
+  user-select: none;
+}
+
 /* ─── Buttons ───────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;

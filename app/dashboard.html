@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AudioProctor — Dashboard</title>
+  <script type="module" src="/js/i18n.js"></script>
   <link rel="stylesheet" href="/css/styles.css">
   <style>
     .tier-badge {
@@ -187,6 +188,7 @@
           <a id="div-admin-nav-link" href="/division-admin.html" class="btn btn--ghost btn--small hidden">Division Admin</a>
           <a href="https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj" target="_blank" rel="noopener" class="btn btn--ghost btn--small">Extension</a>
           <a href="/settings.html" class="btn btn--ghost btn--small">Settings</a>
+          <span class="lang-toggle" id="lang-toggle"></span>
           <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
         </div>
       </div>
@@ -423,6 +425,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
   <script src="/js/supabase-client.js"></script>
   <script src="/js/auth.js"></script>
+  <script src="/js/language-toggle.js"></script>
   <!-- dashboard module splits -->
   <script src="/js/dashboard-state.js"></script>
   <script src="/js/dashboard-utils.js"></script>

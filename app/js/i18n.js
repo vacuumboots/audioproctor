@@ -95,3 +95,9 @@ async function setLocale(locale) {
 const initPromise = loadLocale(currentLocale);
 
 export { t, getLocale, setLocale, initPromise, loadLocale };
+
+// Expose on window so regular (non-module) scripts can access them
+window.t = t;
+window.getLocale = getLocale;
+window.setLocale = setLocale;
+window.i18nReady = initPromise;

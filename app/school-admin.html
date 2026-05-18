@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AudioProctor — School Admin</title>
+  <script type="module" src="/js/i18n.js"></script>
   <link rel="stylesheet" href="/css/styles.css">
   <style>
     .stats-row {
@@ -89,6 +90,7 @@
           <span id="admin-email" class="label"></span>
           <a href="/dashboard.html" class="btn btn--ghost btn--small">My Dashboard</a>
           <a href="/settings.html" class="btn btn--ghost btn--small">Settings</a>
+          <span class="lang-toggle" id="lang-toggle"></span>
           <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
         </div>
       </div>
@@ -186,6 +188,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="/js/supabase-client.js"></script>
   <script src="/js/auth.js"></script>
+  <script src="/js/language-toggle.js"></script>
   <script src="/js/school-admin.js"></script>
   <script src="/js/content-browser.js"></script>
   <script src="/js/school-admin-content.js"></script>

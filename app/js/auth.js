@@ -64,21 +64,29 @@ async function ensureProfile(userId, accessToken) {
 
   const { data } = await supabaseClient
     .from('profiles')
-    .select('id')
+    .select('id, lang')
     .eq('id', userId)
     .maybeSingle();
+  let profileLang = data?.lang || 'en';
   if (!data) {
-    const lang        = (navigator.languages?.[0] || navigator.language || '');
-    const countryCode = lang.includes('-') ? lang.split('-').pop().toUpperCase() : null;
-    const expiresAt   = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const browserLang  = (navigator.languages?.[0] || navigator.language || '');
+    const countryCode  = browserLang.includes('-') ? browserLang.split('-').pop().toUpperCase() : null;
+    const detectedLang = browserLang.startsWith('fr') ? 'fr' : 'en';
+    const expiresAt    = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     await supabaseClient.from('profiles').insert({
       id: userId,
       country_code: countryCode,
+      lang: detectedLang,
       tier: 'premium',
       expires_at: expiresAt
     });
+    profileLang = detectedLang;
   }
-  return { allowed: true };
+  // Activate the correct locale (i18n.js must be loaded first)
+  if (window.setLocale) {
+    await window.setLocale(profileLang);
+  }
+  return { allowed: true, lang: profileLang };
 }
 
 // Returns the teacher's effective tier, resolving division → school → teacher → free.
