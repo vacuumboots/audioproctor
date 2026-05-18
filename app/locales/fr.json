@@ -326,7 +326,8 @@
     "loadAssessmentDetailsFailed": "Impossible de charger les détails de l'évaluation.",
     "duplicateFailed": "Impossible de dupliquer l'évaluation : {error}",
     "resetStatusFailed": "Impossible de réinitialiser le statut : {error}",
-    "audioUploadFailed": "Échec du téléversement audio : {error}"
+    "audioUploadFailed": "Échec du téléversement audio : {error}",
+    "retryAlert": "Échec de la nouvelle tentative de normalisation : {error}"
   },
   "admin": {},
   "player": {},

@@ -325,7 +325,8 @@
       "customCode": "Your Access Code",
       "customCodeHint": "Letters and numbers only. Students will enter this exactly."
     },
-    "audioUploadFailed": "Audio upload failed: {error}"
+    "audioUploadFailed": "Audio upload failed: {error}",
+    "retryAlert": "Normalization retry failed: {error}"
   },
   "admin": {},
   "player": {},

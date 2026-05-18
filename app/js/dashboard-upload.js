@@ -13,7 +13,7 @@ async function uploadInlineImages(teacherId, accessCode) {
               : 'jpg';
     const storagePath = teacherId + '/' + accessCode + '/img_' + i + '.' + ext;
 
-    showProgress(10 + Math.round((i / pendingImages.length) * 70), 'Uploading image ' + (i + 1) + ' of ' + pendingImages.length + '…');
+    showProgress(10 + Math.round((i / pendingImages.length) * 70), t('dashboard.uploadingImage', { current: i + 1, total: pendingImages.length }));
 
     const { error } = await supabaseClient.storage
       .from('assessment-images')
@@ -22,7 +22,7 @@ async function uploadInlineImages(teacherId, accessCode) {
         upsert: false,
       });
 
-    if (error) throw new Error('Image upload failed: ' + error.message);
+    if (error) throw new Error(t('dashboard.imageUploadFailed', { error: error.message }));
 
     totalBytes += blob.size;
   }
@@ -102,12 +102,12 @@ async function handleUpload() {
       textContent = normalizeTextContent(raw);
       if ((!textContent || textContent.length === 0) && pendingImages.length === 0) {
         btn.disabled = false;
-        showUploadNotice('Please paste some assessment text or images.', 'error');
+        showUploadNotice(t('dashboard.textEmpty'), 'error');
         return;
       }
       if (textContent.length > 25000) {
         btn.disabled = false;
-        showUploadNotice('Text is too long. Maximum 25,000 characters.', 'error');
+        showUploadNotice(t('dashboard.textTooLong'), 'error');
         return;
       }
       textCharCount = textContent.length;
@@ -127,7 +127,7 @@ async function handleUpload() {
         if (storageUsed + totalImageMB > 50) {
           btn.disabled = false;
           showUploadNotice(
-            'Images (' + totalImageMB.toFixed(1) + ' MB) would exceed your 50 MB storage limit. You have ' + (50 - storageUsed).toFixed(1) + ' MB remaining.',
+            t('dashboard.storageExceededImages', { size: totalImageMB.toFixed(1), remaining: (50 - storageUsed).toFixed(1) }),
             'error'
           );
           return;
@@ -152,7 +152,7 @@ async function handleUpload() {
         .eq('filename', dbFilename)
         .maybeSingle();
       if (existing) {
-        const proceed = confirm(`You already have an upload named "${dbFilename}". Upload another copy anyway?`);
+        const proceed = confirm(t('dashboard.duplicateConfirm', { name: dbFilename }));
         if (!proceed) { btn.disabled = false; return; }
       }
 
@@ -169,7 +169,7 @@ async function handleUpload() {
         if (storageUsed + estimatedUploadMb > 50) {
           btn.disabled = false;
           showUploadNotice(
-            `This file (${estimatedUploadMb.toFixed(1)} MB) would exceed your 50 MB storage limit. You've used ${storageUsed.toFixed(1)} of 50 MB.`,
+            t('dashboard.storageExceeded', { size: estimatedUploadMb.toFixed(1), used: storageUsed.toFixed(1) }),
             'error'
           );
           return;
@@ -191,7 +191,7 @@ async function handleUpload() {
         const reset    = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const resetFmt = reset.toLocaleDateString('en-CA', { month: 'long', day: 'numeric' });
         showUploadNotice(
-          `You've used all 3 uploads for this month. Your quota resets on ${resetFmt}.`,
+          t('dashboard.quotaFreeFull', { limit: 3, date: resetFmt }),
           'error'
         );
         return;
@@ -207,12 +207,12 @@ async function handleUpload() {
     // Validate custom exit word before doing any work
     if (exitWordMode === 'custom' && !customWord) {
       btn.disabled = false;
-      showUploadNotice('Please enter your custom exit word.', 'error');
+      showUploadNotice(t('dashboard.exitWordRequired'), 'error');
       return;
     }
 
     // Generate access code
-    showProgress(0, 'Preparing…');
+    showProgress(0, t('dashboard.preparing'));
     const accessCode = await generateAccessCode(codeFormat, customCode);
 
     // Generate exit word
@@ -258,7 +258,7 @@ async function handleUpload() {
 
       // Upload to staging path — the Edge Function will move to final
       storagePath = `staging/${userId}/${accessCode}.mp3`;
-      showProgress(10, 'Uploading original audio…');
+      showProgress(10, t('dashboard.uploadingAudio'));
       const { error: storageError } = await supabaseClient.storage
         .from('audio-files')
         .upload(storagePath, uploadFile, {
@@ -266,16 +266,16 @@ async function handleUpload() {
           upsert: false,
           onUploadProgress: (progress) => {
             const pct = Math.round((progress.loaded / progress.total) * 80) + 10;
-            showProgress(Math.min(89, pct), `Uploading… ${Math.min(89, pct)}%`);
+            showProgress(Math.min(89, pct), t('dashboard.uploading') + ' ' + t('dashboard.uploadProgress', { pct: Math.min(89, pct) }));
           },
         });
-      if (storageError) throw new Error('Upload failed: ' + storageError.message);
+      if (storageError) throw new Error(t('dashboard.audioUploadFailed', { error: storageError.message }));
     } else {
-      showProgress(50, 'Saving…');
+      showProgress(50, t('common.saving'));
     }
 
     // ─── Save to database ─────────────────────────────────────────
-    showProgress(90, 'Saving record…');
+    showProgress(90, t('dashboard.savingRecord'));
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     // Audio assessments start with processing_status='pending' — the
@@ -311,9 +311,9 @@ async function handleUpload() {
         await supabaseClient.storage.from('audio-files').remove([storagePath]);
       }
       if (dbError.code === '23505') {
-        throw new Error('The generated access code was already taken — this is rare. Please try uploading again.');
+        throw new Error(t('dashboard.duplicateCode'));
       }
-      throw new Error('Could not save upload record: ' + dbError.message);
+      throw new Error(t('dashboard.saveRecordFailed', { error: dbError.message }));
     }
 
     const uploadId = insertedRecord?.id;
@@ -321,7 +321,7 @@ async function handleUpload() {
     // ─── Trigger audio normalization (only for audio assessments) ──
     if (assessmentType === 'audio' && uploadId) {
       const quality = (currentTier !== 'free') ? '128kbps' : '32kbps';
-      showProgress(92, `Normalizing audio (${quality} mono MP3)…`);
+      showProgress(92, t('dashboard.normalizingAudio', { quality }));
 
       // Call the Vercel trigger function (native ffmpeg transcoding)
       const controller = new AbortController();
@@ -360,19 +360,19 @@ async function handleUpload() {
         if (statusCheck?.processing_status === 'ready') {
           // Normalization completed — storage_path now points to final path
           storagePath = statusCheck.storage_path;
-          showProgress(100, 'Audio normalized ✓');
+          showProgress(100, t('dashboard.audioNormalized'));
           await new Promise(r => setTimeout(r, 500));
           normalized = true;
           break;
         }
 
         if (statusCheck?.processing_status === 'failed') {
-          throw new Error('Audio normalization failed. Please try uploading again.');
+          throw new Error(t('dashboard.normalizationFailed'));
         }
 
         // Still processing — show periodic status
         const elapsed = (i + 1) * 5;
-        showProgress(92, `Normalizing audio… ${elapsed}s`);
+        showProgress(92, t('dashboard.normalizingAudioElapsed', { elapsed }));
       }
 
       if (!normalized) {
@@ -380,7 +380,7 @@ async function handleUpload() {
         // The record will eventually be marked 'ready' or 'failed'.
         console.warn('Normalization polling exhausted for', uploadId);
         showUploadNotice(
-          'Audio is being processed in the background. Check back in a few minutes.',
+          t('dashboard.processingBackground'),
           'success'
         );
       }
@@ -400,8 +400,8 @@ async function handleUpload() {
       pendingImages = [];
     }
     const quality = (currentTier !== 'free') ? '128kbps' : '32kbps';
-    document.getElementById('file-hint').textContent = `Max 50 MB · MP3 or WAV. Audio is transcoded to ${quality} mono MP3 on the server.`;
-    document.getElementById('text-hint').textContent = 'Paste text and images · Max 2 MB per image';
+    document.getElementById('file-hint').textContent = t('dashboard.audioHint', { bitrate: quality });
+    document.getElementById('text-hint').textContent = t('dashboard.textHint');
     document.getElementById('assessment-type').value = 'audio';
     selectAssessmentType('audio');
     if (document.getElementById('exit-word-mode'))  document.getElementById('exit-word-mode').value  = 'random-short';
@@ -411,7 +411,7 @@ async function handleUpload() {
     toggleCustomExitWord();
     toggleCustomCode();
     btn.disabled = true;
-    showUploadNotice('Assessment uploaded successfully.', 'success');
+    showUploadNotice(t('dashboard.uploadSuccess'), 'success');
     await loadUploads();
     await recalculateStorage(userId);
     await loadQuota();
@@ -426,10 +426,10 @@ async function handleUpload() {
 // ─── Duplicate ───────────────────────────────────────────────────
 
 async function duplicateUpload(id, btn) {
-  if (!confirm('Create a new access code for this audio file? The original will remain unchanged.')) return;
+  if (!confirm(t('dashboard.duplicateUpload'))) return;
 
   btn.disabled    = true;
-  btn.textContent = 'Duplicating…';
+  btn.textContent = t('dashboard.duplicateUploading');
 
   try {
     const session = await getSession();
@@ -443,7 +443,7 @@ async function duplicateUpload(id, btn) {
       .eq('id', id)
       .single();
 
-    if (fetchErr || !source) throw new Error('Could not load assessment details.');
+    if (fetchErr || !source) throw new Error(t('dashboard.loadAssessmentDetailsFailed'));
 
     // Generate new code and exit word (standard format defaults).
     // Retry up to 3 times on the rare chance of a global code collision (23505).
@@ -521,7 +521,7 @@ async function duplicateUpload(id, btn) {
       lastErr = error; // code collision — try again
     }
 
-    if (!inserted) throw new Error('Could not create duplicate: ' + (lastErr?.message || 'unknown error'));
+    if (!inserted) throw new Error(t('dashboard.duplicateFailed', { error: lastErr?.message || 'unknown error' }));
 
     await loadUploads();
     await loadQuota();
@@ -530,7 +530,7 @@ async function duplicateUpload(id, btn) {
     alert(err.message);
   } finally {
     btn.disabled    = false;
-    btn.textContent = 'Duplicate';
+    btn.textContent = t('dashboard.duplicate');
   }
 }
 
@@ -538,7 +538,7 @@ async function duplicateUpload(id, btn) {
 
 async function retryNormalize(uploadId, btn) {
   btn.disabled    = true;
-  btn.textContent = 'Retrying…';
+  btn.textContent = t('dashboard.normalizationRetrying');
 
   try {
     const session = await getSession();
@@ -550,7 +550,7 @@ async function retryNormalize(uploadId, btn) {
       .update({ processing_status: 'pending' })
       .eq('id', uploadId);
 
-    if (resetError) throw new Error('Could not reset status: ' + resetError.message);
+    if (resetError) throw new Error(t('dashboard.resetStatusFailed', { error: resetError.message }));
 
     // Call trigger-normalize
     const resp = await fetch('/api/trigger-normalize', {
@@ -578,27 +578,27 @@ async function retryNormalize(uploadId, btn) {
         .maybeSingle();
 
       if (statusCheck?.processing_status === 'ready') {
-        btn.textContent = 'Retry';
+        btn.textContent = t('dashboard.retry');
         btn.disabled = false;
         await loadUploads();
         return;
       }
 
       if (statusCheck?.processing_status === 'failed') {
-        throw new Error('Normalization failed again. The audio file may be corrupt.');
+        throw new Error(t('dashboard.normalizationRetryFailed'));
       }
     }
 
     // Timed out — tell user to check back
-    btn.textContent = 'Retry';
+    btn.textContent = t('dashboard.retry');
     btn.disabled = false;
-    alert('Normalization is still running in the background. Check back in a few minutes.');
+    alert(t('dashboard.processingBackground'));
     await loadUploads();
 
   } catch (err) {
-    btn.textContent = 'Retry';
+    btn.textContent = t('dashboard.retry');
     btn.disabled = false;
-    alert('Normalization retry failed: ' + err.message);
+    alert(t('dashboard.retryAlert', { error: err.message }));
     await loadUploads();
   }
 }
