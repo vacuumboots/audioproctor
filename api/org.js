@@ -22,6 +22,7 @@ const { createClient } = require('@supabase/supabase-js');
 const Stripe = require('stripe');
 const { Resend }       = require('resend');
 const { sendEmail }    = require('./_lib/email');
+const { getRequestLanguage, apiMessage } = require('./_lib/i18n.js');
 
 // ─── Shared: return signed audio URL or resolved text HTML for a single upload ──
 async function handleGetUploadContent(uploadId, supabase, res) {
@@ -32,7 +33,7 @@ async function handleGetUploadContent(uploadId, supabase, res) {
     .single();
 
   if (fetchErr || !upload) {
-    return res.status(404).json({ error: 'Upload not found' });
+    return res.status(404).json({ error: apiMessage('not_found', lang) });
   }
 
   if (upload.assessment_type === 'audio') {
@@ -40,7 +41,7 @@ async function handleGetUploadContent(uploadId, supabase, res) {
       .storage.from('audio-files')
       .createSignedUrl(upload.storage_path, 3600);
     if (signErr || !signed) {
-      return res.status(500).json({ error: 'Could not generate audio link' });
+      return res.status(500).json({ error: apiMessage('server_error', lang) });
     }
     return res.status(200).json({ assessment_type: 'audio', signed_url: signed.signedUrl });
   }
@@ -81,10 +82,12 @@ module.exports = async (req, res) => {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  const lang = getRequestLanguage(req);
+
   // ─── Auth ──────────────────────────────────────────────────────────────
   const authHeader = req.headers['authorization'] || '';
   const jwt = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!jwt) return res.status(401).json({ error: 'Missing authorization' });
+  if (!jwt) return res.status(401).json({ error: apiMessage('missing_auth', lang) });
 
   const anonClient = createClient(
     process.env.SUPABASE_URL,
@@ -93,7 +96,7 @@ module.exports = async (req, res) => {
   );
 
   const { data: { user }, error: authErr } = await anonClient.auth.getUser();
-  if (authErr || !user) return res.status(401).json({ error: 'Invalid token' });
+  if (authErr || !user) return res.status(401).json({ error: apiMessage('invalid_token', lang) });
 
   const supabase = createClient(
     process.env.SUPABASE_URL,
@@ -106,11 +109,11 @@ module.exports = async (req, res) => {
     .eq('id', user.id)
     .single();
 
-  if (profileErr || !profile) return res.status(403).json({ error: 'Forbidden' });
+  if (profileErr || !profile) return res.status(403).json({ error: apiMessage('forbidden', lang) });
 
   const ALLOWED_ROLES = ['school_admin', 'division_admin', 'platform_admin'];
   if (!ALLOWED_ROLES.includes(profile.role)) {
-    return res.status(403).json({ error: 'Forbidden' });
+    return res.status(403).json({ error: apiMessage('forbidden', lang) });
   }
 
   const isSchoolAdmin    = ['school_admin',   'platform_admin'].includes(profile.role);
@@ -184,16 +187,16 @@ module.exports = async (req, res) => {
 
     // ── school-teachers ────────────────────────────────────────────────
     if (action === 'school-teachers') {
-      if (!isSchoolAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isSchoolAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const schoolId = profile.school_id || req.query.schoolId;
-      if (!schoolId) return res.status(400).json({ error: 'No school_id' });
+      if (!schoolId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'school_id' }) });
 
       // Division admin can only query schools in their division
       if (profile.role === 'division_admin') {
         const { data: school } = await supabase
           .from('schools').select('division_id').eq('id', schoolId).single();
         if (!school || school.division_id !== profile.division_id) {
-          return res.status(403).json({ error: 'Forbidden' });
+          return res.status(403).json({ error: apiMessage('forbidden', lang) });
         }
       }
 
@@ -203,7 +206,7 @@ module.exports = async (req, res) => {
         .eq('school_id', schoolId);
       if (error) {
         console.error('school-teachers query failed:', error.message);
-        return res.status(500).json({ error: 'Could not load teachers' });
+        return res.status(500).json({ error: apiMessage('server_error', lang) });
       }
 
       const emailMap = await getAllUserEmails(supabase);
@@ -228,9 +231,9 @@ module.exports = async (req, res) => {
 
     // ── school-report ──────────────────────────────────────────────────
     if (action === 'school-report') {
-      if (!isSchoolAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isSchoolAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const schoolId = profile.school_id || req.query.schoolId;
-      if (!schoolId) return res.status(400).json({ error: 'No school_id' });
+      if (!schoolId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'school_id' }) });
 
       const { count: teacherCount } = await supabase
         .from('profiles')
@@ -274,16 +277,16 @@ module.exports = async (req, res) => {
 
     // ── school-detail (division admin views a specific school) ─────────
     if (action === 'school-detail') {
-      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isDivisionAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const schoolId = req.query.schoolId;
-      if (!schoolId) return res.status(400).json({ error: 'schoolId required' });
+      if (!schoolId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'schoolId' }) });
 
       const { data: school } = await supabase
         .from('schools').select('id, name, division_id, tier').eq('id', schoolId).single();
 
-      if (!school) return res.status(404).json({ error: 'School not found' });
+      if (!school) return res.status(404).json({ error: apiMessage('not_found', lang) });
       if (profile.role === 'division_admin' && school.division_id !== profile.division_id) {
-        return res.status(403).json({ error: 'Forbidden' });
+        return res.status(403).json({ error: apiMessage('forbidden', lang) });
       }
 
       const { data: teachers } = await supabase
@@ -312,9 +315,9 @@ module.exports = async (req, res) => {
 
     // ── division-schools ───────────────────────────────────────────────
     if (action === 'division-schools') {
-      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isDivisionAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const divisionId = profile.division_id;
-      if (!divisionId) return res.status(400).json({ error: 'No division_id' });
+      if (!divisionId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'division_id' }) });
 
       const { data: schools, error } = await supabase
         .from('schools')
@@ -323,7 +326,7 @@ module.exports = async (req, res) => {
         .order('name');
       if (error) {
         console.error('division-schools query failed:', error.message);
-        return res.status(500).json({ error: 'Could not load schools' });
+        return res.status(500).json({ error: apiMessage('server_error', lang) });
       }
 
       const schoolIds = (schools || []).map(s => s.id);
@@ -382,9 +385,9 @@ module.exports = async (req, res) => {
 
     // ── division-report ────────────────────────────────────────────────
     if (action === 'division-report') {
-      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isDivisionAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const divisionId = profile.division_id;
-      if (!divisionId) return res.status(400).json({ error: 'No division_id' });
+      if (!divisionId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'division_id' }) });
 
       const { data: divSchools } = await supabase
         .from('schools').select('id').eq('division_id', divisionId);
@@ -443,9 +446,9 @@ module.exports = async (req, res) => {
 
     // ── division-activity (weekly sessions for the chart) ──────────────
     if (action === 'division-activity') {
-      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isDivisionAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const divisionId = profile.division_id;
-      if (!divisionId) return res.status(400).json({ error: 'No division_id' });
+      if (!divisionId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'division_id' }) });
 
       const { data: divSchools } = await supabase
         .from('schools').select('id').eq('division_id', divisionId);
@@ -503,9 +506,9 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'school-uploads') {
-      if (!isSchoolAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isSchoolAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const schoolId = profile.school_id;
-      if (!schoolId) return res.status(400).json({ error: 'Not attached to a school' });
+      if (!schoolId) return res.status(400).json({ error: apiMessage('bad_request', lang) });
 
       const { uploadId, type, limit, offset } = req.query;
 
@@ -545,7 +548,7 @@ module.exports = async (req, res) => {
       if (type) query = query.eq('assessment_type', type);
 
       const { data: uploads, count: total, error } = await query;
-      if (error) return res.status(500).json({ error: 'Could not load uploads' });
+      if (error) return res.status(500).json({ error: apiMessage('server_error', lang) });
 
       // Enrich with teacher email
       const enriched = (uploads || []).map(u => ({
@@ -557,9 +560,9 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'division-uploads') {
-      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isDivisionAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const divisionId = profile.division_id;
-      if (!divisionId) return res.status(400).json({ error: 'Not attached to a division' });
+      if (!divisionId) return res.status(400).json({ error: apiMessage('bad_request', lang) });
 
       const { uploadId, type, limit, offset } = req.query;
 
@@ -614,7 +617,7 @@ module.exports = async (req, res) => {
       if (type) query = query.eq('assessment_type', type);
 
       const { data: uploads, count: total, error } = await query;
-      if (error) return res.status(500).json({ error: 'Could not load uploads' });
+      if (error) return res.status(500).json({ error: apiMessage('server_error', lang) });
 
       // Enrich with teacher email and school name
       const enriched = (uploads || []).map(u => {
@@ -629,7 +632,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ uploads: enriched, total, offset: pageOffset, limit: pageLimit });
     }
 
-    return res.status(400).json({ error: 'Unknown action' });
+    return res.status(400).json({ error: apiMessage('bad_request', lang) });
   }
 
   // ─── POST routes ───────────────────────────────────────────────────────
@@ -639,16 +642,16 @@ module.exports = async (req, res) => {
 
     // ── detach-teacher ─────────────────────────────────────────────────
     if (action === 'detach-teacher') {
-      if (!isSchoolAdmin && !isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isSchoolAdmin && !isDivisionAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const { userId } = body;
-      if (!userId) return res.status(400).json({ error: 'userId required' });
+      if (!userId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'userId' }) });
 
       // School admin can only detach teachers from their own school
       if (profile.role === 'school_admin') {
         const { data: target } = await supabase
           .from('profiles').select('school_id').eq('id', userId).single();
         if (!target || target.school_id !== profile.school_id) {
-          return res.status(403).json({ error: 'Forbidden' });
+          return res.status(403).json({ error: apiMessage('forbidden', lang) });
         }
       }
 
@@ -664,7 +667,7 @@ module.exports = async (req, res) => {
             .from('schools').select('division_id').eq('id', target.school_id).single();
           if (school?.division_id === profile.division_id) allowed = true;
         }
-        if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+        if (!allowed) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       }
 
       // Fetch teacher's email before detaching so we can notify them
@@ -678,7 +681,7 @@ module.exports = async (req, res) => {
         .eq('id', userId);
       if (error) {
         console.error('detach-teacher failed:', error.message);
-        return res.status(500).json({ error: 'Could not detach teacher' });
+        return res.status(500).json({ error: apiMessage('server_error', lang) });
       }
       audit(supabase, user.id, 'detach_teacher', 'teacher', userId,
         { school_id: prevProfile?.school_id, division_id: prevProfile?.division_id },
@@ -686,7 +689,7 @@ module.exports = async (req, res) => {
 
       // Notify the teacher — fire-and-forget, don't fail the request if email fails
       if (teacherEmail) {
-        sendTierChangeEmail(teacherEmail, 'school').catch(err =>
+        sendTierChangeEmail(teacherEmail, 'school', lang).catch(err =>
           console.error('tier-change email failed:', err.message)
         );
       }
@@ -696,15 +699,15 @@ module.exports = async (req, res) => {
 
     // ── detach-school ──────────────────────────────────────────────────
     if (action === 'detach-school') {
-      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isDivisionAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const { schoolId } = body;
-      if (!schoolId) return res.status(400).json({ error: 'schoolId required' });
+      if (!schoolId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'schoolId' }) });
 
       if (profile.role === 'division_admin') {
         const { data: school } = await supabase
           .from('schools').select('division_id').eq('id', schoolId).single();
         if (!school || school.division_id !== profile.division_id) {
-          return res.status(403).json({ error: 'Forbidden' });
+          return res.status(403).json({ error: apiMessage('forbidden', lang) });
         }
       }
 
@@ -717,7 +720,7 @@ module.exports = async (req, res) => {
         .from('schools').update({ division_id: null }).eq('id', schoolId);
       if (error) {
         console.error('detach-school failed:', error.message);
-        return res.status(500).json({ error: 'Could not detach school' });
+        return res.status(500).json({ error: apiMessage('server_error', lang) });
       }
       audit(supabase, user.id, 'detach_school', 'school', schoolId,
         { division_id: profile.division_id }, { division_id: null });
@@ -728,7 +731,7 @@ module.exports = async (req, res) => {
         affectedIds.forEach(tid => {
           const email = emailMap[tid];
           if (email) {
-            sendTierChangeEmail(email, 'division').catch(err =>
+            sendTierChangeEmail(email, 'division', lang).catch(err =>
               console.error('tier-change email failed:', err.message)
             );
           }
@@ -744,12 +747,12 @@ module.exports = async (req, res) => {
     // with `proration_behavior: 'create_prorations'` so the unused portion
     // credits to the division customer's balance.
     if (action === 'attach-school') {
-      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isDivisionAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const { schoolId } = body;
-      if (!schoolId) return res.status(400).json({ error: 'schoolId required' });
+      if (!schoolId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'schoolId' }) });
 
       const divisionId = profile.division_id;
-      if (!divisionId) return res.status(400).json({ error: 'No division_id' });
+      if (!divisionId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'division_id' }) });
 
       // Verify the school isn't already in a division
       const { data: school } = await supabase
@@ -757,12 +760,12 @@ module.exports = async (req, res) => {
         .eq('id', schoolId)
         .single();
 
-      if (!school) return res.status(404).json({ error: 'School not found' });
+      if (!school) return res.status(404).json({ error: apiMessage('not_found', lang) });
       if (school.division_id === divisionId) {
-        return res.status(400).json({ error: 'School is already in this division' });
+        return res.status(400).json({ error: apiMessage('bad_request', lang) });
       }
       if (school.division_id) {
-        return res.status(400).json({ error: 'School belongs to another division. Detach it first.' });
+        return res.status(400).json({ error: apiMessage('bad_request', lang) });
       }
 
       // ── Proration: cancel school subscription if active ──────────────
@@ -793,7 +796,7 @@ module.exports = async (req, res) => {
 
       if (error) {
         console.error('attach-school failed:', error.message);
-        return res.status(500).json({ error: 'Could not attach school to division' });
+        return res.status(500).json({ error: apiMessage('server_error', lang) });
       }
 
       audit(supabase, user.id, 'attach_school', 'school', schoolId,
@@ -804,9 +807,9 @@ module.exports = async (req, res) => {
 
     // ── remove-school-admin ────────────────────────────────────────────
     if (action === 'remove-school-admin') {
-      if (!isDivisionAdmin) return res.status(403).json({ error: 'Forbidden' });
+      if (!isDivisionAdmin) return res.status(403).json({ error: apiMessage('forbidden', lang) });
       const { userId } = body;
-      if (!userId) return res.status(400).json({ error: 'userId required' });
+      if (!userId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'userId' }) });
 
       // Division admin can only demote school admins within their own division
       if (profile.role === 'division_admin') {
@@ -817,7 +820,7 @@ module.exports = async (req, res) => {
           .eq('role', 'school_admin')
           .single();
         if (!target || !target.school_id) {
-          return res.status(403).json({ error: 'Forbidden' });
+          return res.status(403).json({ error: apiMessage('forbidden', lang) });
         }
         const { data: school } = await supabase
           .from('schools')
@@ -825,7 +828,7 @@ module.exports = async (req, res) => {
           .eq('id', target.school_id)
           .single();
         if (!school || school.division_id !== profile.division_id) {
-          return res.status(403).json({ error: 'Forbidden' });
+          return res.status(403).json({ error: apiMessage('forbidden', lang) });
         }
       }
 
@@ -836,7 +839,7 @@ module.exports = async (req, res) => {
         .eq('role', 'school_admin');
       if (error) {
         console.error('remove-school-admin failed:', error.message);
-        return res.status(500).json({ error: 'Could not remove school admin role' });
+        return res.status(500).json({ error: apiMessage('server_error', lang) });
       }
       return res.status(200).json({ ok: true });
     }
@@ -846,18 +849,18 @@ module.exports = async (req, res) => {
       // This endpoint is for school admins and division admins only.
       // Platform admins use the invite action in api/admin.js.
       if (!['school_admin', 'division_admin'].includes(profile.role)) {
-        return res.status(403).json({ error: 'Forbidden' });
+        return res.status(403).json({ error: apiMessage('forbidden', lang) });
       }
 
       const { email } = body;
-      if (!email) return res.status(400).json({ error: 'email required' });
+      if (!email) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'email' }) });
 
       // School admins must be assigned to a school; division admins to a division.
       if (profile.role === 'school_admin' && !profile.school_id) {
-        return res.status(400).json({ error: 'You are not assigned to a school' });
+        return res.status(400).json({ error: apiMessage('bad_request', lang) });
       }
       if (profile.role === 'division_admin' && !profile.division_id) {
-        return res.status(400).json({ error: 'You are not assigned to a division' });
+        return res.status(400).json({ error: apiMessage('bad_request', lang) });
       }
 
       // Resolve org name for the invitation email
@@ -882,14 +885,14 @@ module.exports = async (req, res) => {
         })
         .select('id, token')
         .single();
-      if (invErr) return res.status(500).json({ error: 'Could not create invitation' });
+      if (invErr) return res.status(500).json({ error: apiMessage('server_error', lang) });
 
       const inviteUrl = `https://app.audioproctor.com/accept-invite.html?token=${invite.token}`;
 
       let emailOk = true;
       let emailError = null;
       try {
-        const { subject, text, html } = buildInviteEmail({ role: 'teacher', inviteUrl, orgName });
+        const { subject, text, html } = buildInviteEmail({ role: 'teacher', inviteUrl, orgName, lang });
         const emailResult = await sendEmail({ to: email, subject, text, html });
         if (!emailResult.ok) {
           emailOk = false;
@@ -908,10 +911,10 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, inviteUrl, token: invite.token, emailOk, emailError });
     }
 
-    return res.status(400).json({ error: 'Unknown action' });
+    return res.status(400).json({ error: apiMessage('bad_request', lang) });
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  return res.status(405).json({ error: apiMessage('method_not_allowed', lang) });
 };
 
 // ─── Invite email helper ───────────────────────────────────────────────────
@@ -920,8 +923,18 @@ function formatRole(role) {
   return role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function buildInviteEmail({ role, inviteUrl, orgName }) {
+function buildInviteEmail({ role, inviteUrl, orgName, lang = 'en' }) {
   const roleLabel = formatRole(role);
+  if (lang === 'fr') {
+    const subject = `Vous avez été invité à rejoindre AudioProctor`;
+    let text = `Vous avez été invité à rejoindre AudioProctor à titre de ${roleLabel}.`;
+    if (orgName) text += `\n\ndans le cadre de ${orgName}`;
+    text += `\n\nCliquez sur le lien ci-dessous pour accepter votre invitation :\n${inviteUrl}\n\nCette invitation expire dans 7 jours.\nSi vous n'avez pas demandé cette invitation, vous pouvez ignorer ce message.`;
+    let html = `<p>Vous avez été invité à rejoindre AudioProctor à titre de <strong>${roleLabel}</strong>.</p>`;
+    if (orgName) html += `<p>dans le cadre de <strong>${orgName}</strong></p>`;
+    html += `<p>Cliquez sur le lien ci-dessous pour accepter votre invitation :</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>Cette invitation expire dans 7 jours.<br>Si vous n'avez pas demandé cette invitation, vous pouvez ignorer ce message.</p>`;
+    return { subject, text, html };
+  }
   const subject   = `You've been invited to join AudioProctor`;
   let text = `You've been invited to join AudioProctor as a ${roleLabel}.`;
   if (orgName) text += `\n\nas part of ${orgName}`;
@@ -983,9 +996,32 @@ async function getAllUserEmails(supabase) {
 // 'detachedFrom' is 'school' or 'division' — describes what they were removed from.
 // Called fire-and-forget; errors are logged but not surfaced to the caller.
 
-async function sendTierChangeEmail(teacherEmail, detachedFrom) {
+async function sendTierChangeEmail(teacherEmail, detachedFrom, lang = 'en') {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const orgLabel = detachedFrom === 'division' ? 'division' : 'school';
+
+  if (lang === 'fr') {
+    await resend.emails.send({
+      from:    'AudioProctor <hello@audioproctor.com>',
+      to:      teacherEmail,
+      subject: 'Votre forfait AudioProctor a changé',
+      text: [
+        'Bonjour,',
+        '',
+        `Votre compte a été retiré de votre ${orgLabel} dans AudioProctor.`,
+        '',
+        'Votre compte et toutes vos évaluations sont toujours intacts, mais votre forfait',
+        'est revenu au niveau Gratuit. Vous êtes maintenant limité à 3 téléversements par mois',
+        'et 50 Mo de stockage. Les codes d\'accès existants continueront de fonctionner jusqu\'à leur expiration.',
+        '',
+        'Si vous croyez qu\'il s\'agit d\'une erreur, veuillez contacter votre administrateur de ' + orgLabel,
+        'ou répondre à ce courriel.',
+        '',
+        '— AudioProctor',
+      ].join('\n'),
+    });
+    return;
+  }
 
   await resend.emails.send({
     from:    'AudioProctor <hello@audioproctor.com>',
