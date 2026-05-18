@@ -42,8 +42,8 @@
         <span class="wordmark">Audio<span class="accent">Proctor</span></span>
         <div style="display:flex; align-items:center; gap:1.5rem;">
           <span id="user-email" class="label"></span>
-          <a href="/dashboard.html" class="btn btn--ghost btn--small">Dashboard</a>
-          <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
+          <a id="lnk-dashboard" href="/dashboard.html" class="btn btn--ghost btn--small"></a>
+          <button id="btn-signout" class="btn btn--ghost btn--small" onclick="handleSignOut()"></button>
         </div>
       </div>
     </div>
@@ -51,75 +51,67 @@
 
   <div class="page-container" style="padding-top:2.5rem; padding-bottom:4rem; max-width:640px;">
 
-    <h1 style="font-size:1.6rem; margin-bottom:2rem;">Settings</h1>
+    <h1 id="heading-settings" style="font-size:1.6rem; margin-bottom:2rem;"></h1>
 
     <div class="card">
 
       <!-- ─── Profile ─────────────────────────────────────────────────── -->
       <div class="settings-section">
-        <p class="label" style="margin-bottom:1.25rem;">Profile</p>
+        <p id="label-profile" class="label" style="margin-bottom:1.25rem;"></p>
 
         <div class="form-group">
-          <label class="label" for="display-name-input">Display Name <span style="font-weight:300; text-transform:none; letter-spacing:0;">(optional)</span></label>
-          <input type="text" id="display-name-input" class="input-field" maxlength="80" placeholder="e.g. Ms. Johnson">
+          <label class="label" for="display-name-input">
+            <span id="label-display-name"></span>
+            <span id="span-display-name-optional" style="font-weight:300; text-transform:none; letter-spacing:0;"></span>
+          </label>
+          <input type="text" id="display-name-input" class="input-field" maxlength="80">
         </div>
 
         <div class="form-group">
-          <label class="label">Email Address</label>
+          <label id="label-email" class="label"></label>
           <p id="profile-email" style="font-size:0.9rem; color:var(--muted); margin:0.25rem 0 0;">—</p>
-          <p class="label text-muted" style="margin-top:0.25rem; text-transform:none; letter-spacing:0; font-size:0.75rem;">Sourced from your Google account. Cannot be changed here.</p>
+          <p id="txt-email-sourced" class="label text-muted" style="margin-top:0.25rem; text-transform:none; letter-spacing:0; font-size:0.75rem;"></p>
         </div>
 
         <div class="form-group">
-          <label class="label">Organization</label>
+          <label id="label-org" class="label"></label>
           <p id="profile-org" style="font-size:0.9rem; color:var(--muted); margin:0.25rem 0 0;">—</p>
-          <p class="label text-muted" style="margin-top:0.25rem; text-transform:none; letter-spacing:0; font-size:0.75rem;">Set by your school or division admin. Contact them to update.</p>
+          <p id="txt-org-admin" class="label text-muted" style="margin-top:0.25rem; text-transform:none; letter-spacing:0; font-size:0.75rem;"></p>
         </div>
 
         <div id="profile-notice" class="notice hidden" style="margin-bottom:0.75rem;"></div>
-        <button class="btn btn--primary" onclick="saveDisplayName()">Save Profile</button>
+        <button id="btn-save-profile" class="btn btn--primary" onclick="saveDisplayName()"></button>
       </div>
 
       <!-- ─── Subscription ──────────────────────────────────────────────── -->
       <div class="settings-section">
-        <p class="label" style="margin-bottom:1.25rem;">Subscription</p>
+        <p id="label-subscription" class="label" style="margin-bottom:1.25rem;"></p>
         <div id="subscription-block" class="subscription-block">
-          <p>Loading…</p>
+          <p id="txt-subscription-loading"></p>
         </div>
       </div>
 
       <!-- ─── Delete Account ────────────────────────────────────────────── -->
       <div class="danger-zone">
-        <p class="label" style="margin-bottom:0.75rem;">Delete Account</p>
-        <p style="font-size:0.875rem; color:var(--muted); margin-bottom:0.5rem; line-height:1.6;">
-          This will permanently delete your account and all uploaded audio files.
-          Access codes will stop working immediately. This action cannot be undone.
-        </p>
-        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:1.25rem; line-height:1.5;">
-          <strong style="font-weight:500;">Leaving a school?</strong> Ask your school or division admin to
-          deactivate your account instead — this preserves your upload history and session records,
-          and can be reversed if you return.
-        </p>
+        <p id="label-delete-account" class="label" style="margin-bottom:0.75rem;"></p>
+        <p id="txt-delete-warning" style="font-size:0.875rem; color:var(--muted); margin-bottom:0.5rem; line-height:1.6;"></p>
+        <p id="txt-deactivate-hint" style="font-size:0.8rem; color:var(--muted); margin-bottom:1.25rem; line-height:1.5;"></p>
 
         <div id="delete-step-1">
-          <button class="btn btn--danger" onclick="startDeleteFlow()">Delete My Account</button>
+          <button id="btn-delete-account" class="btn btn--danger" onclick="startDeleteFlow()"></button>
         </div>
 
         <div id="delete-step-2" class="hidden">
           <div style="border:1px solid var(--accent); padding:1.25rem; background:var(--light-accent); margin-bottom:1rem;">
-            <p style="font-size:0.875rem; color:var(--accent); font-weight:500; margin-bottom:0.5rem;">Are you absolutely sure?</p>
-            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem; line-height:1.5;">
-              All uploads and audio files will be deleted immediately.
-              All session analytics associated with your assessments will be deleted.
-              Students with active access codes will lose access.
-            </p>
+            <p id="txt-are-you-sure" style="font-size:0.875rem; color:var(--accent); font-weight:500; margin-bottom:0.5rem;"></p>
+            <p id="txt-delete-details" style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem; line-height:1.5;"></p>
             <div class="form-group" style="margin-bottom:0.75rem;">
-              <label class="label" for="delete-confirm-input">Type DELETE to confirm</label>
+              <label class="label" for="delete-confirm-input"><span id="label-type-delete"></span></label>
               <input type="text" id="delete-confirm-input" class="input-field" placeholder="DELETE" style="max-width:200px;" oninput="checkDeleteConfirm()">
             </div>
             <div style="display:flex; gap:0.75rem;">
-              <button id="btn-confirm-delete" class="btn btn--danger" onclick="confirmDelete()" disabled>Permanently Delete</button>
-              <button class="btn btn--ghost" onclick="cancelDeleteFlow()">Cancel</button>
+              <button id="btn-confirm-delete" class="btn btn--danger" onclick="confirmDelete()" disabled></button>
+              <button id="btn-cancel-delete" class="btn btn--ghost" onclick="cancelDeleteFlow()"></button>
             </div>
           </div>
         </div>
@@ -136,12 +128,52 @@
   <script src="/js/auth.js"></script>
   <script src="/js/settings.js"></script>
   <script>
-    (async () => {
+    function renderTranslations() {
+      document.title = t('settings.pageTitle') + ' \u2014 AudioProctor';
+      document.getElementById('heading-settings').textContent = t('settings.pageTitle');
+      document.getElementById('lnk-dashboard').textContent = t('nav.dashboard');
+      document.getElementById('btn-signout').textContent = t('admin.signOut');
+      document.getElementById('label-profile').textContent = t('settings.profile');
+      document.getElementById('label-display-name').textContent = t('settings.displayName') + ' ';
+      document.getElementById('span-display-name-optional').textContent = t('settings.displayNameOptional');
+      document.getElementById('display-name-input').placeholder = t('settings.displayNamePlaceholder');
+      document.getElementById('label-email').textContent = t('settings.emailAddress');
+      document.getElementById('txt-email-sourced').textContent = t('settings.emailSourced');
+      document.getElementById('label-org').textContent = t('settings.organization');
+      document.getElementById('txt-org-admin').textContent = t('settings.orgSetByAdmin');
+      document.getElementById('btn-save-profile').textContent = t('settings.saveProfile');
+      document.getElementById('label-subscription').textContent = t('settings.subscription');
+      document.getElementById('txt-subscription-loading').textContent = t('settings.loadingDetails');
+      document.getElementById('label-delete-account').textContent = t('settings.deleteAccount');
+      document.getElementById('txt-delete-warning').innerHTML = t('settings.deleteWarning');
+      document.getElementById('txt-deactivate-hint').innerHTML =
+        '<strong>' + t('settings.leaveSchool') + '</strong> ' + t('settings.deactivateHint');
+      document.getElementById('btn-delete-account').textContent = t('settings.deleteMyAccount');
+      document.getElementById('txt-are-you-sure').textContent = t('settings.areYouSure');
+      document.getElementById('txt-delete-details').textContent = t('settings.deleteDetails');
+      document.getElementById('label-type-delete').textContent = t('settings.typeDeleteToConfirm');
+      document.getElementById('btn-confirm-delete').textContent = t('settings.permanentlyDelete');
+      document.getElementById('btn-cancel-delete').textContent = t('common.cancel');
+    }
+
+    async function init() {
       const user = await requireAuth();
       if (!user) return;
       document.getElementById('user-email').textContent = user.email;
       await initSettings(user);
-    })();
+    }
+
+    window.i18nReady.then(function() {
+      renderTranslations();
+      init();
+    });
+
+    window.addEventListener('localechanged', renderTranslations);
+
+    function handleSignOut() {
+      supabaseClient.auth.signOut();
+      window.location.href = '/login.html';
+    }
   </script>
 
 </body>

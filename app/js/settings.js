@@ -27,7 +27,7 @@ async function initSettings(user) {
 
   // Org affiliation — resolve school name and, if the school is part of a
   // division, the division name too (even though profile.division_id is null).
-  let orgText = 'No school or division assigned';
+  let orgText = t('settings.noOrg');
   let schoolDivisionId = null; // division that the teacher's school belongs to
   if (profile?.school_id || profile?.division_id) {
     const parts = [];
@@ -61,15 +61,15 @@ async function renderSubscription(tier, profile, schoolDivisionId = null) {
 
   if (tier === 'free') {
     block.innerHTML = `
-      <p><strong>You're on the Free tier.</strong></p>
-      <p style="margin-top:0.5rem; color:var(--muted);">3 uploads per calendar month · 50 MB storage · No analytics</p>
-      <p style="margin-top:0.75rem;"><a href="/site/pricing.html" style="color:var(--ink); font-weight:500;">See pricing →</a></p>
+      <p><strong>${t('settings.freeTierTitle')}</strong></p>
+      <p style="margin-top:0.5rem; color:var(--muted);">${t('settings.freeTierDesc')}</p>
+      <p style="margin-top:0.75rem;"><a href="/site/pricing.html" style="color:var(--ink); font-weight:500;">${t('settings.seePricing')}</a></p>
     `;
   } else if (profile?.tier_override) {
-    const tierLabels = { premium: 'Teacher Premium', school: 'School Plan', division: 'Division Plan' };
+    const tierLabels = { premium: t('dashboard.tierBadge.premium'), school: t('dashboard.tierBadge.school'), division: t('dashboard.tierBadge.division') };
     block.innerHTML = `
-      <p><strong>You're on ${tierLabels[tier] || tier}.</strong></p>
-      <p style="margin-top:0.5rem; color:var(--muted);">Your tier has been set manually by the platform administrator.</p>
+      <p><strong>${t('settings.tierOverrideTitle', { tier: tierLabels[tier] || tier })}</strong></p>
+      <p style="margin-top:0.5rem; color:var(--muted);">${t('settings.tierOverride')}</p>
     `;
   } else if (profile?.division_id) {
     // Load division Stripe subscription status
@@ -80,14 +80,16 @@ async function renderSubscription(tier, profile, schoolDivisionId = null) {
       .maybeSingle();
 
     const statusHtml = getStripeStatusHtml(division?.stripe_subscription_status);
-    const bandLabel = division?.enrolment_band ? capitalize(division.enrolment_band) + ' Division' : 'Division';
-    const tierLabel = division?.tier === 'division' ? `${bandLabel} Plan` : 'Division';
+    const bandLabel = division?.enrolment_band ? capitalize(division.enrolment_band) : '';
+    const planLabel = division?.tier === 'division'
+      ? (bandLabel ? t('settings.divisionPlanLabel', { band: capitalize(division.enrolment_band) }) : t('settings.divisionPlanLabel', { band: '' }).trim())
+      : t('dashboard.tierBadge.division');
 
     block.innerHTML = `
-      <p><strong>Your division (${division?.name || '—'}) is on a ${tierLabel}.</strong> ${statusHtml}</p>
-      <p style="margin-top:0.5rem; color:var(--muted);">Unlimited uploads · Full analytics · All features included.</p>
+      <p><strong>${t('settings.divisionOnPlan', { name: division?.name || '—', plan: planLabel })}</strong> ${statusHtml}</p>
+      <p style="margin-top:0.5rem; color:var(--muted);">${t('settings.planFeatures')}</p>
       <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
-        <a href="/division-admin.html" style="color:var(--ink);">Manage Division Plan →</a>
+        <a href="/division-admin.html" style="color:var(--ink);">${t('settings.manageDivisionPlan')}</a>
       </p>
     `;
   } else if (profile?.school_id) {
@@ -99,36 +101,36 @@ async function renderSubscription(tier, profile, schoolDivisionId = null) {
       .maybeSingle();
 
     const onDivisionPlan = tier === 'division' || !!schoolDivisionId;
-    const label = onDivisionPlan ? 'Division Plan' : 'School Plan';
-    const via   = onDivisionPlan ? ' (through your school\'s division)' : '';
+    const label = onDivisionPlan ? t('dashboard.tierBadge.division') : t('dashboard.tierBadge.school');
+    const via   = onDivisionPlan ? t('settings.schoolDivisionVia') : '';
     const statusHtml = school ? getStripeStatusHtml(school.stripe_subscription_status) : '';
 
     block.innerHTML = `
-      <p><strong>${school?.name || 'Your school'} is on a ${label}.</strong> ${statusHtml}</p>
-      <p style="margin-top:0.5rem; color:var(--muted);">Unlimited uploads · Full analytics · All features included${via}.</p>
+      <p><strong>${t('settings.schoolOnPlan', { school: school?.name || t('settings.yourSchool'), plan: label })}</strong> ${statusHtml}</p>
+      <p style="margin-top:0.5rem; color:var(--muted);">${t('settings.planFeaturesVia', { via: via })}</p>
       <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
-        <a href="/school-admin.html" style="color:var(--ink);">Manage School Plan →</a>
+        <a href="/school-admin.html" style="color:var(--ink);">${t('settings.manageSchoolPlan')}</a>
       </p>
     `;
   } else if (tier === 'premium') {
     block.innerHTML = `
-      <p><strong>You're on Teacher Premium.</strong></p>
-      <p style="margin-top:0.5rem; color:var(--muted);">Unlimited uploads · Full analytics · All features included.</p>
-      <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">Billing management is coming in a future update.</p>
+      <p><strong>${t('settings.premiumTitle')}</strong></p>
+      <p style="margin-top:0.5rem; color:var(--muted);">${t('settings.planFeatures')}</p>
+      <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">${t('settings.billingComing')}</p>
     `;
   } else {
-    block.innerHTML = `<p>Loading subscription details…</p>`;
+    block.innerHTML = `<p>${t('settings.loadingDetails')}</p>`;
   }
 }
 
 function getStripeStatusHtml(status) {
   if (!status || status === 'active') return '';
   const statusLabels = {
-    past_due: 'Past Due',
-    canceled: 'Canceled',
-    incomplete: 'Incomplete',
-    unpaid: 'Unpaid',
-    paused: 'Paused',
+    past_due: t('settings.stripeStatusPastDue'),
+    canceled: t('settings.stripeStatusCanceled'),
+    incomplete: t('settings.stripeStatusIncomplete'),
+    unpaid: t('settings.stripeStatusUnpaid'),
+    paused: t('settings.stripeStatusPaused'),
   };
   const label = statusLabels[status] || status;
   return `<span style="display:inline-block; padding:0.1rem 0.45rem; font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:500; background:var(--light-accent); color:var(--accent); border:1px solid var(--accent); vertical-align:middle;">${label}</span>`;
@@ -149,12 +151,12 @@ async function saveDisplayName() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
 
-    noticeEl.textContent = 'Profile saved.';
+    noticeEl.textContent = t('settings.profileSaved');
     noticeEl.className   = 'notice notice--success';
     noticeEl.classList.remove('hidden');
     setTimeout(() => noticeEl.classList.add('hidden'), 3000);
   } catch (err) {
-    noticeEl.textContent = 'Could not save: ' + err.message;
+    noticeEl.textContent = t('settings.couldNotSave', { error: err.message });
     noticeEl.className   = 'notice notice--error';
     noticeEl.classList.remove('hidden');
   }
@@ -186,7 +188,7 @@ async function confirmDelete() {
 
   const btn = document.getElementById('btn-confirm-delete');
   btn.disabled    = true;
-  btn.textContent = 'Deleting…';
+  btn.textContent = t('settings.deleting');
 
   const noticeEl = document.getElementById('delete-notice');
 
@@ -202,11 +204,11 @@ async function confirmDelete() {
     await supabaseClient.auth.signOut();
     window.location.href = 'https://audioproctor.com';
   } catch (err) {
-    noticeEl.textContent = err.message;
+    noticeEl.textContent = t('settings.deleteError', { error: err.message });
     noticeEl.className   = 'notice notice--error';
     noticeEl.classList.remove('hidden');
     btn.disabled    = false;
-    btn.textContent = 'Permanently Delete';
+    btn.textContent = t('settings.permanentlyDelete');
   }
 }
 
