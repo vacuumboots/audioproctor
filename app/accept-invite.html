@@ -13,35 +13,31 @@
       <a href="/" class="wordmark">Audio<span class="accent">Proctor</span></a>
 
       <div id="state-loading">
-        <p style="color:var(--muted); font-size:0.9rem; margin-top:1.5rem;">Validating invitation…</p>
+        <p id="txt-loading" style="color:var(--muted); font-size:0.9rem; margin-top:1.5rem;"></p>
       </div>
 
       <div id="state-invite" style="display:none;">
         <p class="tagline" id="invite-desc" style="margin-top:1rem;"></p>
         <div id="notice-invite" class="notice notice--error hidden" style="margin-top:1rem;"></div>
-        <button id="btn-accept" class="btn btn--primary" style="margin-top:1.5rem; width:100%;" onclick="acceptInvite()">
-          Sign in with Google to accept
-        </button>
-        <p style="font-size:0.8rem; color:var(--muted); margin-top:1rem; line-height:1.5;">
-          You must sign in with the Google account for <strong id="invite-email"></strong>.
-        </p>
+        <button id="btn-accept" class="btn btn--primary" style="margin-top:1.5rem; width:100%;" onclick="acceptInvite()"></button>
+        <p id="txt-must-sign-in" style="font-size:0.8rem; color:var(--muted); margin-top:1rem; line-height:1.5;"></p>
       </div>
 
       <div id="state-accepting" style="display:none;">
-        <p style="color:var(--muted); font-size:0.9rem; margin-top:1.5rem;">Accepting invitation…</p>
+        <p id="txt-accepting" style="color:var(--muted); font-size:0.9rem; margin-top:1.5rem;"></p>
       </div>
 
       <div id="state-expired" style="display:none;">
-        <div class="notice notice--error" style="margin-top:1.5rem;">This invitation has expired.</div>
-        <p style="margin-top:1rem; color:var(--muted); font-size:0.9rem; line-height:1.5;">
-          If you still need access, you can request a new invitation.
-        </p>
-        <a href="/site/request-access.html" class="btn btn--primary" style="margin-top:1rem; display:block; text-align:center;">Request Access</a>
+        <div class="notice notice--error" style="margin-top:1.5rem;">
+          <span id="txt-invitation-expired"></span>
+        </div>
+        <p id="txt-request-new" style="margin-top:1rem; color:var(--muted); font-size:0.9rem; line-height:1.5;"></p>
+        <a id="lnk-request-access" href="/site/request-access.html" class="btn btn--primary" style="margin-top:1rem; display:block; text-align:center;"></a>
       </div>
 
       <div id="state-error" style="display:none;">
         <div id="error-msg" class="notice notice--error" style="margin-top:1.5rem;"></div>
-        <a href="/login.html" class="btn btn--ghost" style="margin-top:1rem; display:block; text-align:center;">Sign in</a>
+        <a id="lnk-sign-in" href="/login.html" class="btn btn--ghost" style="margin-top:1rem; display:block; text-align:center;"></a>
       </div>
     </div>
   </div>
@@ -52,6 +48,23 @@
     const PENDING_INVITE_KEY = 'ap_pending_invite_token';
     const params = new URLSearchParams(window.location.search);
     const token  = params.get('token');
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+
+    function renderTranslations() {
+      document.title = t('auth.acceptInvitation') + ' \u2014 AudioProctor';
+      document.getElementById('txt-loading').textContent = t('auth.validatingInvitation');
+      document.getElementById('btn-accept').textContent = t('auth.signInWithGoogleToAccept');
+      document.getElementById('txt-accepting').textContent = t('auth.acceptingInvitation');
+      document.getElementById('txt-invitation-expired').textContent = t('auth.invitationExpired');
+      document.getElementById('txt-request-new').textContent = t('auth.requestNewInvitation');
+      document.getElementById('lnk-request-access').textContent = t('auth.requestAccess');
+      document.getElementById('lnk-sign-in').textContent = t('auth.signIn');
+    }
 
     function showState(id) {
       ['state-loading','state-invite','state-accepting','state-expired','state-error'].forEach(s => {
@@ -65,7 +78,7 @@
     }
 
     async function loadInvite() {
-      if (!token) { showError('No invitation token found. Please use the link from your invitation email.'); return; }
+      if (!token) { showError(t('auth.noInvitationToken')); return; }
 
       try {
         const res  = await fetch(`/api/accept-invite?token=${encodeURIComponent(token)}`);
@@ -76,18 +89,23 @@
             showState('state-expired');
             return;
           }
-          showError(data.error || 'Invalid invitation.');
+          showError(data.error || t('auth.invitationInvalid'));
           return;
         }
 
         // Show invitation details
-        let desc = `You've been invited to join AudioProctor`;
-        if (data.divisionName) desc += ` as part of ${data.divisionName}`;
-        else if (data.schoolName) desc += ` as part of ${data.schoolName}`;
-        desc += '.';
+        var desc;
+        if (data.divisionName) {
+          desc = t('auth.youHaveBeenInvitedToJoinWithEntity', { org: 'AudioProctor', entity: data.divisionName });
+        } else if (data.schoolName) {
+          desc = t('auth.youHaveBeenInvitedToJoinWithEntity', { org: 'AudioProctor', entity: data.schoolName });
+        } else {
+          desc = t('auth.youHaveBeenInvitedToJoin', { org: 'AudioProctor' });
+        }
 
         document.getElementById('invite-desc').textContent  = desc;
-        document.getElementById('invite-email').textContent = data.email;
+        document.getElementById('txt-must-sign-in').innerHTML =
+          t('auth.mustSignInWithAccountFor', { email: '<strong>' + escapeHtml(data.email) + '</strong>' });
         showState('state-invite');
 
         // If already signed in with the right account, auto-accept
@@ -96,7 +114,7 @@
           await doAccept(session.access_token);
         }
       } catch {
-        showError('Could not load invitation. Please try again or contact hello@audioproctor.com.');
+        showError(t('auth.couldNotLoadInvitation', { email: 'hello@audioproctor.com' }));
       }
     }
 
@@ -105,7 +123,7 @@
       localStorage.setItem(PENDING_INVITE_KEY, token);
 
       document.getElementById('btn-accept').disabled = true;
-      document.getElementById('btn-accept').textContent = 'Redirecting…';
+      document.getElementById('btn-accept').textContent = t('auth.redirecting');
       document.getElementById('notice-invite').classList.add('hidden');
 
       const { error } = await supabaseClient.auth.signInWithOAuth({
@@ -115,8 +133,8 @@
 
       if (error) {
         document.getElementById('btn-accept').disabled = false;
-        document.getElementById('btn-accept').textContent = 'Sign in with Google to accept';
-        document.getElementById('notice-invite').textContent = 'Could not start sign-in. Please try again.';
+        document.getElementById('btn-accept').textContent = t('auth.signInWithGoogleToAccept');
+        document.getElementById('notice-invite').textContent = t('auth.couldNotStartSignIn');
         document.getElementById('notice-invite').classList.remove('hidden');
       }
     }
@@ -134,7 +152,7 @@
         });
         const data = await res.json();
 
-        if (!res.ok) { showError(data.error || 'Could not accept invitation.'); return; }
+        if (!res.ok) { showError(data.error || t('auth.couldNotAcceptInvitation')); return; }
 
         localStorage.removeItem(PENDING_INVITE_KEY);
 
@@ -147,11 +165,16 @@
 
         window.location.href = dest;
       } catch {
-        showError('Network error. Please try again or contact hello@audioproctor.com.');
+        showError(t('auth.inviteNetworkError', { email: 'hello@audioproctor.com' }));
       }
     }
 
-    loadInvite();
+    window.i18nReady.then(function() {
+      renderTranslations();
+      loadInvite();
+    });
+
+    window.addEventListener('localechanged', renderTranslations);
   </script>
 </body>
 </html>
