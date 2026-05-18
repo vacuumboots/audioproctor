@@ -29,14 +29,14 @@ module.exports = async (req, res) => {
 
   const lang = getRequestLanguage(req);
 
-  if (req.method !== 'GET')    return res.status(405).json({ error: apiMessage('method_not_allowed', lang) });
+  if (req.method !== 'GET')    return res.status(405).json({ error: apiMessage('methodNotAllowed', lang) });
 
   const { code } = req.query;
-  if (!code) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'code' }) });
+  if (!code) return res.status(400).json({ error: apiMessage('missingCode', lang) });
 
   // Validate code format — reject obviously invalid input before hitting the DB
   if (typeof code !== 'string' || code.length > 20 || !/^[A-Za-z0-9 -]{2,20}$/.test(code)) {
-    return res.status(400).json({ error: apiMessage('invalid_param', lang, { param: 'code' }) });
+    return res.status(400).json({ error: apiMessage('invalidCodeFormat', lang) });
   }
 
   const supabase = createClient(
@@ -62,7 +62,7 @@ module.exports = async (req, res) => {
     .gte('attempted_at', windowStart);
 
   if (count >= RATE_LIMIT_MAX) {
-    return res.status(429).json({ error: apiMessage('rate_limited', lang) });
+    return res.status(429).json({ error: apiMessage('rateLimited', lang) });
   }
 
   // ─── Access code lookup ───────────────────────────────────────
@@ -74,13 +74,13 @@ module.exports = async (req, res) => {
 
   if (error || !upload) {
     await supabase.from('rate_limit_log').insert({ ip: clientIp });
-    return res.status(404).json({ error: apiMessage('session_invalid', lang) });
+    return res.status(404).json({ error: apiMessage('invalidCode', lang) });
   }
 
   // Check expiry
   if (new Date(upload.expires_at) < new Date()) {
     await supabase.from('rate_limit_log').insert({ ip: clientIp });
-    return res.status(410).json({ error: apiMessage('session_expired', lang) });
+    return res.status(410).json({ error: apiMessage('assessmentExpired', lang) });
   }
 
   // Check that the teacher account is not deactivated
@@ -91,7 +91,7 @@ module.exports = async (req, res) => {
     .maybeSingle();
 
   if (teacher?.is_deactivated) {
-    return res.status(403).json({ error: apiMessage('forbidden', lang) });
+    return res.status(403).json({ error: apiMessage('deactivated', lang) });
   }
 
   // ─── Build typed response ───────────────────────────────────────
@@ -156,7 +156,7 @@ module.exports = async (req, res) => {
       .createSignedUrl(upload.storage_path, 3600);
 
     if (signError || !signed) {
-      return res.status(500).json({ error: apiMessage('server_error', lang) });
+      return res.status(500).json({ error: apiMessage('serverError', lang) });
     }
 
     responseBody = {

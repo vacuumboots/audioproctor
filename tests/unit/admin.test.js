@@ -61,7 +61,7 @@ describe('api/admin.js', () => {
     const { req, res } = mk('GET', { action: 'overview' }, {}, '');
     await handler(req, res);
     expect(res._status).toBe(401);
-    expect(res._body.error).toBe('Missing authorization');
+    expect(res._body.error).toBe('You are not authorized to perform this action.');
   });
 
   it('rejects invalid token', async () => {
@@ -70,7 +70,7 @@ describe('api/admin.js', () => {
     const { req, res } = mk('GET', { action: 'overview' });
     await handler(req, res);
     expect(res._status).toBe(401);
-    expect(res._body.error).toBe('Invalid token');
+    expect(res._body.error).toBe('Invalid or expired session token. Please sign in again.');
   });
 
   it('rejects non-platform_admin', async () => {
@@ -78,14 +78,14 @@ describe('api/admin.js', () => {
     const { req, res } = mk('GET', { action: 'overview' });
     await handler(req, res);
     expect(res._status).toBe(403);
-    expect(res._body.error).toBe('Forbidden');
+    expect(res._body.error).toBe('Access denied. You do not have permission to perform this action.');
   });
 
   it('rejects when profile not found', async () => {
     const { req, res } = mk('GET', { action: 'overview' });
     await handler(req, res);
     expect(res._status).toBe(403);
-    expect(res._body.error).toBe('Forbidden');
+    expect(res._body.error).toBe('Access denied. You do not have permission to perform this action.');
   });
 
   it('allows platform_admin', async () => {
@@ -150,7 +150,7 @@ describe('api/admin.js', () => {
       const { req, res } = mk('POST', { action: 'set-tier' }, { entityType: 'division', entityId: 'd1', tier: 'nope' });
       await handler(req, res);
       expect(res._status).toBe(400);
-      expect(res._body.error).toBe('Invalid tier');
+      expect(res._body.error).toBe('Invalid role');
     });
 
     it('invite creates invitation', async () => {

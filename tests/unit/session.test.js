@@ -119,35 +119,35 @@ describe('api/session.js', () => {
     const { req, res } = mkReq('GET', {});
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Missing required parameter: code');
+    expect(res._body.error).toBe('Missing code');
   });
 
   it('rejects bad code format', async () => {
     const { req, res } = mkReq('GET', { code: 'AB!' });
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Invalid value for parameter: code');
+    expect(res._body.error).toBe('Invalid code format');
   });
 
   it('rejects non-string code', async () => {
     const { req, res } = mkReq('GET', { code: 123 });
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Invalid value for parameter: code');
+    expect(res._body.error).toBe('Invalid code format');
   });
 
   it('rejects code over 20 characters', async () => {
     const { req, res } = mkReq('GET', { code: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' });
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Invalid value for parameter: code');
+    expect(res._body.error).toBe('Invalid code format');
   });
 
   it('rejects single character code', async () => {
     const { req, res } = mkReq('GET', { code: 'A' });
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Invalid value for parameter: code');
+    expect(res._body.error).toBe('Invalid code format');
   });
 
   it('handles OPTIONS', async () => {
@@ -218,7 +218,7 @@ describe('api/session.js', () => {
     const { req, res } = mkReq('GET', { code: 'EXP-01' });
     await handler(req, res);
     expect(res._status).toBe(410);
-    expect(res._body.error).toBe('This assessment has expired');
+    expect(res._body.error).toBe('Assessment expired');
   });
 
   it('returns 403 for deactivated teacher', async () => {
@@ -234,7 +234,7 @@ describe('api/session.js', () => {
     const { req, res } = mkReq('GET', { code: 'DE-001' });
     await handler(req, res);
     expect(res._status).toBe(403);
-    expect(res._body.error).toBe('Forbidden');
+    expect(res._body.error).toBe('This account has been deactivated. Contact your administrator.');
   });
 
   it('returns 404 for unknown code', async () => {
@@ -243,7 +243,7 @@ describe('api/session.js', () => {
     const { req, res } = mkReq('GET', { code: 'ZZZ-999' });
     await handler(req, res);
     expect(res._status).toBe(404);
-    expect(res._body.error).toBe('Invalid access code or expired assessment');
+    expect(res._body.error).toBe('Invalid access code.');
   });
 
   it('handles case-insensitive code lookup', async () => {
@@ -291,7 +291,7 @@ describe('api/session.js', () => {
     const { req, res } = mkReq('GET', { code: 'RL-BAD' }, '127.0.0.1');
     await handler(req, res);
     expect(res._status).toBe(429);
-    expect(res._body.error).toBe('Too many requests. Please try again later.');
+    expect(res._body.error).toBe('Too many attempts. Try again later.');
   });
 
   it('rate limits by IP independently', async () => {

@@ -80,8 +80,8 @@
     "fr": "Le traitement du webhook a échoué. L'abonnement n'est peut-être pas entièrement activé."
   },
   "methodNotAllowed": {
-    "en": "Method not allowed.",
-    "fr": "Méthode non autorisée."
+    "en": "Method not allowed",
+    "fr": "Méthode non autorisée"
   },
   "invalidToken": {
     "en": "Invalid or expired session token. Please sign in again.",
