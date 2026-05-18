@@ -1,0 +1,94 @@
+{
+  "_meta": {
+    "description": "API error and success messages for all Vercel serverless functions",
+    "languages": ["en", "fr"],
+    "locale_fr": "fr-CA",
+    "formality_fr": "formal (vous)",
+    "created": "2026-05-18",
+    "total_keys": 21
+  },
+  "invalidCode": {
+    "en": "Invalid access code.",
+    "fr": "Code d'accès invalide."
+  },
+  "missingCode": {
+    "en": "Missing access code.",
+    "fr": "Code d'accès manquant."
+  },
+  "rateLimited": {
+    "en": "Too many attempts. Try again later.",
+    "fr": "Trop de tentatives. Veuillez réessayer plus tard."
+  },
+  "unauthorized": {
+    "en": "You are not authorized to perform this action.",
+    "fr": "Vous n'êtes pas autorisé à effectuer cette action."
+  },
+  "notFound": {
+    "en": "The requested resource was not found.",
+    "fr": "La ressource demandée est introuvable."
+  },
+  "serverError": {
+    "en": "An internal server error occurred. Please try again later.",
+    "fr": "Une erreur interne du serveur est survenue. Veuillez réessayer plus tard."
+  },
+  "invalidRequest": {
+    "en": "Invalid request. Please check your input and try again.",
+    "fr": "Requête invalide. Veuillez vérifier vos données et réessayer."
+  },
+  "accountDeleted": {
+    "en": "Your account has been permanently deleted.",
+    "fr": "Votre compte a été supprimé de façon permanente."
+  },
+  "deactivated": {
+    "en": "This account has been deactivated. Contact your administrator.",
+    "fr": "Ce compte a été désactivé. Veuillez contacter votre administrateur."
+  },
+  "uploadTooLarge": {
+    "en": "The uploaded file exceeds the maximum allowed size.",
+    "fr": "Le fichier téléversé dépasse la taille maximale autorisée."
+  },
+  "quotaExceeded": {
+    "en": "You have reached your monthly upload limit. Upgrade your plan or wait for the quota to reset.",
+    "fr": "Vous avez atteint votre limite mensuelle de téléversements. Mettez à niveau votre forfait ou attendez la réinitialisation du quota."
+  },
+  "storageExceeded": {
+    "en": "You have exceeded your storage limit. Free up space or upgrade your plan.",
+    "fr": "Vous avez dépassé votre limite de stockage. Libérez de l'espace ou mettez à niveau votre forfait."
+  },
+  "invitationExpired": {
+    "en": "This invitation has expired. Request a new invitation from your administrator.",
+    "fr": "Cette invitation a expiré. Veuillez demander une nouvelle invitation à votre administrateur."
+  },
+  "invitationUsed": {
+    "en": "This invitation has already been accepted.",
+    "fr": "Cette invitation a déjà été acceptée."
+  },
+  "emailSent": {
+    "en": "Email sent successfully.",
+    "fr": "Courriel envoyé avec succès."
+  },
+  "emailFailed": {
+    "en": "Could not send the email. Please try again or contact support.",
+    "fr": "Impossible d'envoyer le courriel. Veuillez réessayer ou contacter le soutien."
+  },
+  "checkoutError": {
+    "en": "Could not start checkout. Please try again or contact support.",
+    "fr": "Impossible de démarrer le paiement. Veuillez réessayer ou contacter le soutien."
+  },
+  "webhookError": {
+    "en": "Webhook processing failed. The subscription may not be fully activated.",
+    "fr": "Le traitement du webhook a échoué. L'abonnement n'est peut-être pas entièrement activé."
+  },
+  "methodNotAllowed": {
+    "en": "Method not allowed.",
+    "fr": "Méthode non autorisée."
+  },
+  "invalidToken": {
+    "en": "Invalid or expired session token. Please sign in again.",
+    "fr": "Jeton de session invalide ou expiré. Veuillez vous reconnecter."
+  },
+  "forbidden": {
+    "en": "Access denied. You do not have permission to perform this action.",
+    "fr": "Accès refusé. Vous n'avez pas la permission d'effectuer cette action."
+  }
+}
