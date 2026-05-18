@@ -10,10 +10,10 @@ async function generateAccessCode(format, customCode) {
   if (format === 'custom') {
     const code = (customCode || '').toUpperCase().trim();
     if (!/^[A-Z0-9]{3,20}$/.test(code)) {
-      throw new Error('Custom code must be 3–20 letters and numbers, no spaces or symbols.');
+      throw new Error(t('dashboard.customCodeError'));
     }
     if (await checkCodeExists(code)) {
-      throw new Error(`The code "${code}" is already in use. Choose a different one.`);
+      throw new Error(t('dashboard.customCodeExists', { code }));
     }
     return code;
   }
@@ -23,7 +23,7 @@ async function generateAccessCode(format, customCode) {
   do {
     code = generateCodeString();
     attempts++;
-    if (attempts > 20) throw new Error('Could not generate a unique access code. Please try again.');
+    if (attempts > 20) throw new Error(t('dashboard.codeGenerationFailed'));
   } while (await checkCodeExists(code));
   return code;
 }
