@@ -1,3 +1,11 @@
+/* ─── RTL Readiness ────────────────────────────────────────────── */
+/* RTL audit: 4 physical-direction properties found and converted to
+   logical equivalents (text-align → start/end, margin-left → margin-inline-start).
+   No float, padding-left/right, or border-left/right usage was found.
+   This file is RTL-ready for the style rules checked. Any new directional
+   styles should use logical properties (inline-start/end) instead of
+   physical direction (left/right).                                     */
+
 /* ─── Self-hosted fonts ──────────────────────────────────────────── */
 /* Playfair Display (variable, all weights) + DM Sans (variable, all weights) */
 /* Downloaded from Google Fonts and self-hosted — no third-party requests */
@@ -332,7 +340,7 @@ code, .monospace {
 }
 
 .uploads-table th {
-  text-align: left;
+  text-align: start;
   padding: 0.5rem 0.75rem;
   font-size: 0.7rem;
   letter-spacing: 0.14em;
@@ -534,7 +542,7 @@ code, .monospace {
   font-size: 0.8rem;
   color: var(--muted);
   min-width: 5rem;
-  text-align: right;
+  text-align: end;
 }
 
 .controls-row {
@@ -630,7 +638,7 @@ code, .monospace {
 .cb-count {
   font-size: 0.8rem;
   color: var(--muted);
-  margin-left: auto;
+  margin-inline-start: auto;
   white-space: nowrap;
 }
 .cb-table {
@@ -638,7 +646,7 @@ code, .monospace {
   border-collapse: collapse;
 }
 .cb-table th {
-  text-align: left;
+  text-align: start;
   padding: 0.5rem 0.75rem;
   font-size: 0.7rem;
   letter-spacing: 0.14em;
