@@ -346,6 +346,8 @@ function handleEditorInput() {
 
   const text = editor.innerText || '';
 
+  const locale = window.getLocale ? window.getLocale() : 'en';
+
   // If all images have been removed, clear any CORS/stripped-image warning
   if (editor.querySelectorAll('img').length === 0) {
     const notice = document.getElementById('upload-notice');
@@ -364,14 +366,14 @@ function handleEditorInput() {
 
   if (text.length > 25000) {
     btn.disabled = true;
-    hint.textContent = t('dashboard.textCharCountTooLong', { count: text.length.toLocaleString() });
+    hint.textContent = t('dashboard.textCharCountTooLong', { count: text.length.toLocaleString(locale) });
     return;
   }
 
   const imageSizeMB = pendingImages.reduce((sum, img) => sum + img.blob.size, 0) / 1024 / 1024;
   btn.disabled = false;
   hint.textContent = t('dashboard.textCharCount', {
-    count: text.length.toLocaleString(),
+    count: text.length.toLocaleString(locale),
     images: imageCount,
     plural: imageCount !== 1 ? 's' : '',
     size: imageSizeMB.toFixed(1)
@@ -391,6 +393,7 @@ function handleTextInput() {
   const text = normalizeTextContent(raw);
   const btn  = document.getElementById('btn-upload');
   const hint = document.getElementById('text-hint');
+  const locale = window.getLocale ? window.getLocale() : 'en';
 
   if (text.length === 0) {
     btn.disabled = true;
@@ -400,10 +403,10 @@ function handleTextInput() {
 
   if (text.length > 25000) {
     btn.disabled = true;
-    hint.textContent = t('dashboard.textCharCountTooLong', { count: text.length.toLocaleString() });
+    hint.textContent = t('dashboard.textCharCountTooLong', { count: text.length.toLocaleString(locale) });
     return;
   }
 
   btn.disabled = false;
-  hint.textContent = t('dashboard.textCharCountPlain', { count: text.length.toLocaleString() });
+  hint.textContent = t('dashboard.textCharCountPlain', { count: text.length.toLocaleString(locale) });
 }

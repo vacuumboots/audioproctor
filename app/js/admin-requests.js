@@ -21,7 +21,8 @@ async function loadRequests() {
     }
 
     const rows = requests.map(r => {
-      const date = new Date(r.created_at).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
+      const locale = window.getLocale ? window.getLocale() : 'en';
+      const date = new Intl.DateTimeFormat(locale, { year:'numeric', month:'short', day:'numeric' }).format(new Date(r.created_at));
       const statusBadge = r.status === 'pending'
         ? `<span style="color:var(--ink); font-weight:500;">${t('admin.requests.statusPending')}</span>`
         : r.status === 'approved'
@@ -104,8 +105,9 @@ async function loadInvitations() {
     }
 
     const renderRows = (list, isExpired) => list.map(inv => {
-      const date = new Date(inv.created_at).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
-      const expDate = new Date(inv.expires_at).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
+      const locale = window.getLocale ? window.getLocale() : 'en';
+      const date = new Intl.DateTimeFormat(locale, { year:'numeric', month:'short', day:'numeric' }).format(new Date(inv.created_at));
+      const expDate = new Intl.DateTimeFormat(locale, { year:'numeric', month:'short', day:'numeric' }).format(new Date(inv.expires_at));
       const org = inv.schools?.name || inv.divisions?.name || '—';
       const status = isExpired
         ? `<span style="color:var(--accent);">${t('admin.invitations.expired', { date: expDate })}</span>`

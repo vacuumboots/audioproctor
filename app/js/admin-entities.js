@@ -12,8 +12,9 @@ async function loadDivisions() {
     }
 
     const rows = divisions.map(d => {
+      const locale = window.getLocale ? window.getLocale() : 'en';
       const expiry = d.expires_at
-        ? new Date(d.expires_at).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' })
+        ? new Intl.DateTimeFormat(locale, { year:'numeric', month:'short', day:'numeric' }).format(new Date(d.expires_at))
         : '—';
       return `
         <tr data-id="${d.id}" data-type="division">
@@ -190,7 +191,8 @@ function renderTeachers(teachers) {
     if (t.expires_at) {
       const exp = new Date(t.expires_at);
       const now = new Date();
-      const dateStr = exp.toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
+      const locale = window.getLocale ? window.getLocale() : 'en';
+      const dateStr = new Intl.DateTimeFormat(locale, { year:'numeric', month:'short', day:'numeric' }).format(exp);
       const daysLeft = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
       if (exp > now) {
         trialHtml = `<span style="color:#4a7c59; font-size:0.8rem;">${t('admin.entities.teachers.expires', { date: dateStr })}</span>`;

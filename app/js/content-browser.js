@@ -160,10 +160,11 @@ function renderPanel(container) {
 
 function buildTable(page, start) {
   const rows = page.map((u, i) => {
+    const locale = window.getLocale ? window.getLocale() : 'en';
     const created = u.created_at
-      ? new Date(u.created_at).toLocaleDateString('en-CA', {
+      ? new Intl.DateTimeFormat(locale, {
           year: 'numeric', month: 'short', day: 'numeric'
-        })
+        }).format(new Date(u.created_at))
       : '—';
 
     const size = u.file_size_mb != null

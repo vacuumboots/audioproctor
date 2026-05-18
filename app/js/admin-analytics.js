@@ -39,7 +39,8 @@ function renderPlatformActivityChart(data, container) {
     const x     = i * (barW + gap);
     const y     = chartH - barH;
     const date  = new Date(d.week + 'T00:00:00Z');
-    const label = date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const locale = window.getLocale ? window.getLocale() : 'en';
+    const label = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(date);
     return `
       <rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="var(--ink)" opacity="0.75"/>
       <text x="${x + barW / 2}" y="${chartH + 13}" text-anchor="middle" font-size="8" fill="var(--muted)" font-family="'DM Sans',sans-serif">${label}</text>

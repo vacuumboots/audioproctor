@@ -171,7 +171,8 @@ async function loadQuota() {
   const used     = count || 0;
   const limit    = 3;
   const reset    = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const resetFmt = reset.toLocaleDateString('en-CA', { month: 'long', day: 'numeric' });
+  const locale   = window.getLocale ? window.getLocale() : 'en';
+  const resetFmt = new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric' }).format(reset);
 
   el.classList.remove('hidden', 'quota-bar--full');
 

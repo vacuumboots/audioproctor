@@ -103,8 +103,9 @@ async function loadTeachers() {
     }
 
     const rows = teachers.map(t => {
+      const locale = window.getLocale ? window.getLocale() : 'en';
       const lastActive = t.last_active
-        ? new Date(t.last_active).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })
+        ? new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(t.last_active))
         : '—';
       const roleTag = t.role === 'school_admin'
         ? `<span class="role-badge">Admin</span> `

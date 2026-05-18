@@ -139,7 +139,7 @@ async function renderDivisionBilling() {
             <strong>${p.label}</strong>
             ${p.description ? `<span style="font-size:0.8rem; color:var(--muted); margin-left:0.5rem;">${p.description}</span>` : ''}
             <div style="font-size:0.8rem; color:var(--ink); margin-top:0.15rem;">
-              $${(p.annual_price_cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}/year
+              ${new Intl.NumberFormat(window.getLocale ? window.getLocale() : 'en', { minimumFractionDigits: 2 }).format(p.annual_price_cents / 100)} $US/year
             </div>
           </div>
         </label>`).join('');
@@ -244,7 +244,8 @@ function renderActivityChart(data, container) {
     const x     = i * (barW + gap);
     const y     = chartH - barH;
     const date  = new Date(d.week + 'T00:00:00Z');
-    const label = date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const locale = window.getLocale ? window.getLocale() : 'en';
+    const label = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(date);
     return `
       <rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="var(--ink)" opacity="0.75"/>
       <text x="${x + barW / 2}" y="${chartH + 13}" text-anchor="middle" font-size="8" fill="var(--muted)" font-family="'DM Sans',sans-serif">${label}</text>
@@ -347,8 +348,9 @@ async function openDrillDown(schoolId, schoolName) {
     }
 
     const rows = teachers.map(t => {
+      const locale = window.getLocale ? window.getLocale() : 'en';
       const lastActive = t.last_active
-        ? new Date(t.last_active).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })
+        ? new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(t.last_active))
         : '—';
       const roleTag = t.role === 'school_admin'
         ? `<span style="display:inline-block; padding:0.1rem 0.45rem; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:500; border:1px solid var(--ink);">Admin</span> `
