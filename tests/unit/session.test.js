@@ -119,35 +119,35 @@ describe('api/session.js', () => {
     const { req, res } = mkReq('GET', {});
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Missing code parameter');
+    expect(res._body.error).toBe('Missing required parameter: code');
   });
 
   it('rejects bad code format', async () => {
     const { req, res } = mkReq('GET', { code: 'AB!' });
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Invalid code format');
+    expect(res._body.error).toBe('Invalid value for parameter: code');
   });
 
   it('rejects non-string code', async () => {
     const { req, res } = mkReq('GET', { code: 123 });
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Invalid code format');
+    expect(res._body.error).toBe('Invalid value for parameter: code');
   });
 
   it('rejects code over 20 characters', async () => {
     const { req, res } = mkReq('GET', { code: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' });
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Invalid code format');
+    expect(res._body.error).toBe('Invalid value for parameter: code');
   });
 
   it('rejects single character code', async () => {
     const { req, res } = mkReq('GET', { code: 'A' });
     await handler(req, res);
     expect(res._status).toBe(400);
-    expect(res._body.error).toBe('Invalid code format');
+    expect(res._body.error).toBe('Invalid value for parameter: code');
   });
 
   it('handles OPTIONS', async () => {
@@ -234,7 +234,7 @@ describe('api/session.js', () => {
     const { req, res } = mkReq('GET', { code: 'DE-001' });
     await handler(req, res);
     expect(res._status).toBe(403);
-    expect(res._body.error).toBe('This assessment is no longer available');
+    expect(res._body.error).toBe('Forbidden');
   });
 
   it('returns 404 for unknown code', async () => {
@@ -243,7 +243,7 @@ describe('api/session.js', () => {
     const { req, res } = mkReq('GET', { code: 'ZZZ-999' });
     await handler(req, res);
     expect(res._status).toBe(404);
-    expect(res._body.error).toBe('Access code not found');
+    expect(res._body.error).toBe('Invalid access code or expired assessment');
   });
 
   it('handles case-insensitive code lookup', async () => {
@@ -291,7 +291,7 @@ describe('api/session.js', () => {
     const { req, res } = mkReq('GET', { code: 'RL-BAD' }, '127.0.0.1');
     await handler(req, res);
     expect(res._status).toBe(429);
-    expect(res._body.error).toBe('Too many attempts. Try again later.');
+    expect(res._body.error).toBe('Too many requests. Please try again later.');
   });
 
   it('rate limits by IP independently', async () => {

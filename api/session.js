@@ -9,6 +9,7 @@
 // NEVER be sent to the browser — it lives only in this function.
 
 const { createClient } = require('@supabase/supabase-js');
+const { getRequestLanguage, apiMessage } = require('./_lib/i18n.js');
 
 const RATE_LIMIT_MAX    = 10;   // max failed attempts per IP per window
 const RATE_LIMIT_WINDOW = 60;   // minutes
@@ -25,14 +26,17 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET')    return res.status(405).json({ error: 'Method not allowed' });
+
+  const lang = getRequestLanguage(req);
+
+  if (req.method !== 'GET')    return res.status(405).json({ error: apiMessage('method_not_allowed', lang) });
 
   const { code } = req.query;
-  if (!code) return res.status(400).json({ error: 'Missing code parameter' });
+  if (!code) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'code' }) });
 
   // Validate code format — reject obviously invalid input before hitting the DB
   if (typeof code !== 'string' || code.length > 20 || !/^[A-Za-z0-9 -]{2,20}$/.test(code)) {
-    return res.status(400).json({ error: 'Invalid code format' });
+    return res.status(400).json({ error: apiMessage('invalid_param', lang, { param: 'code' }) });
   }
 
   const supabase = createClient(
@@ -58,7 +62,7 @@ module.exports = async (req, res) => {
     .gte('attempted_at', windowStart);
 
   if (count >= RATE_LIMIT_MAX) {
-    return res.status(429).json({ error: 'Too many attempts. Try again later.' });
+    return res.status(429).json({ error: apiMessage('rate_limited', lang) });
   }
 
   // ─── Access code lookup ───────────────────────────────────────
@@ -70,13 +74,13 @@ module.exports = async (req, res) => {
 
   if (error || !upload) {
     await supabase.from('rate_limit_log').insert({ ip: clientIp });
-    return res.status(404).json({ error: 'Access code not found' });
+    return res.status(404).json({ error: apiMessage('session_invalid', lang) });
   }
 
   // Check expiry
   if (new Date(upload.expires_at) < new Date()) {
     await supabase.from('rate_limit_log').insert({ ip: clientIp });
-    return res.status(410).json({ error: 'This assessment has expired' });
+    return res.status(410).json({ error: apiMessage('session_expired', lang) });
   }
 
   // Check that the teacher account is not deactivated
@@ -87,7 +91,7 @@ module.exports = async (req, res) => {
     .maybeSingle();
 
   if (teacher?.is_deactivated) {
-    return res.status(403).json({ error: 'This assessment is no longer available' });
+    return res.status(403).json({ error: apiMessage('forbidden', lang) });
   }
 
   // ─── Build typed response ───────────────────────────────────────
@@ -152,7 +156,7 @@ module.exports = async (req, res) => {
       .createSignedUrl(upload.storage_path, 3600);
 
     if (signError || !signed) {
-      return res.status(500).json({ error: 'Could not generate audio link' });
+      return res.status(500).json({ error: apiMessage('server_error', lang) });
     }
 
     responseBody = {
