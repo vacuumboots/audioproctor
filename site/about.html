@@ -7,6 +7,7 @@
   <meta name="description" content="AudioProctor was built by an IT administrator at an Alberta school division who ran into this problem and couldn't find a solution that didn't create new privacy issues.">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/site/site.css">
+  <script src="/site/js/i18n.js"></script>
 </head>
 <body>
 
@@ -14,32 +15,14 @@
 
 <div class="site-section" style="border-top: var(--border);">
   <div class="site-container">
-    <span class="section-label">About</span>
-    <h1 class="section-headline">Built by someone in the room.</h1>
+    <span class="section-label" id="about-label"></span>
+    <h1 class="section-headline" id="about-headline"></h1>
   </div>
 </div>
 
 <div class="site-section" style="padding-top:0; border-top:none;">
   <div class="site-container">
-    <div class="prose">
-
-      <h2>The Problem</h2>
-      <p>When a student requires audio or text accommodation during an assessment, the expectation is clear, but the tools rarely are. Teachers are expected to deliver audio support or provide a text-to-speech reader for students with IEPs or designations, and the standard assessment environment gives them almost nothing to do it with.</p>
-      <p>The workarounds are familiar: another adult in the room reading aloud, screen readers that weren't calibrated for assessment content, or aging playback hardware that may or may not still work. None of these are consistent. None of them scale. And none of them are what the accommodation is supposed to look like.</p>
-      <p>The friction is structural. Schools have moved to managed Chromebooks and browser-based assessment delivery, but accommodation tooling hasn't kept pace. The gap isn't theoretical. It shows up every time a teacher has to improvise a solution five minutes before a test begins.</p>
-
-      <h2>The Solution</h2>
-      <p>AudioProctor was built to fill that gap. A teacher uploads an audio file or pastes assessment text, generates a short access code, and hands it to the student. The student enters the code in a Chrome extension on their Chromebook. For audio, a locked fullscreen player opens. The student listens and replays as needed. For text, a fullscreen reader appears with built-in read-aloud powered by the device's text-to-speech. When the assessment is done, the teacher provides an exit word to close the session.</p>
-      <p>No student accounts. No student data. No IT ticket per assessment. The extension is deployed once by IT through Google Admin Console and works across every Chromebook in the division from that point forward.</p>
-
-      <h2>Pricing</h2>
-      <p>AudioProctor is priced by the scope of the purchase. A teacher can sign up free. A school can buy a plan from their minibudget. A division can sign one contract that covers every school, every teacher, and every Chromebook. The price scales with how much of the organization is covered, not with how many features are unlocked. <a href="/#pricing" style="color:var(--ink);">See pricing.</a></p>
-
-      <h2>Built by someone in the room</h2>
-      <p>AudioProctor was built by an IT administrator at a real Alberta school division who ran into this problem and couldn't find a solution that didn't create new privacy risks or require significant infrastructure. The tool reflects what actually happens in schools: how assessments get run, how teachers operate under time pressure, and what IT departments will and won't support.</p>
-      <p>If you have questions, concerns, or want to talk about what a pilot would look like for your division, <a href="/contact" style="color:var(--ink);">get in touch</a>.</p>
-
-    </div>
+    <div class="prose" id="about-prose"></div>
   </div>
 </div>
 
@@ -49,5 +32,53 @@
 <script defer src="/_vercel/insights/script.js"></script>
 <script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  function renderAbout() {
+    // ── Meta ──
+    document.title = t('about.metaTitle');
+    document.querySelector('meta[name="description"]').content = t('about.metaDescription');
+
+    // ── Hero section ──
+    document.getElementById('about-label').textContent = t('about.sectionLabel');
+    document.getElementById('about-headline').textContent = t('about.pageTitle');
+
+    // ── Prose sections ──
+    var prose = document.getElementById('about-prose');
+    prose.innerHTML = ''
+
+      // The Problem
+      + '<h2>' + t('about.problemTitle') + '</h2>'
+      + '<p>' + t('about.problemBody1') + '</p>'
+      + '<p>' + t('about.problemBody2') + '</p>'
+      + '<p>' + t('about.problemBody3') + '</p>'
+
+      // The Solution
+      + '<h2>' + t('about.solutionTitle') + '</h2>'
+      + '<p>' + t('about.solutionBody1') + '</p>'
+      + '<p>' + t('about.solutionBody2') + '</p>'
+
+      // Pricing
+      + '<h2>' + t('about.pricingTitle') + '</h2>'
+      + '<p>' + t('about.pricingBody')
+      + ' <a href="/#pricing" style="color:var(--ink);">' + t('about.pricingLink') + '</a></p>'
+
+      // Built by someone in the room
+      + '<h2>' + t('about.teamTitle') + '</h2>'
+      + '<p>' + t('about.teamBody1') + '</p>'
+      + '<p>'
+      + t('about.teamBody2', { link: '<a href="/contact" style="color:var(--ink);">' + t('about.teamBody2Link') + '</a>' })
+      + '</p>';
+  }
+
+  if (window.i18nReady) {
+    window.i18nReady.then(renderAbout);
+  }
+  window.addEventListener('localechanged', renderAbout);
+})();
+</script>
 </body>
 </html>

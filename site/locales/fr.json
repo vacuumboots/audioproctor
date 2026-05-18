@@ -33,7 +33,8 @@
     "sending": "Envoi en cours\u2026",
     "submit": "Soumettre",
     "learnMore": "En savoir plus",
-    "getStarted": "Commencer"
+    "getStarted": "Commencer",
+    "menu": "Menu"
   },
   "index": {
     "metaTitle": "AudioProctor \u2014 Audio d\u2019accommodement pour les \u00e9valuations",
@@ -70,7 +71,7 @@
       "label": "Tarifs",
       "headline": "Des tarifs adapt\u00e9s au fonctionnement r\u00e9el des \u00e9coles.",
       "intro": "Que vous soyez un enseignant seul, une \u00e9cole avec un minibudget ou une division qui d\u00e9ploie sur tous les Chromebooks \u00e0 la fois, il existe un forfait adapt\u00e9 \u00e0 votre fa\u00e7on de prendre des d\u00e9cisions.",
-      "footnote": "Tous les prix en CAD. La tarification des divisions se fait par facture annuelle. Les forfaits Teacher Premium et \u00c9cole sont en libre-service par carte de cr\u00e9dit (contactez-nous pour acheter en attendant).",
+      "footnote": "Tous les prix en CAD. La tarification des divisions se fait par facture annuelle. Les forfaits Teacher Premium et \u00c9cole sont en libre-service par carte de cr\u00e9dit ({contactUrl} pour acheter en attendant).",
       "free": {
         "name": "Gratuit \u2014 Enseignant individuel",
         "price": "0\u00a0$",
@@ -151,7 +152,9 @@
     "pricingBody": "AudioProctor est tarif\u00e9 selon la port\u00e9e de l\u2019achat. Un enseignant peut s\u2019inscrire gratuitement. Une \u00e9cole peut acheter un forfait \u00e0 partir de son minibudget. Une division peut signer un seul contrat qui couvre chaque \u00e9cole, chaque enseignant et chaque Chromebook. Le prix augmente avec la portion de l\u2019organisation couverte, pas avec le nombre de fonctionnalit\u00e9s d\u00e9verrouill\u00e9es.",
     "teamTitle": "Cr\u00e9\u00e9 par quelqu\u2019un dans la salle",
     "teamBody1": "AudioProctor a \u00e9t\u00e9 cr\u00e9\u00e9 par un administrateur TI d\u2019une v\u00e9ritable division scolaire de l\u2019Alberta qui a rencontr\u00e9 ce probl\u00e8me et n\u2019a pas trouv\u00e9 de solution qui ne cr\u00e9ait pas de nouveaux risques pour la confidentialit\u00e9 ou ne n\u00e9cessitait pas une infrastructure importante. L\u2019outil refl\u00e8te ce qui se passe r\u00e9ellement dans les \u00e9coles\u00a0: comment les \u00e9valuations sont men\u00e9es, comment les enseignants travaillent sous pression, et ce que les d\u00e9partements TI soutiendront ou non.",
-    "teamBody2": "Si vous avez des questions, des pr\u00e9occupations ou souhaitez discuter de ce \u00e0 quoi ressemblerait un projet pilote pour votre division, contactez-nous."
+    "pricingLink": "Voir les tarifs.",
+    "teamBody2": "Si vous avez des questions, des pr\u00e9occupations ou souhaitez discuter de ce \u00e0 quoi ressemblerait un projet pilote pour votre division, {link}.",
+    "teamBody2Link": "contactez-nous"
   },
   "contact": {
     "metaTitle": "Contact \u2014 AudioProctor",

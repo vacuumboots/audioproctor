@@ -551,6 +551,11 @@
 
 .site-form-group input:focus,
 .site-form-group textarea:focus,
+.site-form-group select:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
 .site-nav__locale-sep {
   color: var(--warm-mid);
   font-size: 0.65rem;
