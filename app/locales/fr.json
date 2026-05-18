@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "language": "Français",
+    "locale": "fr-CA",
+    "direction": "ltr"
+  },
+  "common": {},
+  "nav": {},
+  "auth": {},
+  "dashboard": {},
+  "admin": {},
+  "player": {},
+  "popup": {},
+  "emails": {}
+}
