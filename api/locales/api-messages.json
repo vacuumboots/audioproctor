@@ -158,5 +158,45 @@
   "missingAuth": {
     "en": "Missing authorization header",
     "fr": "En-tête d'autorisation manquant"
+  },
+  "missingCode": {
+    "en": "Missing code",
+    "fr": "Code manquant"
+  },
+  "invalidCodeFormat": {
+    "en": "Invalid code format",
+    "fr": "Format de code invalide"
+  },
+  "invalidEventType": {
+    "en": "Invalid or missing eventType",
+    "fr": "Type d'événement invalide ou manquant"
+  },
+  "invalidParam": {
+    "en": "Invalid value for parameter: {param}",
+    "fr": "Valeur invalide pour le paramètre : {param}"
+  },
+  "metadataNotObject": {
+    "en": "metadata must be a plain object",
+    "fr": "metadata doit être un objet simple"
+  },
+  "metadataTooLarge": {
+    "en": "metadata too large",
+    "fr": "metadata trop volumineux"
+  },
+  "metadataNotSerializable": {
+    "en": "metadata must be serializable",
+    "fr": "metadata doit être sérialisable"
+  },
+  "codeNotFound": {
+    "en": "Code not found",
+    "fr": "Code introuvable"
+  },
+  "assessmentExpired": {
+    "en": "Assessment expired",
+    "fr": "Évaluation expirée"
+  },
+  "badRequest": {
+    "en": "Bad request",
+    "fr": "Requête incorrecte"
   }
 }

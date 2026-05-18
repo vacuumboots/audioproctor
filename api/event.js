@@ -39,32 +39,32 @@ module.exports = async (req, res) => {
   const lang = getRequestLanguage(req);
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: apiMessage('method_not_allowed', lang) });
+    return res.status(405).json({ error: apiMessage('methodNotAllowed', lang) });
   }
 
   const { code, eventType, metadata } = req.body || {};
 
   if (!code || typeof code !== 'string') {
-    return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'code' }) });
+    return res.status(400).json({ error: apiMessage('missingCode', lang) });
   }
   // Validate code format — same rules as api/session.js
   if (code.length > 20 || !/^[A-Za-z0-9 -]{2,20}$/.test(code)) {
-    return res.status(400).json({ error: apiMessage('invalid_param', lang, { param: 'code' }) });
+    return res.status(400).json({ error: apiMessage('invalidCodeFormat', lang) });
   }
   if (!eventType || !ALLOWED_EVENTS.has(eventType)) {
-    return res.status(400).json({ error: apiMessage('invalid_param', lang, { param: 'eventType' }) });
+    return res.status(400).json({ error: apiMessage('invalidEventType', lang) });
   }
   // metadata is optional; if present must be a plain object with capped size
   if (metadata !== undefined && (typeof metadata !== 'object' || Array.isArray(metadata))) {
-    return res.status(400).json({ error: apiMessage('bad_request', lang) });
+    return res.status(400).json({ error: apiMessage('metadataNotObject', lang) });
   }
   if (metadata !== undefined) {
     try {
       if (JSON.stringify(metadata).length > 2048) {
-        return res.status(400).json({ error: apiMessage('bad_request', lang) });
+        return res.status(400).json({ error: apiMessage('metadataTooLarge', lang) });
       }
     } catch {
-      return res.status(400).json({ error: apiMessage('bad_request', lang) });
+      return res.status(400).json({ error: apiMessage('metadataNotSerializable', lang) });
     }
   }
 
@@ -83,14 +83,14 @@ module.exports = async (req, res) => {
     .single();
 
   if (uploadErr || !upload) {
-    return res.status(404).json({ error: apiMessage('not_found', lang) });
+    return res.status(404).json({ error: apiMessage('codeNotFound', lang) });
   }
 
   // Accept events up to 2 hours after expiry to catch end-of-session events
   // that arrive just after the 1-hour signed URL expires.
   const grace = new Date(upload.expires_at).getTime() + 2 * 60 * 60 * 1000;
   if (Date.now() > grace) {
-    return res.status(410).json({ error: apiMessage('session_expired', lang) });
+    return res.status(410).json({ error: apiMessage('assessmentExpired', lang) });
   }
 
   const { error: insertErr } = await supabase
@@ -104,7 +104,7 @@ module.exports = async (req, res) => {
   if (insertErr) {
     // Don't surface DB errors to the client — log and swallow
     console.error('session_events insert failed:', insertErr.message);
-    return res.status(500).json({ error: apiMessage('server_error', lang) });
+    return res.status(500).json({ error: apiMessage('serverError', lang) });
   }
 
   return res.status(200).json({ ok: true });
