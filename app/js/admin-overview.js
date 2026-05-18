@@ -10,11 +10,11 @@ async function loadOverview() {
     // Badge anomaly tab if there are flagged accounts
     if (overview.anomalies?.length > 0) {
       document.getElementById('anomaly-tab').textContent =
-        `Anomalies (${overview.anomalies.length})`;
+        t('admin.tabs.anomaliesWithCount', { count: overview.anomalies.length });
       renderAnomalies(overview.anomalies);
     } else {
       document.getElementById('anomalies-container').innerHTML =
-        `<div class="empty-state"><p class="label">No anomalies flagged</p></div>`;
+        `<div class="empty-state"><p class="label">${t('admin.anomalies.noFlags')}</p></div>`;
     }
   } catch (err) {
     console.error('overview failed:', err);
@@ -35,15 +35,14 @@ function renderAnomalies(anomalies) {
 
   container.innerHTML = `
     <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">
-      These accounts have a non-Canadian country code detected on sign-up.
-      Review and add a note, or ignore if legitimate.
+      ${t('admin.anomalies.description')}
     </p>
     <table class="admin-table">
       <thead>
         <tr>
-          <th>User ID</th>
-          <th>Country</th>
-          <th>Division (self-reported)</th>
+          <th>${t('admin.anomalies.tableHeaders.userId')}</th>
+          <th>${t('admin.anomalies.tableHeaders.country')}</th>
+          <th>${t('admin.anomalies.tableHeaders.division')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>

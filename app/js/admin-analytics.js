@@ -16,14 +16,14 @@ async function loadAnalytics() {
     renderPlatformDivisionTable(data.divisions, document.getElementById('pa-divisions-container'));
   } catch (err) {
     console.error('platform-analytics failed:', err);
-    document.getElementById('pa-activity-chart').innerHTML = `<p class="label text-accent">Could not load activity data</p>`;
-    document.getElementById('pa-divisions-container').innerHTML = `<p class="label text-accent">Could not load division data</p>`;
+    document.getElementById('pa-activity-chart').innerHTML = `<p class="label text-accent">${t('admin.analytics.loadActivityError')}</p>`;
+    document.getElementById('pa-divisions-container').innerHTML = `<p class="label text-accent">${t('admin.analytics.loadDivisionError')}</p>`;
   }
 }
 
 function renderPlatformActivityChart(data, container) {
   if (!data || data.length === 0 || data.every(d => d.sessions === 0)) {
-    container.innerHTML = `<p style="font-size:0.85rem; color:var(--muted); padding:0.5rem 0;">No session data yet. Data will appear here once students use access codes.</p>`;
+    container.innerHTML = `<p style="font-size:0.85rem; color:var(--muted); padding:0.5rem 0;">${t('admin.analytics.noSessionData')}</p>`;
     return;
   }
 
@@ -53,13 +53,13 @@ function renderPlatformActivityChart(data, container) {
         ${bars}
       </svg>
     </div>
-    <p style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">Sessions per week (last 12 weeks)</p>
+    <p style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">${t('admin.analytics.sessionsPerWeek')}</p>
   `;
 }
 
 function renderPlatformDivisionTable(divisions, container) {
   if (!divisions || !divisions.length) {
-    container.innerHTML = `<div class="empty-state"><p class="label">No division data yet</p></div>`;
+    container.innerHTML = `<div class="empty-state"><p class="label">${t('admin.analytics.noDivisionData')}</p></div>`;
     return;
   }
 
@@ -77,11 +77,11 @@ function renderPlatformDivisionTable(divisions, container) {
     <table class="admin-table">
       <thead>
         <tr>
-          <th>Division</th>
-          <th style="text-align:center;">Uploads</th>
-          <th style="text-align:center;">Sessions</th>
-          <th style="text-align:center;">Completion</th>
-          <th style="text-align:center;">Replays</th>
+          <th>${t('admin.analytics.tableHeaders.division')}</th>
+          <th style="text-align:center;">${t('admin.analytics.tableHeaders.uploads')}</th>
+          <th style="text-align:center;">${t('admin.analytics.tableHeaders.sessions')}</th>
+          <th style="text-align:center;">${t('admin.analytics.tableHeaders.completion')}</th>
+          <th style="text-align:center;">${t('admin.analytics.tableHeaders.replays')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>

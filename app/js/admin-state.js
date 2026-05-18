@@ -28,9 +28,9 @@ async function initAdmin(user) {
     document.body.innerHTML = `
       <div style="display:flex; align-items:center; justify-content:center; min-height:100vh; padding:2rem; text-align:center;">
         <div>
-          <p class="label" style="margin-bottom:1rem; color:var(--accent);">Access denied</p>
-          <p style="color:var(--muted); margin-bottom:1.5rem;">This page is only accessible to platform administrators.</p>
-          <a href="/dashboard.html" class="btn btn--ghost">Go to Dashboard</a>
+          <p class="label" style="margin-bottom:1rem; color:var(--accent);">${t('admin.accessDenied')}</p>
+          <p style="color:var(--muted); margin-bottom:1.5rem;">${t('admin.accessDeniedPlatform')}</p>
+          <a href="/dashboard.html" class="btn btn--ghost">${t('admin.goToDashboard')}</a>
         </div>
       </div>`;
     return;

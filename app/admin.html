@@ -151,12 +151,12 @@
   <div class="top-bar">
     <div class="page-container">
       <div class="top-bar__inner">
-        <span class="wordmark">Audio<span class="accent">Proctor</span> <span style="font-size:0.8rem; font-family:'DM Sans',sans-serif; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-left:0.5rem;">Admin</span></span>
+        <span class="wordmark">Audio<span class="accent">Proctor</span> <span class="wordmark__suffix" data-i18n="nav.admin">Admin</span></span>
         <div style="display:flex; align-items:center; gap:1.5rem;">
           <span id="admin-email" class="label"></span>
-          <a href="/dashboard.html" class="btn btn--ghost btn--small">Dashboard</a>
+          <a href="/dashboard.html" class="btn btn--ghost btn--small" data-i18n="admin.myDashboard">My Dashboard</a>
           <span class="lang-toggle" id="lang-toggle"></span>
-          <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
+          <button class="btn btn--ghost btn--small" onclick="handleSignOut()" data-i18n="admin.signOut">Sign out</button>
         </div>
       </div>
     </div>
@@ -168,45 +168,45 @@
     <div class="stats-row">
       <div class="stat-box">
         <div id="stat-divisions" class="stat-box__value">—</div>
-        <div class="label">Divisions</div>
+        <div class="label" data-i18n="admin.stats.divisions">Divisions</div>
       </div>
       <div class="stat-box">
         <div id="stat-schools" class="stat-box__value">—</div>
-        <div class="label">Schools</div>
+        <div class="label" data-i18n="admin.stats.schools">Schools</div>
       </div>
       <div class="stat-box">
         <div id="stat-teachers" class="stat-box__value">—</div>
-        <div class="label">Teachers</div>
+        <div class="label" data-i18n="admin.stats.teachers">Teachers</div>
       </div>
     </div>
 
     <!-- Tabs -->
     <div class="admin-tabs">
-      <button class="admin-tab admin-tab--active" onclick="switchTab('divisions', this)">Divisions</button>
-      <button class="admin-tab" onclick="switchTab('schools', this)">Schools</button>
-      <button class="admin-tab" onclick="switchTab('teachers', this)">Teachers</button>
-      <button class="admin-tab" onclick="switchTab('analytics', this)">Analytics</button>
-      <button class="admin-tab" id="requests-tab" onclick="switchTab('requests', this)">Requests</button>
-      <button class="admin-tab" id="invitations-tab" onclick="switchTab('invitations', this)">Invitations</button>
-      <button class="admin-tab" id="anomaly-tab" onclick="switchTab('anomalies', this)">Anomalies</button>
-      <button class="admin-tab" onclick="switchTab('demo', this)">Demo</button>
-      <button class="admin-tab" onclick="switchTab('content', this)">Content</button>
+      <button class="admin-tab admin-tab--active" onclick="switchTab('divisions', this)" data-i18n="admin.tabs.divisions">Divisions</button>
+      <button class="admin-tab" onclick="switchTab('schools', this)" data-i18n="admin.tabs.schools">Schools</button>
+      <button class="admin-tab" onclick="switchTab('teachers', this)" data-i18n="admin.tabs.teachers">Teachers</button>
+      <button class="admin-tab" onclick="switchTab('analytics', this)" data-i18n="admin.tabs.analytics">Analytics</button>
+      <button class="admin-tab" id="requests-tab" onclick="switchTab('requests', this)" data-i18n="admin.tabs.requests">Requests</button>
+      <button class="admin-tab" id="invitations-tab" onclick="switchTab('invitations', this)" data-i18n="admin.tabs.invitations">Invitations</button>
+      <button class="admin-tab" id="anomaly-tab" onclick="switchTab('anomalies', this)" data-i18n="admin.tabs.anomalies">Anomalies</button>
+      <button class="admin-tab" onclick="switchTab('demo', this)" data-i18n="admin.tabs.demo">Demo</button>
+      <button class="admin-tab" onclick="switchTab('content', this)" data-i18n="admin.tabs.content">Content</button>
     </div>
 
     <!-- Divisions panel -->
     <div id="panel-divisions" class="admin-panel admin-panel--active">
       <div class="section-toolbar">
-        <p class="label">All Divisions</p>
-        <button class="btn btn--ghost btn--small" onclick="toggleCreateForm('division-form')">+ New Division</button>
+        <p class="label" data-i18n="admin.entities.divisions.title">All Divisions</p>
+        <button class="btn btn--ghost btn--small" onclick="toggleCreateForm('division-form')" data-i18n="admin.entities.divisions.new">+ New Division</button>
       </div>
 
       <div id="division-form" class="create-form hidden">
         <div class="form-group">
-          <label class="label">Name</label>
+          <label class="label" for="new-div-name">Name</label>
           <input type="text" id="new-div-name" class="input-field" placeholder="Foothills School Division No. 38" style="font-size:0.875rem;">
         </div>
         <div class="form-group">
-          <label class="label">Enrolment Band</label>
+          <label class="label" for="new-div-band">Enrolment Band</label>
           <select id="new-div-band" class="input-field" style="font-size:0.875rem;">
             <option value="">— none —</option>
             <option value="small">Small (under 2,000)</option>
@@ -216,60 +216,60 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="label">Tier</label>
+          <label class="label" for="new-div-tier">Tier</label>
           <select id="new-div-tier" class="input-field" style="font-size:0.875rem;">
             <option value="free">Free</option>
             <option value="division">Division</option>
           </select>
         </div>
-        <button class="btn btn--primary btn--small" onclick="createDivision()">Create</button>
+        <button class="btn btn--primary btn--small" onclick="createDivision()" data-i18n="common.save">Create</button>
       </div>
 
       <div id="divisions-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
     <!-- Schools panel -->
     <div id="panel-schools" class="admin-panel">
       <div class="section-toolbar">
-        <p class="label">All Schools</p>
-        <button class="btn btn--ghost btn--small" onclick="toggleCreateForm('school-form')">+ New School</button>
+        <p class="label" data-i18n="admin.entities.schools.title">All Schools</p>
+        <button class="btn btn--ghost btn--small" onclick="toggleCreateForm('school-form')" data-i18n="admin.entities.schools.new">+ New School</button>
       </div>
 
       <div id="school-form" class="create-form hidden">
         <div class="form-group">
-          <label class="label">Name</label>
+          <label class="label" for="new-school-name">Name</label>
           <input type="text" id="new-school-name" class="input-field" placeholder="Okotoks Junior High" style="font-size:0.875rem;">
         </div>
         <div class="form-group">
-          <label class="label">Division ID (optional)</label>
-          <input type="text" id="new-school-div" class="input-field" placeholder="uuid" style="font-size:0.875rem; font-family:monospace;">
+          <label class="label" for="new-school-div" data-i18n="admin.entities.schools.divisionIdLabel">Division ID (optional)</label>
+          <input type="text" id="new-school-div" class="input-field" data-i18n-attr="placeholder" data-i18n="admin.entities.schools.divisionIdPlaceholder" placeholder="uuid" style="font-size:0.875rem; font-family:monospace;">
         </div>
         <div class="form-group">
-          <label class="label">Tier</label>
+          <label class="label" for="new-school-tier">Tier</label>
           <select id="new-school-tier" class="input-field" style="font-size:0.875rem;">
             <option value="free">Free</option>
             <option value="school">School</option>
             <option value="division">Division</option>
           </select>
         </div>
-        <button class="btn btn--primary btn--small" onclick="createSchool()">Create</button>
+        <button class="btn btn--primary btn--small" onclick="createSchool()" data-i18n="common.save">Create</button>
       </div>
 
       <div id="schools-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
     <!-- Teachers panel -->
     <div id="panel-teachers" class="admin-panel">
       <div class="section-toolbar">
-        <p class="label">All Teachers</p>
-        <input type="text" id="teacher-search" class="input-field" placeholder="Filter by email or division…" style="width:260px; font-size:0.875rem;" oninput="filterTeachers(this.value)">
+        <p class="label" data-i18n="admin.entities.teachers.title">All Teachers</p>
+        <input type="text" id="teacher-search" class="input-field" data-i18n-attr="placeholder" data-i18n="admin.entities.teachers.filterPlaceholder" placeholder="Filter by email or division…" style="width:260px; font-size:0.875rem;" oninput="filterTeachers(this.value)">
       </div>
       <div id="teachers-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
@@ -278,41 +278,41 @@
       <div class="stats-row" style="grid-template-columns: repeat(5, 1fr);">
         <div class="stat-box">
           <div id="pa-sessions" class="stat-box__value">—</div>
-          <div class="label">Total Sessions</div>
+          <div class="label" data-i18n="admin.stats.totalSessions">Total Sessions</div>
         </div>
         <div class="stat-box">
           <div id="pa-completions" class="stat-box__value">—</div>
-          <div class="label">Completions</div>
+          <div class="label" data-i18n="admin.stats.completions">Completions</div>
         </div>
         <div class="stat-box">
           <div id="pa-rate" class="stat-box__value">—</div>
-          <div class="label">Completion Rate</div>
+          <div class="label" data-i18n="admin.stats.completionRate">Completion Rate</div>
         </div>
         <div class="stat-box">
           <div id="pa-replays" class="stat-box__value">—</div>
-          <div class="label">Replays</div>
+          <div class="label" data-i18n="admin.stats.replays">Replays</div>
         </div>
         <div class="stat-box">
           <div id="pa-listen" class="stat-box__value">—</div>
-          <div class="label">Avg Listen</div>
+          <div class="label" data-i18n="admin.stats.avgListen">Avg Listen</div>
         </div>
       </div>
 
       <div class="card" style="margin-bottom:1.5rem;">
         <div class="card__header">
-          <p class="label">Platform Activity</p>
+          <p class="label" data-i18n="admin.analytics.platformActivity">Platform Activity</p>
         </div>
         <div id="pa-activity-chart">
-          <div class="empty-state"><p class="label">Loading…</p></div>
+          <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
         </div>
       </div>
 
       <div class="card">
         <div class="card__header">
-          <p class="label">Per-Division Breakdown</p>
+          <p class="label" data-i18n="admin.analytics.perDivisionBreakdown">Per-Division Breakdown</p>
         </div>
         <div id="pa-divisions-container">
-          <div class="empty-state"><p class="label">Loading…</p></div>
+          <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
         </div>
       </div>
     </div>
@@ -320,40 +320,40 @@
     <!-- Requests panel -->
     <div id="panel-requests" class="admin-panel">
       <div class="section-toolbar">
-        <p class="label">Teacher Access Requests</p>
-        <button class="btn btn--ghost btn--small" onclick="loadRequests()">Refresh</button>
+        <p class="label" data-i18n="admin.requests.title">Teacher Access Requests</p>
+        <button class="btn btn--ghost btn--small" onclick="loadRequests()" data-i18n="admin.requests.refresh">Refresh</button>
       </div>
       <div id="requests-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
     <!-- Invitations panel -->
     <div id="panel-invitations" class="admin-panel">
       <div class="section-toolbar">
-        <p class="label">Pending Invitations</p>
-        <button class="btn btn--ghost btn--small" onclick="loadInvitations()">Refresh</button>
+        <p class="label" data-i18n="admin.invitations.title">Pending Invitations</p>
+        <button class="btn btn--ghost btn--small" onclick="loadInvitations()" data-i18n="admin.invitations.refresh">Refresh</button>
       </div>
       <div id="invitations-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
     <!-- Anomalies panel -->
     <div id="panel-anomalies" class="admin-panel">
-      <p class="label" style="margin-bottom:1rem;">Accounts flagged for review</p>
+      <p class="label" style="margin-bottom:1rem;" data-i18n="admin.anomalies.title">Accounts flagged for review</p>
       <div id="anomalies-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
     <!-- Content panel -->
     <div id="panel-content" class="admin-panel">
       <div class="section-toolbar">
-        <p class="label">All Teacher Uploads</p>
+        <p class="label" data-i18n="admin.content.title">All Teacher Uploads</p>
       </div>
       <div id="content-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
@@ -361,20 +361,20 @@
     <div id="panel-demo" class="admin-panel">
       <div class="section-toolbar" style="margin-bottom:1.5rem;">
         <div>
-          <p class="label" style="margin-bottom:0.25rem;">Demo Accounts</p>
-          <p style="font-size:0.8rem; color:var(--muted);">
+          <p class="label" style="margin-bottom:0.25rem;" data-i18n="admin.demo.title">Demo Accounts</p>
+          <p style="font-size:0.8rem; color:var(--muted);" data-i18n="admin.demo.description">
             Realistic demo data for Aspen Peaks School Division and Horizon Charter Academy.
             Demo uploads display accurate analytics but have no audio files — playback will not work.
           </p>
         </div>
         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
-          <button class="btn btn--ghost btn--small" onclick="seedDemoData(this)">Seed / Refresh Demo Data</button>
+          <button class="btn btn--ghost btn--small" onclick="seedDemoData(this)" data-i18n="admin.demo.seedButton">Seed / Refresh Demo Data</button>
           <div id="seed-notice" class="notice hidden" style="max-width:400px; font-size:0.8rem;"></div>
         </div>
       </div>
 
       <div id="demo-personas">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
@@ -394,13 +394,33 @@
   <script src="/js/content-browser.js"></script>
   <script src="/js/admin-content.js"></script>
   <script>
+    // ─── i18n DOM initializer ────────────────────────────────────
+    // Applies t() to all [data-i18n] elements and [data-i18n-attr] placeholders.
+    function applyAdminTranslations() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        const attr = el.dataset.i18nAttr;
+        if (attr) {
+          el.setAttribute(attr, t(key));
+        } else {
+          el.textContent = t(key);
+        }
+      });
+    }
+
     (async () => {
+      await window.i18nReady;
+      applyAdminTranslations();
+
       const user = await requireAuth();
       if (!user) return;
       document.getElementById('admin-email').textContent = user.email;
       await initAdmin(user);
       await initAdminContent();
     })();
+
+    // Re-apply translations when locale changes
+    window.addEventListener('localechanged', applyAdminTranslations);
   </script>
 </body>
 </html>

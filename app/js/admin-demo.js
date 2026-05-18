@@ -42,7 +42,7 @@ async function loadDemoPanel() {
               <td style="font-size:0.8rem; color:var(--muted);">${escapeHtml(p.roleLabel)}</td>
               <td style="font-size:0.8rem; color:var(--muted); font-family:monospace;">${escapeHtml(p.email)}</td>
               <td style="width:100px; text-align:right;">
-                <button class="btn btn--ghost btn--small" onclick="viewAs('${p.key}','${escapeHtml(p.name)}','${escapeHtml(p.email)}',this)">View as</button>
+                <button class="btn btn--ghost btn--small" onclick="viewAs('${p.key}','${escapeHtml(p.name)}','${escapeHtml(p.email)}',this)">${t('admin.demo.viewAs')}</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -56,22 +56,22 @@ async function loadDemoPanel() {
 
 async function viewAs(key, name, email, btn) {
   btn.disabled    = true;
-  btn.textContent = 'Loading…';
+  btn.textContent = t('common.loading');
 
   try {
     const teacher = allTeachers.find(t => t.email === email);
-    if (!teacher) throw new Error('Demo account not found — seed demo data first.');
+    if (!teacher) throw new Error(t('admin.demo.demoNotFound'));
 
     const data = await adminApi(`login-link&userId=${teacher.id}`, 'GET');
 
     btn.disabled    = false;
-    btn.textContent = 'View as';
+    btn.textContent = t('admin.demo.viewAs');
 
     showViewAsModal(name, data.email, data.role, data.redirectTo, data.link);
   } catch (err) {
     btn.disabled    = false;
-    btn.textContent = 'View as';
-    alert('Could not generate login link: ' + err.message);
+    btn.textContent = t('admin.demo.viewAs');
+    alert(t('admin.demo.loginLinkError', { error: err.message }));
   }
 }
 
@@ -88,25 +88,22 @@ function showViewAsModal(name, email, role, redirectTo, link) {
 
   modal.innerHTML = `
     <div style="background:var(--paper); border:var(--border); max-width:480px; width:100%; padding:2rem;">
-      <p class="label" style="margin-bottom:0.5rem;">View as ${escapeHtml(name)}</p>
+      <p class="label" style="margin-bottom:0.5rem;">${t('admin.demo.viewAsTitle', { name: escapeHtml(name) })}</p>
       <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.25rem; line-height:1.5;">
-        This one-time link signs in as <strong style="font-weight:500;">${escapeHtml(email)}</strong>
-        and opens <code style="font-size:0.75rem;">${escapeHtml(redirectTo.replace('https://app.audioproctor.com',''))}</code>.
+        ${t('admin.demo.viewAsDescription', { email: escapeHtml(email), path: escapeHtml(redirectTo.replace('https://app.audioproctor.com','')) })}
       </p>
 
       <div style="border:1px solid var(--accent); padding:0.75rem 1rem; background:var(--light-accent); margin-bottom:1.25rem;">
-        <p style="font-size:0.8rem; color:var(--accent); font-weight:500; margin-bottom:0.25rem;">Session warning</p>
+        <p style="font-size:0.8rem; color:var(--accent); font-weight:500; margin-bottom:0.25rem;">${t('admin.demo.sessionWarningTitle')}</p>
         <p style="font-size:0.8rem; color:var(--muted); line-height:1.4;">
-          Supabase stores sessions in localStorage — opening this link in any tab of this browser
-          will replace your current admin session. Use an incognito or separate browser window
-          to keep your admin session active.
+          ${t('admin.demo.sessionWarningDesc')}
         </p>
       </div>
 
       <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-        <button class="btn btn--primary" onclick="copyViewAsLink('${escapeHtml(link)}', this)">Copy link</button>
-        <a href="${escapeHtml(link)}" target="_blank" class="btn btn--ghost" onclick="document.getElementById('view-as-modal').remove()">Open in new tab (signs out admin)</a>
-        <button class="btn btn--ghost" onclick="document.getElementById('view-as-modal').remove()">Cancel</button>
+        <button class="btn btn--primary" onclick="copyViewAsLink('${escapeHtml(link)}', this)">${t('admin.demo.copyLink')}</button>
+        <a href="${escapeHtml(link)}" target="_blank" class="btn btn--ghost" onclick="document.getElementById('view-as-modal').remove()">${t('admin.demo.openNewTab')}</a>
+        <button class="btn btn--ghost" onclick="document.getElementById('view-as-modal').remove()">${t('admin.demo.cancel')}</button>
       </div>
     </div>
   `;
@@ -117,32 +114,37 @@ function showViewAsModal(name, email, role, redirectTo, link) {
 
 function copyViewAsLink(link, btn) {
   navigator.clipboard.writeText(link).then(() => {
-    btn.textContent = 'Copied!';
-    setTimeout(() => { btn.textContent = 'Copy link'; }, 2000);
+    btn.textContent = t('admin.demo.copied');
+    setTimeout(() => { btn.textContent = t('admin.demo.copyLink'); }, 2000);
   });
 }
 
 // ─── Seed Demo Data ───────────────────────────────────────────────
 
 async function seedDemoData(btn) {
-  if (!confirm('This will create 9 demo accounts, 2 schools, 1 division, 27 uploads, and ~2,000 session events. Safe to run multiple times (idempotent). Continue?')) return;
+  if (!confirm(t('admin.demo.seedConfirm'))) return;
 
   btn.disabled    = true;
-  btn.textContent = 'Seeding…';
+  btn.textContent = t('admin.demo.seeding');
   const notice = document.getElementById('seed-notice');
   notice.textContent = '';
   notice.className = 'notice hidden';
 
   try {
     const result = await adminApi('seed-demo', 'POST');
-    notice.textContent = `Done. ${result.usersCreated} users created, ${result.usersFound} already existed. ${result.uploads} uploads, ${result.events} session events inserted. Analytics will refresh within 15 minutes (or run REFRESH MATERIALIZED VIEW upload_summaries in SQL editor now).`;
+    notice.textContent = t('admin.demo.seedDone', {
+      usersCreated: result.usersCreated,
+      usersFound: result.usersFound,
+      uploads: result.uploads,
+      events: result.events,
+    });
     notice.className = 'notice notice--success';
     await loadTeachers();
   } catch (err) {
-    notice.textContent = 'Seed failed: ' + err.message;
+    notice.textContent = t('admin.demo.seedFailed', { error: err.message });
     notice.className = 'notice notice--error';
   } finally {
     btn.disabled    = false;
-    btn.textContent = 'Seed / Refresh Demo Data';
+    btn.textContent = t('admin.demo.seedButton');
   }
 }

@@ -7,7 +7,7 @@ async function loadDivisions() {
     allDivisionsList = divisions;
 
     if (!divisions.length) {
-      container.innerHTML = `<div class="empty-state"><p class="label">No divisions yet</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p class="label">${t('admin.entities.divisions.noData')}</p></div>`;
       return;
     }
 
@@ -27,13 +27,13 @@ async function loadDivisions() {
           <td>${expiry}</td>
           <td>
             <input class="notes-input" type="text" value="${escapeHtml(d.notes || '')}"
-              placeholder="Add notes…"
+              placeholder="${t('admin.entities.teachers.addNotes')}"
               onblur="setNotes('division','${d.id}',this.value)"
               onkeydown="if(event.key==='Enter')this.blur()">
           </td>
           <td>
             <button class="btn btn--small" style="border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
-              onclick="deleteDivision('${d.id}', '${escapeHtml(d.name)}')">Delete</button>
+              onclick="deleteDivision('${d.id}', '${escapeHtml(d.name)}')">${t('common.delete')}</button>
           </td>
         </tr>`;
     }).join('');
@@ -42,18 +42,18 @@ async function loadDivisions() {
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Size</th>
-            <th>Tier</th>
-            <th>Expires</th>
-            <th>Notes / Flags</th>
-            <th>Actions</th>
+            <th>${t('admin.entities.divisions.tableHeaders.name')}</th>
+            <th>${t('admin.entities.divisions.tableHeaders.size')}</th>
+            <th>${t('admin.entities.divisions.tableHeaders.tier')}</th>
+            <th>${t('admin.entities.divisions.tableHeaders.expires')}</th>
+            <th>${t('admin.entities.divisions.tableHeaders.notes')}</th>
+            <th>${t('admin.entities.divisions.tableHeaders.actions')}</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>`;
   } catch (err) {
-    container.innerHTML = `<p class="label text-accent">Could not load divisions: ${escapeHtml(err.message)}</p>`;
+    container.innerHTML = `<p class="label text-accent">${t('admin.entities.divisions.loadError', { error: escapeHtml(err.message) })}</p>`;
   }
 }
 
@@ -61,7 +61,7 @@ async function createDivision() {
   const name = document.getElementById('new-div-name').value.trim();
   const band = document.getElementById('new-div-band').value;
   const tier = document.getElementById('new-div-tier').value;
-  if (!name) { alert('Division name is required.'); return; }
+  if (!name) { alert(t('admin.entities.divisions.nameRequired')); return; }
 
   try {
     await adminApi('create-division', 'POST', { name, enrolmentBand: band || null, tier });
@@ -71,7 +71,7 @@ async function createDivision() {
     toggleCreateForm('division-form');
     await Promise.all([loadDivisions(), loadOverview()]);
   } catch (err) {
-    alert('Could not create division: ' + err.message);
+    alert(t('admin.entities.divisions.createError', { error: err.message }));
   }
 }
 
@@ -84,7 +84,7 @@ async function loadSchools() {
     allSchoolsList = schools;
 
     if (!schools.length) {
-      container.innerHTML = `<div class="empty-state"><p class="label">No schools yet</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p class="label">${t('admin.entities.schools.noData')}</p></div>`;
       return;
     }
 
@@ -101,13 +101,13 @@ async function loadSchools() {
           </td>
           <td>
             <input class="notes-input" type="text" value="${escapeHtml(s.notes || '')}"
-              placeholder="Add notes…"
+              placeholder="${t('admin.entities.teachers.addNotes')}"
               onblur="setNotes('school','${s.id}',this.value)"
               onkeydown="if(event.key==='Enter')this.blur()">
           </td>
           <td>
             <button class="btn btn--small" style="border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
-              onclick="deleteSchool('${s.id}', '${escapeHtml(s.name)}')">Delete</button>
+              onclick="deleteSchool('${s.id}', '${escapeHtml(s.name)}')">${t('common.delete')}</button>
           </td>
         </tr>`;
     }).join('');
@@ -116,17 +116,17 @@ async function loadSchools() {
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Division</th>
-            <th>Tier</th>
-            <th>Notes / Flags</th>
-            <th>Actions</th>
+            <th>${t('admin.entities.schools.tableHeaders.name')}</th>
+            <th>${t('admin.entities.schools.tableHeaders.division')}</th>
+            <th>${t('admin.entities.schools.tableHeaders.tier')}</th>
+            <th>${t('admin.entities.schools.tableHeaders.notes')}</th>
+            <th>${t('admin.entities.schools.tableHeaders.actions')}</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>`;
   } catch (err) {
-    container.innerHTML = `<p class="label text-accent">Could not load schools: ${escapeHtml(err.message)}</p>`;
+    container.innerHTML = `<p class="label text-accent">${t('admin.entities.schools.loadError', { error: escapeHtml(err.message) })}</p>`;
   }
 }
 
@@ -134,7 +134,7 @@ async function createSchool() {
   const name      = document.getElementById('new-school-name').value.trim();
   const divisionId = document.getElementById('new-school-div').value.trim() || null;
   const tier      = document.getElementById('new-school-tier').value;
-  if (!name) { alert('School name is required.'); return; }
+  if (!name) { alert(t('admin.entities.schools.nameRequired')); return; }
 
   try {
     await adminApi('create-school', 'POST', { name, divisionId, tier });
@@ -144,7 +144,7 @@ async function createSchool() {
     toggleCreateForm('school-form');
     await Promise.all([loadSchools(), loadOverview()]);
   } catch (err) {
-    alert('Could not create school: ' + err.message);
+    alert(t('admin.entities.schools.createError', { error: err.message }));
   }
 }
 
@@ -156,7 +156,7 @@ async function loadTeachers() {
     allTeachers = await adminApi('teachers');
     renderTeachers(allTeachers);
   } catch (err) {
-    container.innerHTML = `<p class="label text-accent">Could not load teachers: ${escapeHtml(err.message)}</p>`;
+    container.innerHTML = `<p class="label text-accent">${t('admin.entities.teachers.loadError', { error: escapeHtml(err.message) })}</p>`;
   }
 }
 
@@ -174,7 +174,7 @@ function renderTeachers(teachers) {
   const container = document.getElementById('teachers-container');
 
   if (!teachers.length) {
-    container.innerHTML = `<div class="empty-state"><p class="label">No teachers found</p></div>`;
+    container.innerHTML = `<div class="empty-state"><p class="label">${t('admin.entities.teachers.noData')}</p></div>`;
     return;
   }
 
@@ -193,22 +193,22 @@ function renderTeachers(teachers) {
       const dateStr = exp.toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
       const daysLeft = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
       if (exp > now) {
-        trialHtml = `<span style="color:#4a7c59; font-size:0.8rem;">Expires ${dateStr}</span>`;
+        trialHtml = `<span style="color:#4a7c59; font-size:0.8rem;">${t('admin.entities.teachers.expires', { date: dateStr })}</span>`;
         if (daysLeft <= 7) {
-          trialHtml = `<span style="color:var(--accent); font-size:0.8rem; font-weight:500;">Expires ${dateStr}</span>`;
+          trialHtml = `<span style="color:var(--accent); font-size:0.8rem; font-weight:500;">${t('admin.entities.teachers.expires', { date: dateStr })}</span>`;
         }
       } else {
-        trialHtml = `<span style="color:var(--accent); font-size:0.8rem;">Expired ${dateStr}</span>`;
+        trialHtml = `<span style="color:var(--accent); font-size:0.8rem;">${t('admin.entities.teachers.expired', { date: dateStr })}</span>`;
       }
     }
 
     const deactivatedBadge = t.is_deactivated
-      ? `<span style="color:var(--accent); font-size:0.75rem; margin-left:0.4rem;">(deactivated)</span>`
+      ? `<span style="color:var(--accent); font-size:0.75rem; margin-left:0.4rem;">${t('admin.entities.teachers.deactivated')}</span>`
       : '';
 
     const deactivateBtn = t.is_deactivated
-      ? `<button class="btn btn--ghost btn--small" onclick="toggleDeactivation('${escapeHtml(t.id)}', false, this)">Reactivate</button>`
-      : `<button class="btn btn--small" style="border:1px solid var(--warm-mid); background:transparent; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;" onclick="toggleDeactivation('${escapeHtml(t.id)}', true, this)">Deactivate</button>`;
+      ? `<button class="btn btn--ghost btn--small" onclick="toggleDeactivation('${escapeHtml(t.id)}', false, this)">${t('admin.entities.teachers.reactivate')}</button>`
+      : `<button class="btn btn--small" style="border:1px solid var(--warm-mid); background:transparent; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;" onclick="toggleDeactivation('${escapeHtml(t.id)}', true, this)">${t('admin.entities.teachers.deactivate')}</button>`;
 
     return `
       <tr style="${t.is_deactivated ? 'opacity:0.55;' : ''}">
@@ -222,7 +222,7 @@ function renderTeachers(teachers) {
         <td style="white-space:nowrap;">
           ${trialHtml}
           <button class="btn btn--ghost btn--small" style="margin-left:0.5rem; padding:0.2rem 0.5rem; font-size:0.65rem;"
-            onclick="extendTrial('${t.id}', 30)">+30d</button>
+            onclick="extendTrial('${t.id}', 30)">${t('admin.entities.teachers.extend30d')}</button>
         </td>
         <td>
           <select class="tier-select" onchange="setRole('${t.id}',this.value)">
@@ -236,15 +236,15 @@ function renderTeachers(teachers) {
         </td>
         <td>
           <input class="notes-input" type="text" value="${escapeHtml(t.notes || '')}"
-            placeholder="Add notes…"
+            placeholder="${t('admin.entities.teachers.addNotes')}"
             onblur="setNotes('teacher','${t.id}',this.value)"
             onkeydown="if(event.key==='Enter')this.blur()">
         </td>
         <td>
           ${deactivateBtn}
-          <button class="btn btn--ghost btn--small" onclick="openReassignModal('${t.id}', '${escapeHtml(t.email || '')}', '${t.school_id || ''}', '${t.division_id || ''}')">Reassign</button>
+          <button class="btn btn--ghost btn--small" onclick="openReassignModal('${t.id}', '${escapeHtml(t.email || '')}', '${t.school_id || ''}', '${t.division_id || ''}')">${t('admin.entities.teachers.reassign')}</button>
           <button class="btn btn--small" style="margin-left:0.5rem; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
-            onclick="deleteTeacher('${t.id}', '${escapeHtml(t.email || '')}')">Delete</button>
+            onclick="deleteTeacher('${t.id}', '${escapeHtml(t.email || '')}')">${t('common.delete')}</button>
         </td>
       </tr>`;
   }).join('');
@@ -253,14 +253,14 @@ function renderTeachers(teachers) {
     <table class="admin-table">
       <thead>
         <tr>
-          <th>Email</th>
-          <th>School / Division</th>
-          <th>Tier Override</th>
-          <th>Trial</th>
-          <th>Role</th>
-          <th>Country</th>
-          <th>Notes / Flags</th>
-          <th>Actions</th>
+          <th>${t('admin.entities.teachers.tableHeaders.email')}</th>
+          <th>${t('admin.entities.teachers.tableHeaders.schoolDivision')}</th>
+          <th>${t('admin.entities.teachers.tableHeaders.tierOverride')}</th>
+          <th>${t('admin.entities.teachers.tableHeaders.trial')}</th>
+          <th>${t('admin.entities.teachers.tableHeaders.role')}</th>
+          <th>${t('admin.entities.teachers.tableHeaders.country')}</th>
+          <th>${t('admin.entities.teachers.tableHeaders.notes')}</th>
+          <th>${t('admin.entities.teachers.tableHeaders.actions')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -271,7 +271,7 @@ function renderTeachers(teachers) {
 
 function openReassignModal(userId, email, currentSchoolId, currentDivisionId) {
   if (!allSchoolsList.length || !allDivisionsList.length) {
-    alert('Organizations still loading. Please try again in a moment.');
+    alert(t('admin.entities.teachers.orgsLoading'));
     return;
   }
 
@@ -295,27 +295,27 @@ function openReassignModal(userId, email, currentSchoolId, currentDivisionId) {
 
   modal.innerHTML = `
     <div style="background:var(--paper); border:var(--border); max-width:420px; width:100%; padding:2rem;">
-      <p class="label" style="margin-bottom:1rem;">Reassign ${escapeHtml(email || userId)}</p>
+      <p class="label" style="margin-bottom:1rem;">${t('admin.entities.teachers.reassignTitle', { email: escapeHtml(email || userId) })}</p>
 
       <div style="margin-bottom:1rem;">
-        <label class="label" style="display:block; margin-bottom:0.4rem;">School</label>
+        <label class="label" style="display:block; margin-bottom:0.4rem;">${t('admin.entities.teachers.reassignSchool')}</label>
         <select id="reassign-school" class="input-field" style="font-size:0.875rem;">
-          <option value="">— None —</option>
+          <option value="">${t('admin.entities.teachers.noneOption')}</option>
           ${schoolOpts}
         </select>
       </div>
 
       <div style="margin-bottom:1.5rem;">
-        <label class="label" style="display:block; margin-bottom:0.4rem;">Division</label>
+        <label class="label" style="display:block; margin-bottom:0.4rem;">${t('admin.entities.teachers.reassignDivision')}</label>
         <select id="reassign-division" class="input-field" style="font-size:0.875rem;">
-          <option value="">— None —</option>
+          <option value="">${t('admin.entities.teachers.noneOption')}</option>
           ${divisionOpts}
         </select>
       </div>
 
       <div style="display:flex; gap:0.75rem;">
-        <button class="btn btn--primary btn--small" onclick="submitReassign('${userId}')">Reassign</button>
-        <button class="btn btn--ghost btn--small" onclick="document.getElementById('reassign-modal').remove()">Cancel</button>
+        <button class="btn btn--primary btn--small" onclick="submitReassign('${userId}')">${t('admin.entities.teachers.reassignSubmit')}</button>
+        <button class="btn btn--ghost btn--small" onclick="document.getElementById('reassign-modal').remove()">${t('admin.entities.teachers.reassignCancel')}</button>
       </div>
     </div>
   `;
@@ -333,7 +333,7 @@ async function submitReassign(userId) {
     document.getElementById('reassign-modal').remove();
     await loadTeachers();
   } catch (err) {
-    alert('Could not reassign teacher: ' + err.message);
+    alert(t('admin.entities.teachers.reassignError', { error: err.message }));
   }
 }
 
@@ -343,7 +343,7 @@ async function setTier(entityType, entityId, tier) {
   try {
     await adminApi('set-tier', 'POST', { entityType, entityId, tier });
   } catch (err) {
-    alert('Could not update tier: ' + err.message);
+    alert(t('admin.entities.teachers.tierError', { error: err.message }));
     if (entityType === 'division') loadDivisions();
     else if (entityType === 'school') loadSchools();
     else loadTeachers();
@@ -354,7 +354,7 @@ async function setRole(userId, role) {
   try {
     await adminApi('set-role', 'POST', { userId, role });
   } catch (err) {
-    alert('Could not update role: ' + err.message);
+    alert(t('admin.entities.teachers.roleError', { error: err.message }));
     loadTeachers();
   }
 }
@@ -378,22 +378,27 @@ async function extendTrial(userId, days) {
     await adminApi('set-expires', 'POST', { entityType: 'teacher', entityId: userId, expiresAt: iso });
     await loadTeachers();
   } catch (err) {
-    alert('Could not extend trial: ' + err.message);
+    alert(t('admin.entities.teachers.trialError', { error: err.message }));
   }
 }
 
 async function toggleDeactivation(userId, deactivate, btn) {
-  const actionLabel = deactivate ? 'Deactivate' : 'Reactivate';
-  if (!confirm(`${actionLabel} this teacher?`)) return;
+  const actionLabel = deactivate
+    ? t('admin.entities.teachers.deactivate')
+    : t('admin.entities.teachers.reactivate');
+  const confirmMsg = deactivate
+    ? t('admin.entities.teachers.deactivateConfirm')
+    : t('admin.entities.teachers.reactivateConfirm');
+  if (!confirm(confirmMsg)) return;
 
   btn.disabled    = true;
-  btn.textContent = `${actionLabel}…`;
+  btn.textContent = actionLabel + '…';
 
   try {
     await adminApi('toggle-deactivation', 'POST', { userId, deactivated: deactivate });
     await loadTeachers();
   } catch (err) {
-    alert('Could not update status: ' + err.message);
+    alert(t('admin.entities.teachers.statusError', { error: err.message }));
     btn.disabled    = false;
     btn.textContent = actionLabel;
   }
@@ -402,31 +407,31 @@ async function toggleDeactivation(userId, deactivate, btn) {
 // ─── Delete operations ────────────────────────────────────────────
 
 async function deleteTeacher(userId, email) {
-  if (!confirm(`Permanently delete teacher ${email || userId} and all their uploads? This cannot be undone.`)) return;
+  if (!confirm(t('admin.entities.teachers.deleteConfirm', { email: email || userId }))) return;
   try {
     await adminApi('delete-teacher', 'POST', { userId });
     await Promise.all([loadTeachers(), loadOverview()]);
   } catch (err) {
-    alert('Could not delete teacher: ' + err.message);
+    alert(t('admin.entities.teachers.deleteError', { error: err.message }));
   }
 }
 
 async function deleteSchool(schoolId, name) {
-  if (!confirm(`Delete school "${name || schoolId}"? Teachers currently in this school will become unattached. This cannot be undone.`)) return;
+  if (!confirm(t('admin.entities.schools.deleteConfirm', { name: name || schoolId }))) return;
   try {
     await adminApi('delete-school', 'POST', { schoolId });
     await Promise.all([loadSchools(), loadDivisions(), loadTeachers(), loadOverview()]);
   } catch (err) {
-    alert('Could not delete school: ' + err.message);
+    alert(t('admin.entities.schools.deleteError', { error: err.message }));
   }
 }
 
 async function deleteDivision(divisionId, name) {
-  if (!confirm(`Delete division "${name || divisionId}"? Schools and teachers in this division will become unattached. This cannot be undone.`)) return;
+  if (!confirm(t('admin.entities.divisions.deleteConfirm', { name: name || divisionId }))) return;
   try {
     await adminApi('delete-division', 'POST', { divisionId });
     await Promise.all([loadDivisions(), loadSchools(), loadTeachers(), loadOverview()]);
   } catch (err) {
-    alert('Could not delete division: ' + err.message);
+    alert(t('admin.entities.divisions.deleteError', { error: err.message }));
   }
 }
