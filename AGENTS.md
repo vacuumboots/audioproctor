@@ -32,6 +32,9 @@ No build step. No bundler. No framework. Files are served as-is.
 | `app/js/dashboard-upload.js` | handleUpload, duplicateUpload, inline image uploading |
 | `app/js/dashboard-table.js` | Uploads table rendering, insights, CSV export, rename/expiry/delete |
 | `app/js/dashboard-quota.js` | loadQuota, tier badges, trial banners, CTA, Stripe upgrade, first login, request flow |
+| `app/js/i18n.js` | Core i18n module — `t()`, `getLocale()`, `setLocale()`, locale JSON loading, `localechanged` event |
+| `app/js/language-toggle.js` | EN | FR toggle rendered in top-bar nav, persists to localStorage + server |
+| `app/locales/` | Locale JSON files (`en.json`, `fr.json`) — all UI strings in dotted-key format |
 | `app/js/admin.js` → split into: | Legacy (no longer loaded). See modules below. |
 | `app/js/admin-state.js` | State vars, initAdmin, adminApi helper |
 | `app/js/admin-utils.js` | switchTab, toggleCreateForm, tierOptions, roleOptions, escapeHtml, capitalize |
@@ -50,8 +53,12 @@ No build step. No bundler. No framework. Files are served as-is.
 | `extension/popup.js` | Validates access code, calls `/api/session`, stores in `chrome.storage.session` |
 | `extension/player.js` | Fullscreen audio player + text assessment with TTS read-aloud (voice selection, speed, paragraph navigation, inline images) |
 | `extension/lib/sanitize.js` | Minimal HTML sanitizer for text assessment content |
-| `supabase/migrations/` | Sequential SQL migrations (004–026). Run manually in Supabase SQL Editor. |
+| `extension/lib/i18n.js` | Extension's own i18n module (uses `chrome.storage.local`, `chrome.runtime.getURL`) |
+| `extension/_locales/` | Extension locale JSON files (`en.json`, `fr.json`) |
+| `supabase/migrations/` | Sequential SQL migrations (004–027). Run manually in Supabase SQL Editor. |
 | `site/` | Marketing pages (about, contact, privacy, terms) |
+| `site/js/i18n.js` | Marketing site i18n (non-module, plain `<script>`) |
+| `site/locales/` | Site locale JSON files (`en.json`, `fr.json`) |
 | `vercel.json` | URL rewrites: `/about` → `site/about.html`, `/css/*` → `app/css/*` etc. |
 | `scripts/pre-push` | Doc gate: blocks push if AGENTS.md, CHANGELOG.md, ROADMAP.md, or USERSTEPS.md have drifted from the codebase. Runs automatically on every `git push`. Skip with `git push --no-verify`. |
 | `docs/DEFINITION-OF-DONE.md` | Single release checklist. Section 1-5, web and extension rows. Run top to bottom before every release. |
@@ -61,7 +68,7 @@ No build step. No bundler. No framework. Files are served as-is.
 ### `profiles` (one row per teacher)
 ```
 id (uuid PK), tier (text: free|premium|school|division), tier_override, role (teacher|school_admin|division_admin|platform_admin),
-school_id, division_id, expires_at (trial/subscription expiry), storage_used_mb, country_code, division_name, notes, is_deactivated
+school_id, division_id, expires_at (trial/subscription expiry), storage_used_mb, country_code, division_name, notes, is_deactivated, lang (en|fr)
 ```
 Key function: `get_effective_tier(user_id)` resolves the actual tier via cascade: `tier_override` → division → school → `profiles.tier` → `'free'`, respecting `expires_at`.
 
@@ -108,6 +115,10 @@ Analytics. `session_events` tracks code_entered, playback_started, playback_comp
 | `trigger-normalize.js` | `POST /api/trigger-normalize` | Audio normalization via native ffmpeg. Verifies ownership, idempotent, moves from staging to final path. |
 | `check-access.js` | `POST /api/check-access` | Email allowlist gate. Checks user email against `ALLOWED_EMAIL_PATTERN` env var. Existing users grandfathered. |
 | `contact.js` | `POST /api/contact` | Contact/demo request form via Resend. |
+
+API libraries:
+| `_lib/i18n.js` | Shared language detection (`getRequestLanguage`, `apiMessage`) for all endpoints |
+| `locales/api-messages.json` | API error/success messages in English and French (~39 keys) |
 
 `admin.js` actions: `list-teacher-uploads`, `get-upload-content`, `overview`, `divisions`, `schools`, `teachers`, `audit-log`, `login-link`, `list-invitations`, `list-requests`, `platform-analytics`, `set-tier`, `set-expires`, `set-notes`, `set-role`, `attach-teacher`, `reassign-teacher`, `create-division`, `create-school`, `approve-request`, `reject-request`, `invite`, `resend-invite`, `seed-demo`, `delete-teacher`, `delete-school`, `delete-division`, `toggle-deactivation`, `cancel-subscription` (cancels school/division Stripe sub with proration).
 

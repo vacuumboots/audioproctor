@@ -22,6 +22,15 @@ All notable changes to AudioProctor are documented in this file.
   tables with inline audio player and text viewer, filtering by teacher/school/type,
   and pagination. Wired into admin.html, school-admin.html, and division-admin.html
   via thin role-specific modules.
+- **Bilingual English/French support** — full i18n across the entire product. ~490
+  translation keys in Canadian French (fr-CA). Language auto-detected from browser
+  on first login, persisted to `profiles.lang`. EN | FR toggle in all authenticated
+  page nav bars and extension popup. Covers: teacher dashboard, platform/school/division
+  admin panels, Chrome extension (popup + player + TTS), all 9 user-facing API endpoints
+  (localized error messages via `Accept-Language`), Resend email templates, and all 7
+  marketing site pages. Locale-aware date (DD/MM/YYYY) and number (1 000,50) formatting.
+  Architecture: JSON locale files + `t()` function, `window`-exposed for vanilla JS,
+  `chrome.storage.local` for extension, `api/_lib/i18n.js` for serverless functions.
 
 ### Changed
 - Non-free tiers (premium, school, division) now get 128kbps mono MP3 audio encoding instead of 32kbps.
