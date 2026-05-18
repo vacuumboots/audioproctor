@@ -3,26 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Request Access — AudioProctor</title>
-  <meta name="description" content="Request a teacher account for AudioProctor. Free to start, no credit card required.">
+  <title id="meta-title">Request Access — AudioProctor</title>
+  <meta name="description" id="meta-desc" content="Request a teacher account for AudioProctor. Free to start, no credit card required.">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/site/site.css">
+  <script src="/site/js/i18n.js"></script>
 </head>
 <body>
 
 <div id="site-nav"></div>
 
+<!-- EN | FR toggle -->
+<div style="max-width:1100px; margin:0 auto; padding:0.75rem 2rem 0; display:flex; justify-content:flex-end;">
+  <span class="lang-toggle" id="lang-toggle"></span>
+</div>
+
 <div class="site-section" style="border-top: var(--border);">
   <div class="site-container">
-    <span class="section-label">Get Started</span>
-    <h1 class="section-headline">Request a teacher account.</h1>
-    <p class="section-intro">AudioProctor is free for individual teachers. Submit your details below and you'll hear back within one business day.</p>
+    <span class="section-label" data-i18n="site.requestAccess.sectionLabel">Get Started</span>
+    <h1 class="section-headline" data-i18n="site.requestAccess.pageTitle">Request a teacher account.</h1>
+    <p class="section-intro" data-i18n="site.requestAccess.intro">AudioProctor is free for individual teachers. Submit your details below and you'll hear back within one business day.</p>
 
     <div class="contact-grid">
 
       <div class="contact-form-col">
 
-        <div id="form-success" class="notice notice--success hidden" style="margin-bottom:1.5rem;">
+        <div id="form-success" class="notice notice--success hidden" style="margin-bottom:1.5rem;" data-i18n="site.requestAccess.form.successMessage">
           Request received. You'll hear from us within one business day.
         </div>
         <div id="form-error" class="notice notice--error hidden" style="margin-bottom:1.5rem;"></div>
@@ -35,48 +41,55 @@
           </div>
 
           <div class="site-form-group">
-            <label for="name">Name</label>
+            <label for="name" data-i18n="site.requestAccess.form.nameLabel">Name</label>
             <input type="text" id="name" name="name" required autocomplete="name">
           </div>
 
           <div class="site-form-group">
-            <label for="email">School email</label>
+            <label for="email" data-i18n="site.requestAccess.form.emailLabel">School email</label>
             <input type="email" id="email" name="email" required autocomplete="email"
-              placeholder="you@yourschool.ca">
+              data-i18n-placeholder="site.requestAccess.form.emailPlaceholder" placeholder="you@yourschool.ca">
           </div>
 
           <div class="site-form-group">
-            <label for="school">School name</label>
-            <input type="text" id="school" name="school" placeholder="e.g. Okotoks Junior High">
+            <label for="school" data-i18n="site.requestAccess.form.schoolLabel">School name</label>
+            <input type="text" id="school" name="school"
+              data-i18n-placeholder="site.requestAccess.form.schoolPlaceholder" placeholder="e.g. Okotoks Junior High">
           </div>
 
           <div class="site-form-group">
-            <label for="division">School division</label>
-            <input type="text" id="division" name="division" placeholder="e.g. Foothills School Division No. 38">
+            <label for="division" data-i18n="site.requestAccess.form.divisionLabel">School division</label>
+            <input type="text" id="division" name="division"
+              data-i18n-placeholder="site.requestAccess.form.divisionPlaceholder" placeholder="e.g. Foothills School Division No. 38">
           </div>
 
           <div class="site-form-group">
-            <label for="message">Anything else? <span style="color:var(--muted); font-weight:400;">(optional)</span></label>
-            <textarea id="message" name="message" placeholder="How you plan to use AudioProctor, which assessments, how many students — anything useful."></textarea>
+            <label for="message">
+              <span data-i18n="site.requestAccess.form.messageLabel">Anything else?</span>
+              <span style="color:var(--muted); font-weight:400;" data-i18n="site.requestAccess.form.messageOptional">(optional)</span>
+            </label>
+            <textarea id="message" name="message"
+              data-i18n-placeholder="site.requestAccess.form.messagePlaceholder"
+              placeholder="How you plan to use AudioProctor, which assessments, how many students — anything useful."></textarea>
           </div>
 
-          <button type="submit" class="btn btn--primary" id="btn-submit">Request Access</button>
+          <button type="submit" class="btn btn--primary" id="btn-submit" data-i18n="site.requestAccess.submit.requestAccess">Request Access</button>
 
         </form>
       </div>
 
       <div class="contact-info-col">
-        <p class="label" style="margin-bottom:1rem;">Free tier includes</p>
+        <p class="label" style="margin-bottom:1rem;" data-i18n="site.requestAccess.info.freeTierTitle">Free tier includes</p>
         <ul style="font-size:0.9rem; color:var(--muted); line-height:1.9; padding-left:1.25rem; margin-bottom:2rem;">
-          <li>3 uploads per calendar month</li>
-          <li>7-day access code expiry</li>
-          <li>Fullscreen locked player</li>
-          <li>No student accounts or data</li>
+          <li data-i18n="site.requestAccess.info.freeTierFeatures.0">3 uploads per calendar month</li>
+          <li data-i18n="site.requestAccess.info.freeTierFeatures.1">7-day access code expiry</li>
+          <li data-i18n="site.requestAccess.info.freeTierFeatures.2">Fullscreen locked player</li>
+          <li data-i18n="site.requestAccess.info.freeTierFeatures.3">No student accounts or data</li>
         </ul>
 
-        <p class="label" style="margin-bottom:1rem;">Already have an account?</p>
+        <p class="label" style="margin-bottom:1rem;" data-i18n="site.requestAccess.info.existingAccountTitle">Already have an account?</p>
         <p style="font-size:0.9rem; color:var(--muted); margin-bottom:0.75rem;">
-          <a href="https://app.audioproctor.com/login.html" style="color:var(--ink); font-weight:500;">Sign in here.</a>
+          <a href="https://app.audioproctor.com/login.html" style="color:var(--ink); font-weight:500;" data-i18n="site.requestAccess.info.existingAccountBody">Sign in here.</a>
         </p>
       </div>
 
@@ -86,11 +99,36 @@
 
 <div id="site-footer"></div>
 <script src="/site/nav.js"></script>
+<script src="/site/js/language-toggle.js"></script>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
 <script>
+  // ── i18n: apply translations to data-i18n elements ──
+  function applyI18n() {
+    // Text content
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      el.textContent = window.t(el.getAttribute('data-i18n'));
+    });
+    // Placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+      el.placeholder = window.t(el.getAttribute('data-i18n-placeholder'));
+    });
+    // Meta
+    var metaTitle = document.getElementById('meta-title');
+    if (metaTitle) metaTitle.textContent = window.t('site.requestAccess.metaTitle');
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute('content', window.t('site.requestAccess.metaDescription'));
+  }
+
+  // Wait for i18n ready, then apply
+  window.i18nReady.then(applyI18n);
+
+  // Re-render on locale change
+  window.addEventListener('localechanged', applyI18n);
+
+  // ── Form submission ──
   document.getElementById('request-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -99,7 +137,7 @@
     const successEl = document.getElementById('form-success');
 
     btn.disabled = true;
-    btn.textContent = 'Sending…';
+    btn.textContent = window.t('site.requestAccess.submit.sending');
     errEl.classList.add('hidden');
 
     const body = {
@@ -120,10 +158,10 @@
       const data = await res.json();
 
       if (!res.ok) {
-        errEl.textContent = data.error || 'Something went wrong. Please email hello@audioproctor.com directly.';
+        errEl.textContent = data.error || window.t('site.requestAccess.form.errorGeneric');
         errEl.classList.remove('hidden');
         btn.disabled = false;
-        btn.textContent = 'Request Access';
+        btn.textContent = window.t('site.requestAccess.submit.requestAccess');
         return;
       }
 
@@ -131,10 +169,10 @@
       successEl.classList.remove('hidden');
 
     } catch {
-      errEl.textContent = 'Network error. Please email hello@audioproctor.com directly.';
+      errEl.textContent = window.t('site.requestAccess.form.errorNetwork');
       errEl.classList.remove('hidden');
       btn.disabled = false;
-      btn.textContent = 'Request Access';
+      btn.textContent = window.t('site.requestAccess.submit.requestAccess');
     }
   });
 </script>
