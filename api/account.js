@@ -8,6 +8,7 @@
 //   POST ?action=set-lang        — body: { lang } sets language preference on profiles
 
 const { createClient } = require('@supabase/supabase-js');
+const { getRequestLanguage, apiMessage } = require('./_lib/i18n.js');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin',  'https://app.audioproctor.com');
@@ -15,12 +16,15 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
+
+  const lang = getRequestLanguage(req);
+
+  if (req.method !== 'POST')    return res.status(405).json({ error: apiMessage('method_not_allowed', lang) });
 
   // ─── Auth ───────────────────────────────────────────────────────────────
   const authHeader = req.headers['authorization'] || '';
   const jwt = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!jwt) return res.status(401).json({ error: 'Missing authorization' });
+  if (!jwt) return res.status(401).json({ error: apiMessage('missing_auth', lang) });
 
   const anonClient = createClient(
     process.env.SUPABASE_URL,
@@ -29,7 +33,7 @@ module.exports = async (req, res) => {
   );
 
   const { data: { user }, error: authErr } = await anonClient.auth.getUser();
-  if (authErr || !user) return res.status(401).json({ error: 'Invalid token' });
+  if (authErr || !user) return res.status(401).json({ error: apiMessage('invalid_token', lang) });
 
   const supabase = createClient(
     process.env.SUPABASE_URL,
@@ -43,10 +47,10 @@ module.exports = async (req, res) => {
   if (action === 'update-profile') {
     const { displayName } = body;
     if (typeof displayName !== 'string') {
-      return res.status(400).json({ error: 'displayName must be a string' });
+      return res.status(400).json({ error: apiMessage('invalid_param', lang, { param: 'displayName' }) });
     }
     if (displayName.length > 120) {
-      return res.status(400).json({ error: 'displayName must be 120 characters or fewer' });
+      return res.status(400).json({ error: apiMessage('invalid_param', lang, { param: 'displayName' }) });
     }
 
     const { error } = await supabase
@@ -56,7 +60,7 @@ module.exports = async (req, res) => {
 
     if (error) {
       console.error('update-profile failed:', error.message);
-      return res.status(500).json({ error: 'Could not update profile' });
+      return res.status(500).json({ error: apiMessage('server_error', lang) });
     }
     return res.status(200).json({ ok: true });
   }
@@ -93,14 +97,14 @@ module.exports = async (req, res) => {
     const { error: uploadsErr } = await supabase.from('uploads').delete().eq('teacher_id', user.id);
     if (uploadsErr) {
       console.error('delete-account: uploads delete failed:', uploadsErr.message);
-      return res.status(500).json({ error: 'Could not delete account data. Please try again.' });
+      return res.status(500).json({ error: apiMessage('server_error', lang) });
     }
 
     // Delete profile row
     const { error: profileErr } = await supabase.from('profiles').delete().eq('id', user.id);
     if (profileErr) {
       console.error('delete-account: profile delete failed:', profileErr.message);
-      return res.status(500).json({ error: 'Could not delete account data. Please try again.' });
+      return res.status(500).json({ error: apiMessage('server_error', lang) });
     }
 
     // Audit log — fire-and-forget (the profile row is gone, but we record the event)
@@ -119,7 +123,7 @@ module.exports = async (req, res) => {
     const { error: deleteErr } = await supabase.auth.admin.deleteUser(user.id);
     if (deleteErr) {
       console.error('delete-account: auth delete failed:', deleteErr.message);
-      return res.status(500).json({ error: 'Could not complete account deletion. Please contact support.' });
+      return res.status(500).json({ error: apiMessage('server_error', lang) });
     }
 
     return res.status(200).json({ ok: true });
@@ -129,11 +133,11 @@ module.exports = async (req, res) => {
   if (action === 'set-lang') {
     const { lang } = body;
     if (!lang || !['en', 'fr'].includes(lang)) {
-      return res.status(400).json({ error: 'Invalid language. Must be "en" or "fr".' });
+      return res.status(400).json({ error: apiMessage('invalid_lang', lang) });
     }
     await supabase.from('profiles').update({ lang }).eq('id', user.id);
     return res.status(200).json({ lang });
   }
 
-  return res.status(400).json({ error: 'Unknown action' });
+  return res.status(400).json({ error: apiMessage('bad_request', lang) });
 };
