@@ -5,6 +5,7 @@
 //
 //   POST ?action=update-profile  — body: { displayName }
 //   POST ?action=delete-account  — permanently deletes caller's account and all data
+//   POST ?action=set-lang        — body: { lang } sets language preference on profiles
 
 const { createClient } = require('@supabase/supabase-js');
 
@@ -122,6 +123,16 @@ module.exports = async (req, res) => {
     }
 
     return res.status(200).json({ ok: true });
+  }
+
+  // ─── set-lang ─────────────────────────────────────────────────────
+  if (action === 'set-lang') {
+    const { lang } = body;
+    if (!lang || !['en', 'fr'].includes(lang)) {
+      return res.status(400).json({ error: 'Invalid language. Must be "en" or "fr".' });
+    }
+    await supabase.from('profiles').update({ lang }).eq('id', user.id);
+    return res.status(200).json({ lang });
   }
 
   return res.status(400).json({ error: 'Unknown action' });
