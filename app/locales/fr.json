@@ -100,7 +100,10 @@
     "redirecting": "Redirection\u2026",
     "couldNotAcceptInvitation": "Impossible d\u0027accepter l\u0027invitation.",
     "couldNotStartSignIn": "Impossible de d\u00e9marrer la connexion. Veuillez r\u00e9essayer.",
-    "inviteNetworkError": "Erreur r\u00e9seau. Veuillez r\u00e9essayer ou contacter {email}."
+    "inviteNetworkError": "Erreur r\u00e9seau. Veuillez r\u00e9essayer ou contacter {email}.",
+    "loginTagline": "Audio d\u2019\u00e9valuation pour Chromebooks g\u00e9r\u00e9s",
+    "forTeachersOnly": "Enseignants seulement. Les \u00e9l\u00e8ves utilisent l\u2019extension Chrome.",
+    "newHere": "Nouveau\u00a0?"
   },
   "dashboard": {},
   "admin": {},

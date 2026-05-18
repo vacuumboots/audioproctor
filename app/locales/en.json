@@ -96,11 +96,9 @@
     "redirecting": "Redirecting\u2026",
     "couldNotAcceptInvitation": "Could not accept invitation.",
     "couldNotStartSignIn": "Could not start sign-in. Please try again.",
-    "emailNotAllowed": "This email address is not authorized. Contact your school or division administrator.",
     "loginTagline": "Assessment audio for managed Chromebooks",
     "forTeachersOnly": "For teachers only. Students use the Chrome extension.",
-    "newHere": "New here?",
-    "signInNotStarted": "Could not start sign-in. Please try again."
+    "newHere": "New here?"
   },
   "dashboard": {},
   "admin": {},

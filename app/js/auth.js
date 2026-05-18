@@ -3,13 +3,13 @@
 // Depends on supabaseClient from supabase-client.js.
 
 async function signInWithGoogle() {
-  const btn = document.getElementById('btn-signin');
+  var btn = document.getElementById('btn-signin');
   if (btn) {
     btn.disabled = true;
-    btn.textContent = 'Redirecting…';
+    btn.textContent = t('auth.redirecting');
   }
 
-  const { error } = await supabaseClient.auth.signInWithOAuth({
+  var { error } = await supabaseClient.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: window.location.origin + '/login.html',
@@ -19,11 +19,11 @@ async function signInWithGoogle() {
   if (error) {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'Sign in with Google';
+      btn.textContent = t('auth.signInWithGoogle');
     }
-    const notice = document.getElementById('notice');
+    var notice = document.getElementById('notice');
     if (notice) {
-      notice.textContent = 'Could not start sign-in. Please try again.';
+      notice.textContent = t('auth.couldNotStartSignIn');
       notice.classList.remove('hidden');
     }
   }

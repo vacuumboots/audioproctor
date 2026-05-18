@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AudioProctor — Sign In</title>
+  <title>AudioProctor</title>
   <script type="module" src="/js/i18n.js"></script>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -11,17 +11,16 @@
   <div class="login-page">
     <div class="login-box">
       <a href="/" class="wordmark">Audio<span class="accent">Proctor</span></a>
-      <p class="tagline">Assessment audio for managed Chromebooks</p>
+      <p id="tagline" class="tagline"></p>
 
       <div id="notice" class="notice notice--error hidden"></div>
 
-      <button id="btn-signin" class="btn btn--primary" onclick="signInWithGoogle()">
-        Sign in with Google
-      </button>
+      <button id="btn-signin" class="btn btn--primary" onclick="signInWithGoogle()"></button>
 
-      <p class="login-footer">For teachers only. Students use the Chrome extension.</p>
+      <p id="login-footer-teachers" class="login-footer"></p>
       <p class="login-footer" style="margin-top:0.5rem;">
-        New here? <a href="/request-access" style="color:var(--ink);">Request access.</a>
+        <span id="new-here-text"></span>
+        <a id="request-access-link" href="/request-access" style="color:var(--ink);"></a>
       </p>
     </div>
   </div>
@@ -47,7 +46,24 @@
       }[profile?.role] || '/dashboard.html';
       window.location.href = dest;
     }
+    // ─── i18n: populate translated text ──────────────────────────────
+    function applyLoginI18n() {
+      document.title = 'AudioProctor \u2014 ' + t('auth.signIn');
+      var tagline = document.getElementById('tagline');
+      if (tagline) tagline.textContent = t('auth.loginTagline');
+      var btn = document.getElementById('btn-signin');
+      if (btn) btn.textContent = t('auth.signInWithGoogle');
+      var footer = document.getElementById('login-footer-teachers');
+      if (footer) footer.textContent = t('auth.forTeachersOnly');
+      var newHere = document.getElementById('new-here-text');
+      if (newHere) newHere.textContent = t('auth.newHere') + '\u00a0';
+      var requestLink = document.getElementById('request-access-link');
+      if (requestLink) requestLink.textContent = t('auth.requestAccess');
+    }
+    window.i18nReady.then(applyLoginI18n);
+    window.addEventListener('localechanged', applyLoginI18n);
 
+    // ─── Auth state handler ─────────────────────────────────────────
     // Handles both: OAuth callback (token in hash) and returning signed-in users.
     // onAuthStateChange fires immediately if Supabase detects a token in the URL hash.
     supabaseClient.auth.onAuthStateChange(async (event, session) => {
@@ -59,10 +75,10 @@
     });
 
     // Show error from URL param (e.g. if OAuth provider returns an error)
-    const params = new URLSearchParams(window.location.search);
+    var params = new URLSearchParams(window.location.search);
     if (params.get('error')) {
-      const el = document.getElementById('notice');
-      el.textContent = 'Sign-in failed. Please try again.';
+      var el = document.getElementById('notice');
+      el.textContent = t('auth.couldNotStartSignIn');
       el.classList.remove('hidden');
     }
   </script>
