@@ -12,7 +12,7 @@ async function loadUploads() {
     container.textContent = '';
     const p = document.createElement('p');
     p.className = 'label text-accent';
-    p.textContent = 'Could not load uploads. Please refresh and try again.';
+    p.textContent = t('dashboard.couldNotLoad');
     container.appendChild(p);
     return;
   }
@@ -22,28 +22,27 @@ async function loadUploads() {
   if (!uploads || uploads.length === 0) {
     container.innerHTML = `
       <div class="empty-state" style="text-align:left; padding:2.5rem; border:1px solid var(--ink); background:var(--paper);">
-        <h2 style="font-family:'Playfair Display',serif; font-size:1.4rem; margin-bottom:0.5rem; color:var(--ink);">Upload your first assessment</h2>
+        <h2 style="font-family:'Playfair Display',serif; font-size:1.4rem; margin-bottom:0.5rem; color:var(--ink);">${t('dashboard.emptyStateTitle')}</h2>
         <p style="color:var(--muted); font-size:0.9rem; margin-bottom:1.5rem; line-height:1.5;">
           Once you upload an audio file, you'll get an <strong>access code</strong> for your student and an <strong>exit word</strong> that you read aloud when the assessment is finished.
         </p>
 
         <div style="display:flex; flex-direction:column; gap:1rem; margin-bottom:1.5rem;">
           <div style="border:1px solid var(--warm-mid); padding:1rem;">
-            <p class="label" style="margin-bottom:0.3rem;">Step 1 — Label</p>
-            <p style="font-size:0.85rem; color:var(--muted); margin:0;">Give the assessment a name your students will recognise (e.g. "Grade 7 Reading — May 26").</p>
+            <p class="label" style="margin-bottom:0.3rem;">${t('dashboard.emptyStateStep1Title')}</p>
+            <p style="font-size:0.85rem; color:var(--muted); margin:0;">${t('dashboard.emptyStateStep1Desc')}</p>
           </div>
           <div style="border:1px solid var(--warm-mid); padding:1rem;">
-            <p class="label" style="margin-bottom:0.3rem;">Step 2 — Choose Audio File</p>
-            <p style="font-size:0.85rem; color:var(--muted); margin:0;">Select an MP3 or WAV file from your computer. WAV files convert to MP3 automatically.</p>
+            <p class="label" style="margin-bottom:0.3rem;">${t('dashboard.emptyStateStep2Title')}</p>
+            <p style="font-size:0.85rem; color:var(--muted); margin:0;">${t('dashboard.emptyStateStep2Desc')}</p>
           </div>
           <div style="border:1px solid var(--warm-mid); padding:1rem;">
-            <p class="label" style="margin-bottom:0.3rem;">Step 3 — Share</p>
-            <p style="font-size:0.85rem; color:var(--muted); margin:0;">Give the student the <strong>access code</strong>. Keep the <strong>exit word</strong> private — only read it aloud when the assessment is done.</p>
+            <p class="label" style="margin-bottom:0.3rem;">${t('dashboard.emptyStateStep3Title')}</p>
+            <p style="font-size:0.85rem; color:var(--muted); margin:0;">${t('dashboard.emptyStateStep3Desc')}</p>
           </div>
         </div>
 
-        <button class="btn" onclick="document.getElementById('upload-modal').style.display='block'" style="font-size:0.85rem; padding:0.6rem 1.2rem;">
-          Upload Audio
+        <button class="btn" onclick="document.getElementById('upload-modal').style.display='block'" style="font-size:0.85rem; padding:0.6rem 1.2rem;">${t('dashboard.emptyStateUploadBtn')}
         </button>
       </div>`;
     return;
@@ -67,25 +66,25 @@ async function loadUploads() {
     let statusBadge = '';
     if (isAudio && processingStatus && processingStatus !== 'ready') {
       if (processingStatus === 'pending' || processingStatus === 'processing') {
-        statusBadge = '<span class="chip chip--active" style="font-size:0.65rem; margin-left:0.4rem; background:var(--warm-mid); border-color:var(--ink);">Normalizing…</span>';
+        statusBadge = `<span class="chip chip--active" style="font-size:0.65rem; margin-left:0.4rem; background:var(--warm-mid); border-color:var(--ink);">${t('dashboard.processingBadge')}</span>`;
       } else if (processingStatus === 'failed') {
-        statusBadge = '<span class="chip" style="font-size:0.65rem; margin-left:0.4rem; border-color:var(--accent); color:var(--accent);">Failed</span>';
+        statusBadge = `<span class="chip" style="font-size:0.65rem; margin-left:0.4rem; border-color:var(--accent); color:var(--accent);">${t('dashboard.failedBadge')}</span>`;
       }
     }
 
     const typeBadge    = isText
-      ? '<span class="chip chip--active" style="font-size:0.65rem; margin-left:0.4rem;">Text</span>'
+      ? `<span class="chip chip--active" style="font-size:0.65rem; margin-left:0.4rem;">${t('dashboard.textBadge')}</span>`
       : '';
     const metaLine     = isText
-      ? `<div class="col-assessment__filename">${u.text_char_count || 0} chars</div>`
+      ? `<div class="col-assessment__filename">${t('dashboard.textCharCountPlain', { count: u.text_char_count || 0 })}</div>`
       : (u.label && u.label !== u.filename ? `<div class="col-assessment__filename">${escapeHtml(u.filename)}</div>` : '');
 
     const extendBtn = (!expired && currentTier !== 'free')
-      ? `<button class="btn btn--ghost btn--small" onclick="openExpiryModal('${u.id}', '${u.expires_at}')">Edit Expiry</button>`
+      ? `<button class="btn btn--ghost btn--small" onclick="openExpiryModal('${u.id}', '${u.expires_at}')">${t('dashboard.extendExpiry')}</button>`
       : '';
 
     const retryBtn = (processingStatus === 'failed')
-      ? `<button class="btn btn--ghost btn--small" onclick="retryNormalize('${u.id}', this)" style="color:var(--accent);">Retry</button>`
+      ? `<button class="btn btn--ghost btn--small" onclick="retryNormalize('${u.id}', this)" style="color:var(--accent);">${t('dashboard.retry')}</button>`
       : '';
 
     const statsBlock = buildUploadStatsBlock(u.id);
@@ -100,23 +99,23 @@ async function loadUploads() {
         <td class="col-code">
           <div class="cell-copy-group">
             <span class="monospace">${u.access_code}</span>
-            <button class="btn btn--ghost btn--small" data-copy="${u.access_code}" onclick="copyCode(this.dataset.copy, this)">Copy</button>
+            <button class="btn btn--ghost btn--small" data-copy="${u.access_code}" onclick="copyCode(this.dataset.copy, this)">${t('dashboard.copyCode')}</button>
           </div>
         </td>
         <td class="col-word">
           <div class="cell-copy-group">
             <span>${escapeHtml(u.exit_word)}</span>
-            <button class="btn btn--ghost btn--small" data-copy="${escapeHtml(u.exit_word)}" onclick="copyCode(this.dataset.copy, this)">Copy</button>
+            <button class="btn btn--ghost btn--small" data-copy="${escapeHtml(u.exit_word)}" onclick="copyCode(this.dataset.copy, this)">${t('dashboard.copyCode')}</button>
           </div>
         </td>
         <td><span class="chip ${chipClass}">${expiryText}</span></td>
         <td>
           <div class="action-row">
-            <button class="btn btn--ghost btn--small" onclick="openEditModal('${u.id}', '${escapeHtml(u.label || u.filename)}')">Rename</button>
-            <button class="btn btn--ghost btn--small" onclick="duplicateUpload('${u.id}', this)">Duplicate</button>
+            <button class="btn btn--ghost btn--small" onclick="openEditModal('${u.id}', '${escapeHtml(u.label || u.filename)}')">${t('dashboard.rename')}</button>
+            <button class="btn btn--ghost btn--small" onclick="duplicateUpload('${u.id}', this)">${t('dashboard.duplicate')}</button>
             ${extendBtn}
             ${retryBtn}
-            <button class="btn btn--danger btn--small" onclick="deleteUpload('${u.id}', '${u.storage_path}', this, '${u.assessment_type || 'audio'}')">Delete</button>
+            <button class="btn btn--danger btn--small" onclick="deleteUpload('${u.id}', '${u.storage_path}', this, '${u.assessment_type || 'audio'}')">${t('dashboard.deleteAssessment')}</button>
           </div>
         </td>
       </tr>`;
@@ -126,11 +125,11 @@ async function loadUploads() {
     <table class="uploads-table">
       <thead>
         <tr>
-          <th>Assessment</th>
-          <th>Access Code</th>
-          <th>Exit Word</th>
-          <th>Expires</th>
-          <th>Actions</th>
+          <th>${t('dashboard.tableHeaders.assessment')}</th>
+          <th>${t('dashboard.tableHeaders.accessCode')}</th>
+          <th>${t('dashboard.tableHeaders.exitWord')}</th>
+          <th>${t('dashboard.tableHeaders.expires')}</th>
+          <th>${t('dashboard.tableHeaders.actions')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -145,18 +144,18 @@ async function loadUploads() {
 function buildUploadStatsBlock(uploadId) {
   if (currentTier === 'free') return '';
   const s = allSummaries[uploadId];
-  if (!s || !s.total_sessions) return `<div class="upload-stats">No sessions yet</div>`;
+  if (!s || !s.total_sessions) return `<div class="upload-stats">${t('dashboard.noSessions')}</div>`;
 
   const completionRate = Math.round(s.completions / s.total_sessions * 100);
   const rateColor = completionRate >= 80 ? '#27ae60' : completionRate >= 60 ? '#e67e22' : 'var(--accent)';
   const avgTime   = s.avg_listen_seconds ? formatDuration(s.avg_listen_seconds) : null;
 
   let parts = [
-    `${s.total_sessions} session${s.total_sessions === 1 ? '' : 's'}`,
-    `<span style="color:${rateColor}; font-weight:500;">${completionRate}% completed</span>`,
+    `${t('dashboard.sessionsCount', { count: s.total_sessions, plural: s.total_sessions === 1 ? '' : 's' })}`,
+    `<span style="color:${rateColor}; font-weight:500;">${t('dashboard.completionRate', { rate: completionRate })}</span>`,
   ];
-  if (s.replays > 0) parts.push(`${s.replays} replay${s.replays === 1 ? '' : 's'}`);
-  if (avgTime)       parts.push(`Avg ${avgTime}`);
+  if (s.replays > 0) parts.push(`${t('dashboard.replaysCount', { count: s.replays, plural: s.replays === 1 ? '' : 's' })}`);
+  if (avgTime)       parts.push(`${t('dashboard.avgTime', { time: avgTime })}`);
 
   return `<div class="upload-stats">${parts.join(' · ')}</div>`;
 }
@@ -164,10 +163,10 @@ function buildUploadStatsBlock(uploadId) {
 // ─── Delete ──────────────────────────────────────────────────────
 
 async function deleteUpload(id, storagePath, btn, assessmentType) {
-  if (!confirm('Delete this assessment? Students will lose access immediately.')) return;
+  if (!confirm(t('dashboard.deleteConfirm'))) return;
 
   btn.disabled    = true;
-  btn.textContent = 'Deleting…';
+  btn.textContent = t('dashboard.deleting');
 
   // Audio: only delete the storage file if no other upload shares this path (duplicates)
   if (assessmentType !== 'text') {
@@ -185,7 +184,7 @@ async function deleteUpload(id, storagePath, btn, assessmentType) {
       if (storageErr) {
         alert('Could not delete audio file: ' + storageErr.message);
         btn.disabled    = false;
-        btn.textContent = 'Delete';
+        btn.textContent = t('dashboard.deleteAssessment');
         return;
       }
     }
@@ -234,10 +233,10 @@ async function copyCode(code, btn) {
   try {
     await navigator.clipboard.writeText(code);
     const original  = btn.textContent;
-    btn.textContent = 'Copied!';
+    btn.textContent = t('dashboard.copied');
     setTimeout(() => { btn.textContent = original; }, 1500);
   } catch {
-    alert('Could not copy. Code: ' + code);
+    alert(t('dashboard.copyError', { code }));
   }
 }
 
@@ -260,7 +259,7 @@ async function saveEditLabel() {
     .eq('id', editTargetId);
 
   if (error) {
-    alert('Could not save label: ' + error.message);
+    alert(t('dashboard.renameFailed', { error: error.message }));
     return;
   }
 
@@ -287,11 +286,11 @@ async function saveExpiryDate() {
 
   const newExpiry = new Date(val);
   if (isNaN(newExpiry.getTime())) {
-    alert('Please enter a valid date and time.');
+    alert(t('dashboard.extendInvalidDate'));
     return;
   }
   if (newExpiry <= new Date()) {
-    alert('Please choose a date and time in the future.');
+    alert(t('dashboard.extendFutureDate'));
     return;
   }
 
@@ -301,7 +300,7 @@ async function saveExpiryDate() {
     .eq('id', editTargetId);
 
   if (error) {
-    alert('Could not update expiry: ' + error.message);
+    alert(t('dashboard.extendFailed', { error: error.message }));
     return;
   }
 
@@ -320,7 +319,7 @@ async function extendSevenDays() {
     .eq('id', editTargetId);
 
   if (error) {
-    alert('Could not extend expiry: ' + error.message);
+    alert(t('dashboard.extendFailed', { error: error.message }));
     return;
   }
 
@@ -333,14 +332,14 @@ async function extendSevenDays() {
 
 async function exportCsv() {
   const btn = document.getElementById('btn-export-csv');
-  if (btn) { btn.disabled = true; btn.textContent = 'Exporting…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('dashboard.exportingCSV'); }
 
   try {
     const { data, error } = await supabaseClient.rpc('get_my_session_events');
     if (error) throw new Error(error.message);
 
     if (!data || data.length === 0) {
-      alert('No session data to export yet.');
+      alert(t('dashboard.noSessionDataToExport'));
       return;
     }
 
@@ -358,13 +357,13 @@ async function exportCsv() {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = `audioproctor-sessions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = t('dashboard.csvFilename', { date: new Date().toISOString().slice(0, 10) });
     a.click();
     URL.revokeObjectURL(url);
   } catch (err) {
-    alert('Export failed: ' + err.message);
+    alert(t('dashboard.exportFailed', { error: err.message }));
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Export CSV'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('dashboard.exportCSV'); }
   }
 }
 
@@ -379,7 +378,7 @@ function loadInsights() {
   const summaryValues = Object.values(allSummaries);
 
   if (summaryValues.length === 0) {
-    container.innerHTML = `<div class="empty-state"><p class="label">No session data yet. Stats will appear here once students use access codes.</p></div>`;
+    container.innerHTML = `<div class="empty-state"><p class="label">${t('dashboard.insightsNoSessionData')}</p></div>`;
     return;
   }
 
@@ -406,17 +405,17 @@ function loadInsights() {
     <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; margin-bottom:${mostUsedName ? '1.5rem' : '0'};">
       <div class="stat-box">
         <div class="stat-box__value">${totalSessions}</div>
-        <div class="label">Total Sessions</div>
+        <div class="label">${t('dashboard.insightsTotalSessions')}</div>
       </div>
       <div class="stat-box">
         <div class="stat-box__value" style="color:${rateColor};">${completionRate != null ? completionRate + '%' : '—'}</div>
-        <div class="label">Completion Rate</div>
+        <div class="label">${t('dashboard.insightsCompletionRate')}</div>
       </div>
       <div class="stat-box">
         <div class="stat-box__value">${totalReplays}</div>
-        <div class="label">Total Replays</div>
+        <div class="label">${t('dashboard.insightsTotalReplays')}</div>
       </div>
     </div>
-    ${mostUsedName ? `<p style="font-size:0.85rem; color:var(--muted);">Most-used assessment: <strong style="color:var(--ink);">${escapeHtml(mostUsedName)}</strong> (${mostUsed.total_sessions} sessions)</p>` : ''}
+    ${mostUsedName ? `<p style="font-size:0.85rem; color:var(--muted);">${t('dashboard.insightsMostUsed', { name: `<strong style="color:var(--ink);">${escapeHtml(mostUsedName)}</strong>`, count: mostUsed.total_sessions })}</p>` : ''}
   `;
 }
