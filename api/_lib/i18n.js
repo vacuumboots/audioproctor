@@ -5,7 +5,7 @@
 //   getRequestLanguage(req)   — reads ?lang= or Accept-Language, returns 'en' | 'fr'
 //   apiMessage(key, lang, replacements) — looks up localized string with {placeholder} substitution
 
-const messages = require('./api-messages.json');
+const messages = require('../locales/api-messages.json');
 
 const SUPPORTED_LANGS = ['en', 'fr'];
 const DEFAULT_LANG    = 'en';
@@ -56,15 +56,14 @@ function getRequestLanguage(req) {
  * @returns {string} Localized message string
  */
 function apiMessage(key, lang = DEFAULT_LANG, replacements) {
-  const langMap = messages[lang] || messages[DEFAULT_LANG];
-  let msg = langMap[key];
+  const entry = messages[key];
+  let msg;
 
-  // Fall back to English if the key is missing in the requested language
-  if (msg === undefined && lang !== DEFAULT_LANG) {
-    msg = messages[DEFAULT_LANG][key];
+  if (entry && typeof entry === 'object') {
+    msg = entry[lang] || entry[DEFAULT_LANG];
   }
 
-  // Final fallback — return the key itself so callers aren't silently broken
+  // Fallback — return the key itself so callers aren't silently broken
   if (msg === undefined) {
     return key;
   }
