@@ -24,11 +24,13 @@
   /**
    * Fetch and cache a locale file from /site/locales/{locale}.json.
    * Falls back to English on failure.
+   * Normalises 'fr-CA' to 'fr' for file lookup.
    * @param {string} locale
    * @returns {Promise<boolean>}
    */
   function loadLocale(locale) {
-    return fetch('/site/locales/' + locale + '.json')
+    var fileLocale = locale === 'fr-CA' ? 'fr' : locale;
+    return fetch('/site/locales/' + fileLocale + '.json')
       .then(function (resp) {
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         return resp.json();
@@ -123,8 +125,25 @@
   currentLocale = detectLanguage();
   var initPromise = loadLocale(currentLocale);
 
+  /**
+   * Resolve a dotted key and return the raw value (string or array).
+   * Useful for accessing arrays (e.g. pricing feature lists).
+   * @param {string} key
+   * @returns {*}
+   */
+  function resolveKey(key) {
+    var parts = key.split('.');
+    var cur = strings;
+    for (var i = 0; i < parts.length; i++) {
+      if (cur == null || typeof cur !== 'object') return undefined;
+      cur = cur[parts[i]];
+    }
+    return cur;
+  }
+
   // Expose on window for non-module access
   window.t = t;
+  window.resolveKey = resolveKey;
   window.getLocale = getLocale;
   window.setLocale = setLocale;
   window.i18nReady = initPromise;

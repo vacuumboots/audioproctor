@@ -27,6 +27,36 @@
   gap: 2rem;
 }
 
+.site-nav__locale {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+.site-nav__locale-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+.site-nav__locale-btn--active {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.site-nav__locale-btn:hover { color: var(--ink); }
+.site-nav__locale-sep {
+  color: var(--muted);
+  user-select: none;
+}
+
 .site-nav__link {
   text-decoration: none;
   color: var(--muted);
@@ -59,6 +89,37 @@
   text-decoration: none;
   color: var(--ink);
   font-size: 1rem;
+}
+
+/* ─── Language Toggle ────────────────────────────────────────────── */
+.site-nav__locale {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+.site-nav__locale-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+.site-nav__locale-btn--active {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.site-nav__locale-btn:hover { color: var(--ink); }
+.site-nav__locale-sep {
+  color: var(--warm-mid);
+  font-size: 0.65rem;
 }
 
 /* ─── Footer ────────────────────────────────────────────────────── */
@@ -490,12 +551,16 @@
 
 .site-form-group input:focus,
 .site-form-group textarea:focus,
-.site-form-group select:focus {
-  outline: 2px solid var(--ink);
-  outline-offset: 1px;
+.site-nav__locale-sep {
+  color: var(--warm-mid);
+  font-size: 0.65rem;
 }
 
-/* ─── Responsive ────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .site-nav__mobile .site-nav__locale { padding: 0.5rem 0; }
+}
+
+/* ─── Footer ────────────────────────────────────────────────────── */
 @media (max-width: 900px) and (min-width: 769px) {
   .pricing-grid { grid-template-columns: 1fr 1fr; }
   .pricing-tier { padding: 2rem; }

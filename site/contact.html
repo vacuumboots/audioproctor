@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact — AudioProctor</title>
+  <title id="page-title">Contact — AudioProctor</title>
+  <meta name="description" id="page-description" content="Contact AudioProctor to schedule a demo or ask questions about audio and text accommodation for assessments.">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/site/site.css">
+  <script src="/site/js/i18n.js"></script>
 </head>
 <body>
 
@@ -13,9 +15,9 @@
 
 <div class="site-section" style="border-top: var(--border);">
   <div class="site-container">
-    <span class="section-label">Schedule a Demo</span>
-    <h1 class="section-headline">See it in your division.</h1>
-    <p class="section-intro">A 20-minute demo covers the teacher upload flow, the student extension, and the IT deployment process from the Google Admin Console. No slides, no sales deck.</p>
+    <span class="section-label" id="lbl-section">Schedule a Demo</span>
+    <h1 class="section-headline" id="lbl-headline">See it in your division.</h1>
+    <p class="section-intro" id="lbl-intro">A 20-minute demo covers the teacher upload flow, the student extension, and the IT deployment process from the Google Admin Console. No slides, no sales deck.</p>
 
     <div class="contact-grid">
 
@@ -35,36 +37,36 @@
           </div>
 
           <div class="site-form-group">
-            <label for="name">Name</label>
+            <label for="name" id="lbl-name">Name</label>
             <input type="text" id="name" name="name" required autocomplete="name">
           </div>
 
           <div class="site-form-group">
-            <label for="email">Email</label>
+            <label for="email" id="lbl-email">Email</label>
             <input type="email" id="email" name="email" required autocomplete="email">
           </div>
 
           <div class="site-form-group">
-            <label for="division">School Division</label>
+            <label for="division" id="lbl-division">School Division</label>
             <input type="text" id="division" name="division" placeholder="e.g. Rocky View School Division">
           </div>
 
           <div class="site-form-group">
-            <label for="enrolment">Division Enrolment</label>
+            <label for="enrolment" id="lbl-enrolment">Division Enrolment</label>
             <select id="enrolment" name="enrolment">
-              <option value="">Select one&hellip;</option>
+              <option value="" id="opt-enrolment-placeholder">Select one&hellip;</option>
               <option value="Individual teacher">Individual teacher</option>
               <option value="Under 2,000 students">Under 2,000 students</option>
-              <option value="2,000–8,000 students">2,000–8,000 students</option>
-              <option value="8,000–25,000 students">8,000–25,000 students</option>
+              <option value="2,000&ndash;8,000 students">2,000–8,000 students</option>
+              <option value="8,000&ndash;25,000 students">8,000–25,000 students</option>
               <option value="25,000+ students">25,000+ students</option>
             </select>
           </div>
 
           <div class="site-form-group">
-            <label for="role">Your Role</label>
+            <label for="role" id="lbl-role">Your Role</label>
             <select id="role" name="role">
-              <option value="">Select one&hellip;</option>
+              <option value="" id="opt-role-placeholder">Select one&hellip;</option>
               <option value="Teacher">Teacher</option>
               <option value="Learning Support">Learning Support / Resource</option>
               <option value="IT">IT / Technology Coordinator</option>
@@ -74,7 +76,7 @@
           </div>
 
           <div class="site-form-group">
-            <label for="message">Message</label>
+            <label for="message" id="lbl-message">Message</label>
             <textarea id="message" name="message" required placeholder="Tell us about your situation: how many schools, what assessments, any questions."></textarea>
           </div>
 
@@ -85,13 +87,13 @@
 
       <!-- Info -->
       <div class="contact-info-col">
-        <p class="label" style="margin-bottom:1rem;">Direct contact</p>
+        <p class="label" style="margin-bottom:1rem;" id="lbl-direct-contact">Direct contact</p>
         <p style="font-size:0.95rem; margin-bottom:2rem;">
           <a href="mailto:hello@audioproctor.com" style="color:var(--ink); font-weight:500;">hello@audioproctor.com</a>
         </p>
 
-        <p class="label" style="margin-bottom:1rem;">What to expect</p>
-        <p style="font-size:0.9rem; color:var(--muted); line-height:1.7; margin-bottom:1rem;">Response within one business day. Demo is 20 minutes over Google Meet. We'll walk through a live upload, show the student extension, and cover IT deployment.</p>
+        <p class="label" style="margin-bottom:1rem;" id="lbl-what-to-expect">What to expect</p>
+        <p style="font-size:0.9rem; color:var(--muted); line-height:1.7; margin-bottom:1rem;" id="lbl-expect-body">Response within one business day. Demo is 20 minutes over Google Meet. We'll walk through a live upload, show the student extension, and cover IT deployment.</p>
       </div>
 
     </div>
@@ -105,53 +107,173 @@
 <script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
 <script>
-  document.getElementById('contact-form').addEventListener('submit', async (e) => {
+(function () {
+  'use strict';
+
+  var ENROLMENT_KEYS = [
+    { value: '',          key: 'contact.form.enrolmentOptions.selectPlaceholder' },
+    { value: 'Individual teacher',    key: 'contact.form.enrolmentOptions.individual' },
+    { value: 'Under 2,000 students',  key: 'contact.form.enrolmentOptions.under2000' },
+    { value: '2,000\u20138,000 students', key: 'contact.form.enrolmentOptions.2000to8000' },
+    { value: '8,000\u201325,000 students', key: 'contact.form.enrolmentOptions.8000to25000' },
+    { value: '25,000+ students',      key: 'contact.form.enrolmentOptions.over25000' },
+  ];
+
+  var ROLE_KEYS = [
+    { value: '',          key: 'contact.form.roleOptions.selectPlaceholder' },
+    { value: 'Teacher',                   key: 'contact.form.roleOptions.teacher' },
+    { value: 'Learning Support',          key: 'contact.form.roleOptions.learningSupport' },
+    { value: 'IT',                        key: 'contact.form.roleOptions.itCoordinator' },
+    { value: 'Administrator',             key: 'contact.form.roleOptions.administrator' },
+    { value: 'Other',                     key: 'contact.form.roleOptions.other' },
+  ];
+
+  function t(key) {
+    if (typeof window.t === 'function') return window.t(key);
+    return key;
+  }
+
+  function renderContactPage() {
+    // Meta
+    var titleEl = document.getElementById('page-title');
+    if (titleEl) titleEl.textContent = t('contact.metaTitle');
+
+    // Section
+    setText('lbl-section', t('contact.sectionLabel'));
+    setText('lbl-headline', t('contact.pageTitle'));
+    setText('lbl-intro', t('contact.intro'));
+
+    // Success/error messages (set dynamically; fallback keys stored)
+    var successEl = document.getElementById('form-success');
+    if (successEl) successEl.textContent = t('contact.form.successMessage');
+
+    // Form labels
+    setText('lbl-name', t('contact.form.nameLabel'));
+    setText('lbl-email', t('contact.form.emailLabel'));
+    setText('lbl-division', t('contact.form.divisionLabel'));
+    setText('lbl-enrolment', t('contact.form.enrolmentLabel'));
+    setText('lbl-role', t('contact.form.roleLabel'));
+    setText('lbl-message', t('contact.form.messageLabel'));
+
+    // Placeholders
+    setPlaceholder('division', t('contact.form.divisionPlaceholder'));
+    setPlaceholder('message', t('contact.form.messagePlaceholder'));
+
+    // Enrolment options
+    var enrolmentSelect = document.getElementById('enrolment');
+    if (enrolmentSelect) {
+      var currentValue = enrolmentSelect.value;
+      ENROLMENT_KEYS.forEach(function (opt) {
+        var option = enrolmentSelect.querySelector('option[value="' + escapeValue(opt.value) + '"]');
+        if (option) option.textContent = t(opt.key);
+      });
+      enrolmentSelect.value = currentValue;
+    }
+
+    // Role options
+    var roleSelect = document.getElementById('role');
+    if (roleSelect) {
+      var currentRole = roleSelect.value;
+      ROLE_KEYS.forEach(function (opt) {
+        var option = roleSelect.querySelector('option[value="' + escapeValue(opt.value) + '"]');
+        if (option) option.textContent = t(opt.key);
+      });
+      roleSelect.value = currentRole;
+    }
+
+    // Submit button
+    setText('btn-submit', t('contact.form.sendMessage'));
+
+    // Info column
+    setText('lbl-direct-contact', t('contact.info.directContact'));
+    setText('lbl-what-to-expect', t('contact.info.whatToExpect'));
+    setText('lbl-expect-body', t('contact.info.whatToExpectBody'));
+  }
+
+  function setText(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function setPlaceholder(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.placeholder = text;
+  }
+
+  function escapeValue(v) {
+    return v.replace(/"/g, '\\"').replace(/'/g, "\\'");
+  }
+
+  // ── Form submission ──
+  document.getElementById('contact-form').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    const btn = document.getElementById('btn-submit');
-    const errEl = document.getElementById('form-error');
-    const successEl = document.getElementById('form-success');
+    var btn = document.getElementById('btn-submit');
+    var errEl = document.getElementById('form-error');
+    var successEl = document.getElementById('form-success');
 
     btn.disabled = true;
-    btn.textContent = 'Sending…';
+    btn.textContent = t('contact.form.sending');
     errEl.classList.add('hidden');
 
-    const body = {
+    var body = {
       name:      document.getElementById('name').value.trim(),
       email:     document.getElementById('email').value.trim(),
       division:  document.getElementById('division').value.trim(),
       enrolment: document.getElementById('enrolment').value,
       role:      document.getElementById('role').value,
       message:   document.getElementById('message').value.trim(),
-      website:   document.getElementById('honeypot').value, // honeypot
+      website:   document.getElementById('honeypot').value,
     };
 
     try {
-      const res  = await fetch('/api/contact', {
+      var res = await fetch('/api/contact', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
       });
-      const data = await res.json();
+      var data = await res.json();
 
       if (!res.ok) {
-        errEl.textContent = data.error || 'Something went wrong. Please email hello@audioproctor.com directly.';
+        errEl.textContent = data.error || t('contact.form.errorGeneric');
         errEl.classList.remove('hidden');
         btn.disabled = false;
-        btn.textContent = 'Send Message';
+        btn.textContent = t('contact.form.sendMessage');
         return;
       }
 
       document.getElementById('contact-form').classList.add('hidden');
       successEl.classList.remove('hidden');
 
-    } catch {
-      errEl.textContent = 'Network error. Please email hello@audioproctor.com directly.';
+    } catch (_a) {
+      errEl.textContent = t('contact.form.errorNetwork');
       errEl.classList.remove('hidden');
       btn.disabled = false;
-      btn.textContent = 'Send Message';
+      btn.textContent = t('contact.form.sendMessage');
     }
   });
+
+  // ── i18n initialisation ──
+  function initI18n() {
+    if (typeof window.i18nReady !== 'undefined' && window.i18nReady !== null) {
+      window.i18nReady.then(renderContactPage);
+    } else {
+      renderContactPage();
+    }
+  }
+
+  initI18n();
+
+  // Re-render on locale change
+  window.addEventListener('localechanged', function () {
+    // Update the success/error messages (but don't overwrite visible state)
+    var successEl = document.getElementById('form-success');
+    if (successEl && !successEl.classList.contains('hidden')) {
+      successEl.textContent = t('contact.form.successMessage');
+    }
+    renderContactPage();
+  });
+})();
 </script>
 </body>
 </html>
