@@ -23,12 +23,12 @@ function handleFileSelect(input) {
 
   if (!file) {
     btn.disabled = true;
-    hint.textContent = 'Max 50 MB · MP3 or WAV (WAV converts to MP3)';
+    hint.textContent = t('dashboard.fileHintDefault');
     return;
   }
 
   if (!isSupportedAudioFile(file)) {
-    showUploadNotice('Please select an MP3 or WAV file.', 'error');
+    showUploadNotice(t('dashboard.fileError'), 'error');
     input.value = '';
     btn.disabled = true;
     return;
@@ -36,14 +36,16 @@ function handleFileSelect(input) {
 
   const effectiveBytes = isWavFile(file) ? estimateMp3UpperBoundBytes(file) : file.size;
   if (effectiveBytes > MAX_UPLOAD_BYTES) {
-    showUploadNotice('File is too large. Maximum size is 50 MB.', 'error');
+    showUploadNotice(t('dashboard.fileTooLarge'), 'error');
     input.value = '';
     btn.disabled = true;
     return;
   }
 
-  const suffix = isWavFile(file) ? ' · WAV will convert to MP3 on upload' : '';
-  hint.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB${suffix}`;
+  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+  hint.textContent = isWavFile(file)
+    ? t('dashboard.fileSelectedWav', { name: file.name, size: sizeMB })
+    : t('dashboard.fileSelected', { name: file.name, size: sizeMB });
   btn.disabled = false;
   hideUploadNotice();
 }
@@ -78,7 +80,7 @@ function toggleAssessmentType() {
     textGroup.classList.remove('hidden');
     // Reset audio input
     document.getElementById('file-input').value = '';
-    document.getElementById('file-hint').textContent = 'Max 50 MB · MP3 or WAV (WAV converts to MP3)';
+    document.getElementById('file-hint').textContent = t('dashboard.fileHintDefault');
     // Initialize editor if not already done
     if (!document.getElementById('text-content-editor')._initialized) {
       initTextEditor();
@@ -158,13 +160,13 @@ function handleEditorPaste(e) {
 
     // Validate type
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(blob.type)) {
-      showUploadNotice('Only PNG, JPEG, and WebP images are supported.', 'error');
+      showUploadNotice(t('dashboard.imageUnsupported'), 'error');
       continue;
     }
 
     // Validate size
     if (blob.size > 2 * 1024 * 1024) {
-      showUploadNotice('Image is larger than 2 MB. Please resize it.', 'error');
+      showUploadNotice(t('dashboard.imageResizeHint'), 'error');
       continue;
     }
 
@@ -239,8 +241,8 @@ async function capturePastedHTMLImages() {
 
   if (strippedCount > 0) {
     const msg = strippedCount === 1
-      ? 'One image from the pasted content could not be included. Try taking a screenshot and pasting that instead.'
-      : strippedCount + ' images from the pasted content could not be included. Try taking a screenshot and pasting that instead.';
+      ? t('dashboard.imageStripError')
+      : t('dashboard.imageStripErrorPlural', { count: strippedCount });
     showUploadNotice(msg, 'error');
   }
 }
@@ -283,11 +285,11 @@ function insertImageFiles(files) {
 
   for (const file of files) {
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      showUploadNotice('"' + file.name + '" is not a supported image type.', 'error');
+      showUploadNotice(t('dashboard.imageTypeError', { name: file.name }), 'error');
       continue;
     }
     if (file.size > 2 * 1024 * 1024) {
-      showUploadNotice('"' + file.name + '" is larger than 2 MB.', 'error');
+      showUploadNotice(t('dashboard.imageTooLarge', { name: file.name }), 'error');
       continue;
     }
 
@@ -356,19 +358,24 @@ function handleEditorInput() {
 
   if (text.length === 0 && imageCount === 0) {
     btn.disabled = true;
-    hint.textContent = 'Paste text and images · Max 2 MB per image';
+    hint.textContent = t('dashboard.textHint');
     return;
   }
 
   if (text.length > 25000) {
     btn.disabled = true;
-    hint.textContent = text.length.toLocaleString() + ' / 25,000 characters — too long';
+    hint.textContent = t('dashboard.textCharCountTooLong', { count: text.length.toLocaleString() });
     return;
   }
 
   const imageSizeMB = pendingImages.reduce((sum, img) => sum + img.blob.size, 0) / 1024 / 1024;
   btn.disabled = false;
-  hint.textContent = text.length.toLocaleString() + ' characters · ' + imageCount + ' image' + (imageCount !== 1 ? 's' : '') + ' · ' + imageSizeMB.toFixed(1) + ' MB';
+  hint.textContent = t('dashboard.textCharCount', {
+    count: text.length.toLocaleString(),
+    images: imageCount,
+    plural: imageCount !== 1 ? 's' : '',
+    size: imageSizeMB.toFixed(1)
+  });
 }
 
 function normalizeTextContent(raw) {
@@ -387,16 +394,16 @@ function handleTextInput() {
 
   if (text.length === 0) {
     btn.disabled = true;
-    hint.textContent = 'Plain text only · Max 25,000 characters';
+    hint.textContent = t('dashboard.textCharLimit');
     return;
   }
 
   if (text.length > 25000) {
     btn.disabled = true;
-    hint.textContent = `${text.length.toLocaleString()} / 25,000 characters — too long`;
+    hint.textContent = t('dashboard.textCharCountTooLong', { count: text.length.toLocaleString() });
     return;
   }
 
   btn.disabled = false;
-  hint.textContent = `${text.length.toLocaleString()} characters`;
+  hint.textContent = t('dashboard.textCharCountPlain', { count: text.length.toLocaleString() });
 }
