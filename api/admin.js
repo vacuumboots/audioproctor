@@ -21,20 +21,32 @@ const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 const Stripe = require('stripe');
 const { sendEmail } = require('./_lib/email');
+const { getRequestLanguage, apiMessage } = require('./_lib/i18n');
 
 function formatRole(role) {
   return role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function buildInviteEmail({ role, inviteUrl, orgName }) {
+function buildInviteEmail({ role, inviteUrl, orgName, lang }) {
   const roleLabel = formatRole(role);
-  const subject = `You've been invited to join AudioProctor`;
-  let text = `You've been invited to join AudioProctor as a ${roleLabel}.`;
-  if (orgName) text += `\n\nas part of ${orgName}`;
-  text += `\n\nClick the link below to accept your invitation:\n${inviteUrl}\n\nThis invitation expires in 7 days.\nIf you did not expect this invitation, you can safely ignore it.`;
-  let html = `<p>You've been invited to join AudioProctor as a <strong>${roleLabel}</strong>.</p>`;
-  if (orgName) html += `<p>as part of <strong>${orgName}</strong></p>`;
-  html += `<p>Click the link below to accept your invitation:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This invitation expires in 7 days.<br>If you did not expect this invitation, you can safely ignore it.</p>`;
+  const isFr = lang === 'fr';
+  const subject = isFr ? 'Vous avez été invité à rejoindre AudioProctor' : `You've been invited to join AudioProctor`;
+  let text = isFr
+    ? `Bonjour,\n\nVous avez été invité à rejoindre AudioProctor en tant que ${roleLabel}.`
+    : `You've been invited to join AudioProctor as a ${roleLabel}.`;
+  if (orgName) text += isFr ? `\n\nau sein de ${orgName}` : `\n\nas part of ${orgName}`;
+  text += isFr
+    ? `\n\nCliquez sur le lien ci-dessous pour accepter votre invitation :\n${inviteUrl}\n\nCette invitation expire dans 7 jours.\nSi vous n'avez pas demandé cette invitation, vous pouvez l'ignorer.`
+    : `\n\nClick the link below to accept your invitation:\n${inviteUrl}\n\nThis invitation expires in 7 days.\nIf you did not expect this invitation, you can safely ignore it.`;
+  let html = isFr
+    ? `<p>Bonjour,</p><p>Vous avez été invité à rejoindre AudioProctor en tant que <strong>${roleLabel}</strong>.</p>`
+    : `<p>You've been invited to join AudioProctor as a <strong>${roleLabel}</strong>.</p>`;
+  if (orgName) html += isFr
+    ? `<p>au sein de <strong>${orgName}</strong></p>`
+    : `<p>as part of <strong>${orgName}</strong></p>`;
+  html += isFr
+    ? `<p>Cliquez sur le lien ci-dessous pour accepter votre invitation :</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>Cette invitation expire dans 7 jours.<br>Si vous n'avez pas demandé cette invitation, vous pouvez l'ignorer.</p>`
+    : `<p>Click the link below to accept your invitation:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This invitation expires in 7 days.<br>If you did not expect this invitation, you can safely ignore it.</p>`;
   return { subject, text, html };
 }
 
@@ -44,6 +56,8 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const lang = getRequestLanguage(req);
 
   // ─── Auth check ─────────────────────────────────────────────────
   // The caller passes their Supabase JWT in the Authorization header.
@@ -688,7 +702,7 @@ module.exports = async (req, res) => {
       const { data: authUser } = await supabase.auth.admin.getUserById(userId);
       const teacherEmail = authUser?.user?.email;
       if (teacherEmail) {
-        sendReassignmentEmail(teacherEmail, newSchoolName, newDivName).catch(err =>
+        sendReassignmentEmail(teacherEmail, newSchoolName, newDivName, lang).catch(err =>
           console.error('reassignment email failed:', err.message)
         );
       }
@@ -782,7 +796,7 @@ module.exports = async (req, res) => {
         })
         .select('id, token')
         .single();
-      if (invErr) return res.status(500).json({ error: 'Could not create invitation' });
+      if (invErr) return res.status(500).json({ error: apiMessage('server_error', lang) });
 
       // Mark request approved
       await supabase.from('teacher_requests').update({
@@ -799,7 +813,7 @@ module.exports = async (req, res) => {
       let emailOk = true;
       let emailError = null;
       try {
-        const { subject, text, html } = buildInviteEmail({ role: 'teacher', inviteUrl });
+        const { subject, text, html } = buildInviteEmail({ role: 'teacher', inviteUrl, lang });
         const emailResult = await sendEmail({ to: req.email, subject, text, html });
         if (!emailResult.ok) {
           emailOk = false;
@@ -817,8 +831,8 @@ module.exports = async (req, res) => {
 
     if (action === 'invite') {
       const { email, role, schoolId, divisionId } = body;
-      if (!email) return res.status(400).json({ error: 'email required' });
-      if (!role) return res.status(400).json({ error: 'role required' });
+      if (!email) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'email' }) });
+      if (!role) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'role' }) });
 
       const { data: invite, error: invErr } = await supabase
         .from('invitations')
@@ -830,14 +844,14 @@ module.exports = async (req, res) => {
         })
         .select('id, token')
         .single();
-      if (invErr) return res.status(500).json({ error: 'Could not create invitation' });
+      if (invErr) return res.status(500).json({ error: apiMessage('server_error', lang) });
 
-      const inviteUrl = `https://app.audioproctor.com/accept-invite.html?token=${invite.token}`;
+      const inviteUrl = `https://app.audioproctor.com/accept-invite.html?token=`
 
       let emailOk = true;
       let emailError = null;
       try {
-        const { subject, text, html } = buildInviteEmail({ role, inviteUrl });
+        const { subject, text, html } = buildInviteEmail({ role, inviteUrl, lang });
         const emailResult = await sendEmail({ to: email, subject, text, html });
         if (!emailResult.ok) {
           emailOk = false;
@@ -857,7 +871,7 @@ module.exports = async (req, res) => {
 
     if (action === 'resend-invite') {
       const { invitationId } = body;
-      if (!invitationId) return res.status(400).json({ error: 'invitationId required' });
+      if (!invitationId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'invitationId' }) });
 
       const { data: invite, error: fetchErr } = await supabase
         .from('invitations')
@@ -865,8 +879,8 @@ module.exports = async (req, res) => {
         .eq('id', invitationId)
         .single();
 
-      if (fetchErr || !invite) return res.status(404).json({ error: 'Invitation not found' });
-      if (invite.accepted_at) return res.status(400).json({ error: 'Invitation already accepted' });
+      if (fetchErr || !invite) return res.status(404).json({ error: apiMessage('not_found', lang) });
+      if (invite.accepted_at) return res.status(400).json({ error: apiMessage('bad_request', lang) });
 
       const newExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const { error: updateErr } = await supabase
@@ -876,7 +890,7 @@ module.exports = async (req, res) => {
 
       if (updateErr) {
         console.error('resend-invite update failed:', updateErr.message);
-        return res.status(500).json({ error: 'Could not update invitation' });
+        return res.status(500).json({ error: apiMessage('server_error', lang) });
       }
 
       const inviteUrl = `https://app.audioproctor.com/accept-invite.html?token=${invite.token}`;
@@ -884,7 +898,7 @@ module.exports = async (req, res) => {
       let emailError = null;
       try {
         const orgName = invite.schools?.name || invite.divisions?.name || null;
-        const { subject, text, html } = buildInviteEmail({ role: invite.role, inviteUrl, orgName });
+        const { subject, text, html } = buildInviteEmail({ role: invite.role, inviteUrl, orgName, lang });
         const emailResult = await sendEmail({ to: invite.email, subject, text, html });
         if (!emailResult.ok) {
           emailOk = false;
@@ -903,7 +917,7 @@ module.exports = async (req, res) => {
 
     if (action === 'reject-request') {
       const { requestId, notes } = body;
-      if (!requestId) return res.status(400).json({ error: 'requestId required' });
+      if (!requestId) return res.status(400).json({ error: apiMessage('missing_param', lang, { param: 'requestId' }) });
 
       const { error } = await supabase.from('teacher_requests').update({
         status:      'rejected',
@@ -912,7 +926,7 @@ module.exports = async (req, res) => {
         reviewed_by: user.id,
       }).eq('id', requestId);
 
-      if (error) return res.status(500).json({ error: 'Could not reject request' });
+      if (error) return res.status(500).json({ error: apiMessage('server_error', lang) });
 
       audit(supabase, user.id, 'reject_request', 'teacher_request', requestId, null, { notes: notes || null });
       return res.status(200).json({ ok: true });
@@ -1399,38 +1413,54 @@ function logInviteEmail(supabase, invitationId, action, emailOk, errorMessage) {
 // Notifies a teacher that they have been assigned to a new school/division.
 // Names the specific organization(s) to reduce confusion.
 
-async function sendReassignmentEmail(teacherEmail, schoolName, divisionName) {
+async function sendReassignmentEmail(teacherEmail, schoolName, divisionName, lang) {
   const { Resend } = require('resend');
   const resend = new Resend(process.env.RESEND_API_KEY);
 
+  const isFr = lang === 'fr';
+
   let orgText = '';
   if (schoolName && divisionName) {
-    orgText = `${schoolName}, ${divisionName}`;
+    orgText = isFr ? `${schoolName}, ${divisionName}` : `${schoolName}, ${divisionName}`;
   } else if (schoolName) {
     orgText = schoolName;
   } else if (divisionName) {
     orgText = divisionName;
   } else {
-    orgText = 'no organization (unattached)';
+    orgText = isFr ? 'aucune organisation (non rattaché)' : 'no organization (unattached)';
   }
 
   await resend.emails.send({
     from:    'AudioProctor <hello@audioproctor.com>',
     to:      teacherEmail,
-    subject: 'Your AudioProctor organization has changed',
-    text: [
-      `Hi,`,
-      ``,
-      `Your account has been reassigned to ${orgText} on AudioProctor.`,
-      ``,
-      `Your account and all of your uploaded assessments are still intact. Your plan tier`,
-      `may have changed based on the organization you are now part of.`,
-      ``,
-      `If you believe this was done in error, please contact your administrator`,
-      `or reply to this email.`,
-      ``,
-      `— AudioProctor`,
-    ].join('\n'),
+    subject: isFr ? 'Votre organisation AudioProctor a été modifiée' : 'Your AudioProctor organization has changed',
+    text: isFr
+      ? [
+          `Bonjour,`,
+          ``,
+          `Votre compte a été réaffecté à ${orgText} sur AudioProctor.`,
+          ``,
+          `Votre compte et toutes vos évaluations téléversées sont toujours intacts. Votre forfait`,
+          `peut avoir changé en fonction de l'organisation à laquelle vous appartenez désormais.`,
+          ``,
+          `Si vous pensez qu'il s'agit d'une erreur, veuillez contacter votre administrateur`,
+          `ou répondre à ce courriel.`,
+          ``,
+          `— L'équipe AudioProctor`,
+        ].join('\n')
+      : [
+          `Hi,`,
+          ``,
+          `Your account has been reassigned to ${orgText} on AudioProctor.`,
+          ``,
+          `Your account and all of your uploaded assessments are still intact. Your plan tier`,
+          `may have changed based on the organization you are now part of.`,
+          ``,
+          `If you believe this was done in error, please contact your administrator`,
+          `or reply to this email.`,
+          ``,
+          `— AudioProctor`,
+        ].join('\n'),
   });
 }
 
@@ -1453,4 +1483,3 @@ async function getAllUserEmails(supabase) {
 
   return emailMap;
 }
-
