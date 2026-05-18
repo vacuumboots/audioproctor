@@ -17,19 +17,19 @@ function toggleCreateForm(id) {
 
 function tierOptions(current) {
   return ['free','premium','school','division'].map(t =>
-    `<option value="${t}" ${t === current ? 'selected' : ''}>${capitalize(t)}</option>`
+    `<option value="${t}" ${t === current ? 'selected' : ''}>${t(`admin.entities.tierOptions.${t}`)}</option>`
   ).join('');
 }
 
 function roleOptions(current) {
   const roles = [
-    ['teacher',        'Teacher'],
-    ['school_admin',   'School Admin'],
-    ['division_admin', 'Division Admin'],
-    ['platform_admin', 'Platform Admin'],
+    ['teacher',        'admin.entities.roleOptions.teacher'],
+    ['school_admin',   'admin.entities.roleOptions.schoolAdmin'],
+    ['division_admin', 'admin.entities.roleOptions.divisionAdmin'],
+    ['platform_admin', 'admin.entities.roleOptions.platformAdmin'],
   ];
-  return roles.map(([val, label]) =>
-    `<option value="${val}" ${val === current ? 'selected' : ''}>${label}</option>`
+  return roles.map(([val, key]) =>
+    `<option value="${val}" ${val === current ? 'selected' : ''}>${t(key)}</option>`
   ).join('');
 }
 
