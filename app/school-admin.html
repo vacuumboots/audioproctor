@@ -85,13 +85,13 @@
   <div class="top-bar">
     <div class="page-container">
       <div class="top-bar__inner">
-        <span class="wordmark">Audio<span class="accent">Proctor</span> <span style="font-size:0.8rem; font-family:'DM Sans',sans-serif; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-left:0.5rem;">School Admin</span></span>
+        <span class="wordmark">Audio<span class="accent">Proctor</span> <span id="wordmark-subtitle" style="font-size:0.8rem; font-family:'DM Sans',sans-serif; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-left:0.5rem;">School Admin</span></span>
         <div style="display:flex; align-items:center; gap:1.5rem;">
           <span id="admin-email" class="label"></span>
-          <a href="/dashboard.html" class="btn btn--ghost btn--small">My Dashboard</a>
-          <a href="/settings.html" class="btn btn--ghost btn--small">Settings</a>
+          <a id="admin-my-dashboard-link" href="/dashboard.html" class="btn btn--ghost btn--small">My Dashboard</a>
+          <a id="admin-settings-link" href="/settings.html" class="btn btn--ghost btn--small">Settings</a>
           <span class="lang-toggle" id="lang-toggle"></span>
-          <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
+          <button id="admin-signout-btn" class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
         </div>
       </div>
     </div>
@@ -104,8 +104,8 @@
     </div>
 
     <div class="admin-tabs">
-      <button class="admin-tab admin-tab--active" onclick="schoolSwitchTab('overview', this)">Overview</button>
-      <button class="admin-tab" onclick="schoolSwitchTab('content', this)">Content</button>
+      <button id="tab-overview" class="admin-tab admin-tab--active" onclick="schoolSwitchTab('overview', this)">Overview</button>
+      <button id="tab-content" class="admin-tab" onclick="schoolSwitchTab('content', this)">Content</button>
     </div>
 
     <!-- Overview panel -->
@@ -115,41 +115,41 @@
     <div class="stats-row">
       <div class="stat-box">
         <div id="stat-teachers" class="stat-box__value">—</div>
-        <div class="label">Teachers</div>
+        <div id="stat-label-teachers" class="label">Teachers</div>
       </div>
       <div class="stat-box">
         <div id="stat-uploads" class="stat-box__value">—</div>
-        <div class="label">Total Uploads</div>
+        <div id="stat-label-uploads" class="label">Total Uploads</div>
       </div>
       <div class="stat-box">
         <div id="stat-sessions" class="stat-box__value">—</div>
-        <div class="label">Total Sessions</div>
+        <div id="stat-label-sessions" class="label">Total Sessions</div>
       </div>
       <div class="stat-box">
         <div id="stat-completion" class="stat-box__value">—</div>
-        <div class="label">Completion Rate</div>
+        <div id="stat-label-completion" class="label">Completion Rate</div>
       </div>
     </div>
 
     <!-- Billing -->
     <div class="card" style="margin-bottom:2rem;">
       <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
-        <p class="label">School Plan</p>
+        <p id="billing-label" class="label">School Plan</p>
         <div id="billing-badge" class="tier-badge hidden" style="font-size:0.65rem;"></div>
       </div>
       <div id="billing-block" class="subscription-block" style="padding:1.25rem 1.5rem; border:var(--border); background:var(--warm-mid); font-size:0.9rem;">
-        <p>Loading billing information…</p>
+        <p id="billing-loading-text">Loading billing information…</p>
       </div>
     </div>
 
     <!-- Teachers -->
     <div class="card">
       <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
-        <p class="label">Teachers</p>
-        <button class="btn btn--ghost btn--small" onclick="showInviteTeacherModal()">Invite Teacher</button>
+        <p id="teachers-section-label" class="label">Teachers</p>
+        <button id="invite-teacher-btn" class="btn btn--ghost btn--small" onclick="showInviteTeacherModal()">Invite Teacher</button>
       </div>
       <div id="teachers-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p id="loading-teachers" class="label">Loading…</p></div>
       </div>
     </div><!-- /card -->
 
@@ -158,10 +158,10 @@
     <!-- Content panel -->
     <div id="panel-content" class="admin-panel">
       <div class="section-toolbar">
-        <p class="label">School Teacher Uploads</p>
+        <p id="content-section-label" class="label">School Teacher Uploads</p>
       </div>
       <div id="content-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p id="loading-content" class="label">Loading…</p></div>
       </div>
     </div>
 
@@ -170,17 +170,17 @@
   <!-- Invite Teacher modal -->
   <div id="invite-teacher-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <p class="label" style="margin-bottom:0.75rem;">Invite a Teacher</p>
-      <h2>Send an invitation to join this school</h2>
-      <p style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;">An email will be sent with a link to accept the invitation and create an account.</p>
+      <p id="invite-modal-title" class="label" style="margin-bottom:0.75rem;">Invite a Teacher</p>
+      <h2 id="invite-modal-heading">Send an invitation to join this school</h2>
+      <p id="invite-modal-desc" style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;">An email will be sent with a link to accept the invitation and create an account.</p>
       <div class="form-group">
-        <label class="label" for="invite-email-input">Teacher's Email</label>
+        <label id="invite-email-label" class="label" for="invite-email-input">Teacher's Email</label>
         <input type="email" id="invite-email-input" class="input-field" placeholder="teacher@school.edu" maxlength="255">
       </div>
       <div id="invite-notice" class="notice hidden" style="margin-bottom:0.75rem;"></div>
       <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
-        <button class="btn btn--primary" onclick="inviteTeacher()">Send Invitation</button>
-        <button class="btn btn--ghost" onclick="document.getElementById('invite-teacher-modal').classList.add('hidden'); document.getElementById('invite-notice').classList.add('hidden');">Cancel</button>
+        <button id="btn-send-invitation" class="btn btn--primary" onclick="inviteTeacher()">Send Invitation</button>
+        <button id="btn-cancel-invitation" class="btn btn--ghost" onclick="document.getElementById('invite-teacher-modal').classList.add('hidden'); document.getElementById('invite-notice').classList.add('hidden');">Cancel</button>
       </div>
     </div>
   </div>
@@ -193,6 +193,56 @@
   <script src="/js/content-browser.js"></script>
   <script src="/js/school-admin-content.js"></script>
   <script>
+    // ─── i18n: populate translated text ──────────────────────────────
+    function applySchoolAdminI18n() {
+      document.title = 'AudioProctor — ' + t('admin.schoolPanelTitle');
+
+      // Top bar
+      var el = document.getElementById('wordmark-subtitle');
+      if (el) el.textContent = t('admin.schoolPanelTitle');
+      el = document.getElementById('admin-my-dashboard-link');
+      if (el) el.textContent = t('admin.myDashboard');
+      el = document.getElementById('admin-settings-link');
+      if (el) el.textContent = t('admin.settings');
+      el = document.getElementById('admin-signout-btn');
+      if (el) el.textContent = t('admin.signOut');
+
+      // Tabs
+      document.getElementById('tab-overview').textContent = t('admin.schoolAdmin.tabs.overview');
+      document.getElementById('tab-content').textContent = t('admin.schoolAdmin.tabs.content');
+
+      // Stats (static label divs — values are populated by loadSchoolReport)
+      document.getElementById('stat-label-teachers').textContent = t('admin.schoolAdmin.stats.teachers');
+      document.getElementById('stat-label-uploads').textContent = t('admin.schoolAdmin.stats.totalUploads');
+      document.getElementById('stat-label-sessions').textContent = t('admin.schoolAdmin.stats.totalSessions');
+      document.getElementById('stat-label-completion').textContent = t('admin.schoolAdmin.stats.completionRate');
+
+      // Billing
+      document.getElementById('billing-label').textContent = t('admin.schoolAdmin.billing.schoolPlan');
+      var billingLoading = document.getElementById('billing-loading-text');
+      if (billingLoading) billingLoading.textContent = t('admin.schoolAdmin.billing.loading');
+
+      // Teachers section
+      document.getElementById('teachers-section-label').textContent = t('admin.schoolAdmin.teachers.title');
+      document.getElementById('invite-teacher-btn').textContent = t('admin.schoolAdmin.teachers.inviteButton');
+      document.getElementById('loading-teachers').textContent = t('common.loading');
+
+      // Content section
+      document.getElementById('content-section-label').textContent = t('admin.content.schoolTitle');
+      document.getElementById('loading-content').textContent = t('common.loading');
+
+      // Invite modal
+      document.getElementById('invite-modal-title').textContent = t('admin.schoolAdmin.inviteTeacher.title');
+      document.getElementById('invite-modal-heading').textContent = t('admin.schoolAdmin.inviteTeacher.description');
+      document.getElementById('invite-modal-desc').textContent = t('admin.schoolAdmin.inviteTeacher.emailDesc');
+      document.getElementById('invite-email-label').textContent = t('admin.schoolAdmin.inviteTeacher.emailLabel');
+      document.getElementById('invite-email-input').placeholder = t('admin.schoolAdmin.inviteTeacher.emailPlaceholder');
+      document.getElementById('btn-send-invitation').textContent = t('admin.schoolAdmin.inviteTeacher.sendButton');
+      document.getElementById('btn-cancel-invitation').textContent = t('admin.schoolAdmin.inviteTeacher.cancel');
+    }
+    window.i18nReady.then(applySchoolAdminI18n);
+    window.addEventListener('localechanged', applySchoolAdminI18n);
+
     function schoolSwitchTab(name, btn) {
       document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('admin-panel--active'));
       document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('admin-tab--active'));
