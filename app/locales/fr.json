@@ -61,9 +61,17 @@
     "somethingWentWrong": "Une erreur est survenue. Veuillez réessayer.",
     "tryAgain": "Réessayer",
     "networkError": "Erreur réseau. Vérifiez votre connexion.",
-    "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action."
+    "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action.",
+    "termsOfService": "Conditions d'utilisation",
+    "privacyPolicy": "Politique de confidentialité"
   },
-  "nav": {},
+  "nav": {
+    "admin": "Admin",
+    "schoolAdmin": "Admin scolaire",
+    "divisionAdmin": "Admin de division",
+    "extension": "Extension",
+    "settings": "Paramètres"
+  },
   "auth": {
     "signIn": "Connexion",
     "signOut": "Déconnexion",
@@ -268,7 +276,9 @@
       "free": "Vous êtes sur le forfait Gratuit — 3 téléversements/mois, 50 Mo de stockage, audio 32 kbps.",
       "premium": "L'essai Premium expire dans {days} jour{plural}.",
       "school": "Votre école a un forfait.",
-      "division": "Votre division a un forfait."
+      "division": "Votre division a un forfait.",
+      "expiredTrial": "Votre essai Premium de 30 jours a expiré.",
+      "viewSubscription": "Voir les détails de l'abonnement"
     },
     "tierBadge": {
       "free": "Gratuit",
@@ -310,7 +320,13 @@
       "customExitWord": "Votre mot ou phrase de sortie",
       "customCode": "Votre code d'accès",
       "customCodeHint": "Lettres et chiffres seulement. Les élèves le saisiront exactement ainsi."
-    }
+    },
+    "imageUploadFailed": "Échec du téléversement de l'image : {error}",
+    "saveRecordFailed": "Impossible d'enregistrer le dossier de l'évaluation : {error}",
+    "loadAssessmentDetailsFailed": "Impossible de charger les détails de l'évaluation.",
+    "duplicateFailed": "Impossible de dupliquer l'évaluation : {error}",
+    "resetStatusFailed": "Impossible de réinitialiser le statut : {error}",
+    "audioUploadFailed": "Échec du téléversement audio : {error}"
   },
   "admin": {},
   "player": {},
