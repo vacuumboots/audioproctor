@@ -68,7 +68,7 @@ async function initContentBrowser(opts) {
   const container = document.getElementById(opts.containerId);
   if (!container) return;
 
-  container.innerHTML = `<div class="empty-state"><p class="label">Loading…</p></div>`;
+  container.innerHTML = `<div class="empty-state"><p class="label">${t('common.loading')}</p></div>`;
 
   try {
     const data = await contentOpts.apiFn(contentOpts.listAction);
@@ -78,12 +78,12 @@ async function initContentBrowser(opts) {
   } catch (err) {
     container.innerHTML = `
       <div class="empty-state">
-        <p class="label text-accent">Could not load uploads</p>
+        <p class="label text-accent">${t('admin.content.loadError')}</p>
         <p style="font-size:0.85rem; color:var(--muted); margin-top:0.5rem;">
           ${escapeHtml(err.message)}
         </p>
         <button class="btn btn--ghost btn--small mt-2"
-          onclick="initContentBrowser(contentOpts)">Retry</button>
+          onclick="initContentBrowser(contentOpts)">${t('admin.content.retry')}</button>
       </div>`;
   }
 }
@@ -126,29 +126,29 @@ function renderPanel(container) {
   container.innerHTML = `
     <div class="cb-filter-bar">
       <input type="text" id="cb-search" class="input-field"
-        placeholder="Search by teacher name…"
+        placeholder="${t('admin.content.searchPlaceholder')}"
         value="${escapeHtml(document.getElementById('cb-search')?.value || '')}"
         oninput="onFilterChange()" style="width:220px; font-size:0.875rem;">
 
       ${contentOpts.showSchool ? `
         <select id="cb-filter-school" class="input-field"
           onchange="onFilterChange()" style="width:180px; font-size:0.875rem;">
-          <option value="">All Schools</option>
+          <option value="">${t('admin.content.allSchools')}</option>
           ${schools.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}
         </select>` : ''}
 
       <select id="cb-filter-type" class="input-field"
         onchange="onFilterChange()" style="width:140px; font-size:0.875rem;">
-        <option value="">All Types</option>
+        <option value="">${t('admin.content.allTypes')}</option>
         ${types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(capitalize(t))}</option>`).join('')}
       </select>
 
-      <span class="cb-count">${total} upload${total !== 1 ? 's' : ''}</span>
+      <span class="cb-count">${t('admin.content.count', { count: total, plural: total !== 1 ? 's' : '' })}</span>
     </div>
 
     <div id="cb-table-wrapper">
       ${page.length === 0
-        ? '<div class="empty-state"><p class="label">No uploads found</p></div>'
+        ? `<div class="empty-state"><p class="label">${t('admin.content.noUploadsFound')}</p></div>`
         : buildTable(page, start)}
     </div>
 
@@ -172,7 +172,7 @@ function buildTable(page, start) {
           : Number(u.file_size_mb).toFixed(1) + ' MB')
       : '—';
 
-    const typeLabel    = u.assessment_type === 'text' ? 'Text' : 'Audio';
+    const typeLabel    = u.assessment_type === 'text' ? t('admin.content.typeText') : t('admin.content.typeAudio');
     const rowId        = `cb-row-${start + i}`;
     const teacherName  = u.teacher_name || u.teacher_email || '—';
 
@@ -193,7 +193,7 @@ function buildTable(page, start) {
       <tr class="cb-detail-row" id="cb-detail-${u.id}" style="display:none;">
         <td colspan="${contentOpts.showSchool && contentOpts.showTeacher ? 7 : contentOpts.showSchool || contentOpts.showTeacher ? 6 : 5}">
           <div class="cb-detail-cell" id="cb-detail-content-${u.id}">
-            <div class="empty-state" style="padding:1.5rem;"><p class="label">Loading…</p></div>
+            <div class="empty-state" style="padding:1.5rem;"><p class="label">${t('common.loading')}</p></div>
           </div>
         </td>
       </tr>`;
@@ -203,12 +203,12 @@ function buildTable(page, start) {
     <table class="cb-table">
       <thead>
         <tr>
-          ${contentOpts.showTeacher ? '<th>Teacher</th>' : ''}
-          ${contentOpts.showSchool ? '<th>School</th>' : ''}
-          <th>Type</th>
-          <th>Filename</th>
-          <th>Size</th>
-          <th>Created</th>
+          ${contentOpts.showTeacher ? `<th>${t('admin.content.tableHeaders.teacher')}</th>` : ''}
+          ${contentOpts.showSchool ? `<th>${t('admin.content.tableHeaders.school')}</th>` : ''}
+          <th>${t('admin.content.tableHeaders.type')}</th>
+          <th>${t('admin.content.tableHeaders.filename')}</th>
+          <th>${t('admin.content.tableHeaders.size')}</th>
+          <th>${t('admin.content.tableHeaders.created')}</th>
           <th style="width:50px; text-align:center;">▶</th>
         </tr>
       </thead>
@@ -266,7 +266,7 @@ async function toggleInlineViewer(uploadId, rowId, rowEl) {
     } catch (err) {
       contentDiv.innerHTML = `
         <div class="cb-error">
-          <p class="label text-accent">Failed to load content</p>
+          <p class="label text-accent">${t('admin.content.loadContentError')}</p>
           <p style="font-size:0.85rem; color:var(--muted); margin-top:0.25rem;">
             ${escapeHtml(err.message)}
           </p>
@@ -280,17 +280,17 @@ async function toggleInlineViewer(uploadId, rowId, rowEl) {
 function buildAudioPlayer(data) {
   const signedUrl = data.signed_url || data.url || '';
   if (!signedUrl) {
-    return `<div class="cb-error"><p class="label text-accent">No audio URL available</p></div>`;
+    return `<div class="cb-error"><p class="label text-accent">${t('admin.content.noAudioUrl')}</p></div>`;
   }
 
   return `
     <div class="cb-player">
-      <p class="cb-player__label">Audio</p>
+      <p class="cb-player__label">${t('admin.content.audioLabel')}</p>
       <audio controls src="${escapeHtml(signedUrl)}"
         style="width:100%; max-width:480px;"
         onerror="handleAudioError(this)"
         preload="none">
-        Your browser does not support the audio element.
+        ${t('admin.content.browserNotSupported')}
       </audio>
     </div>`;
 }
@@ -301,9 +301,9 @@ function handleAudioError(el) {
   if (!parent) return;
   parent.innerHTML = `
     <div class="cb-error">
-      <p class="label text-accent">Session expired — refresh to reload</p>
+      <p class="label text-accent">${t('admin.content.sessionExpired')}</p>
       <p style="font-size:0.85rem; color:var(--muted); margin-top:0.25rem;">
-        The signed URL has expired. Close and re-open this row to refresh.
+        ${t('admin.content.sessionExpiredDesc')}
       </p>
     </div>`;
 }
@@ -313,12 +313,12 @@ function handleAudioError(el) {
 function buildTextViewer(data) {
   const textContent = data.text_content || data.html || '';
   if (!textContent) {
-    return `<div class="cb-error"><p class="label text-accent">No text content</p></div>`;
+    return `<div class="cb-error"><p class="label text-accent">${t('admin.content.noTextContent')}</p></div>`;
   }
 
   return `
     <div class="cb-text-viewer">
-      <p class="cb-player__label">Text Assessment</p>
+      <p class="cb-player__label">${t('admin.content.textLabel')}</p>
       <div class="cb-text-content">${textContent}</div>
     </div>`;
 }
@@ -332,10 +332,10 @@ function buildPagination(totalPages) {
   return `
     <div class="cb-pagination">
       <button class="btn btn--ghost btn--small" ${prevDisabled ? 'disabled' : ''}
-        onclick="goContentPage(${contentPage - 1})">← Prev</button>
-      <span class="cb-page-info">Page ${contentPage + 1} of ${totalPages}</span>
+        onclick="goContentPage(${contentPage - 1})">${t('admin.content.paginationPrev')}</button>
+      <span class="cb-page-info">${t('admin.content.paginationPage', { current: contentPage + 1, total: totalPages })}</span>
       <button class="btn btn--ghost btn--small" ${nextDisabled ? 'disabled' : ''}
-        onclick="goContentPage(${contentPage + 1})">Next →</button>
+        onclick="goContentPage(${contentPage + 1})">${t('admin.content.paginationNext')}</button>
     </div>`;
 }
 
@@ -357,6 +357,13 @@ function goContentPage(page) {
   if (container) renderPanel(container);
 }
 
+// ─── Locale change listener ───────────────────────────────────────
+// Re-render the panel when language toggles so all strings update.
+window.addEventListener('localechanged', function () {
+  const container = document.getElementById(contentOpts?.containerId);
+  if (container && contentOpts) renderPanel(container);
+});
+
 // ─── Helper ───────────────────────────────────────────────────────
 
 function escapeHtml(str) {
@@ -365,7 +372,7 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+    .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
 
