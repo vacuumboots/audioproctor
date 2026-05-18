@@ -126,6 +126,14 @@ Any new `api/*.js` file counts toward the limit. The onboarding email cron (3 fi
 - **Exit word hashing:** SHA-256 of lowercased+trimmed input. Used identically in `app/js/dashboard-access-codes.js` (upload) and `extension/player.js` (verification).
 - **Auth:** Google OAuth via Supabase Auth. Redirects to `https://app.audioproctor.com/dashboard.html`. `ensureProfile()` calls `/api/check-access` to verify email against `ALLOWED_EMAIL_PATTERN` (when set), then creates the `profiles` row on first login with `tier='premium'` and `expires_at` 30 days out. Existing users are grandfathered through the email gate.
 - **Access codes:** Standard format (`ABC-123`) or custom (3–20 alphanumeric, teacher-defined). Short format was removed.
+- **i18n / bilingual support:** The app supports English and French Canadian (`fr-CA`). Locale files live in `app/locales/`, `extension/_locales/`, `site/locales/`, and `api/locales/`.
+  - **Locale files:** `app/locales/{en,fr}.json` (web app), `extension/_locales/{en,fr}.json` (extension), `site/locales/{en,fr}.json` (marketing site), `api/locales/api-messages.json` (serverless functions).
+  - **Translation function:** `window.t('namespace.key', {replacements})` in the web app, extension, and site. The API uses `api/_lib/i18n.js` → `apiMessage(key, lang, replacements)`.
+  - **Language detection:** Browser `Accept-Language` → `?lang=` URL param → `localStorage` → `profiles.lang`. The extension uses `chrome.storage.local`, not `localStorage`.
+  - **Adding new strings:** Add the key to `en.json` first, then translate in `fr.json`. Never hardcode English text — always use locale keys.
+  - **Date/number formatting:** Always use `Intl.DateTimeFormat` / `Intl.NumberFormat` with `getLocale()` (returns `'fr-CA'` for French).
+  - **French locale code:** `'fr'` for file lookups, `'fr-CA'` for `Intl` formatting.
+  - **Legal text:** Privacy/Terms pages need professional human translation review.
 
 ## How to run locally
 
