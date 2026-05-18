@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AudioProctor — Division Admin</title>
+  <title id="page-title">AudioProctor — Division Admin</title>
   <script type="module" src="/js/i18n.js"></script>
   <link rel="stylesheet" href="/css/styles.css">
   <style>
@@ -90,13 +90,13 @@
   <div class="top-bar">
     <div class="page-container">
       <div class="top-bar__inner">
-        <span class="wordmark">Audio<span class="accent">Proctor</span> <span style="font-size:0.8rem; font-family:'DM Sans',sans-serif; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-left:0.5rem;">Division Admin</span></span>
+        <span class="wordmark">Audio<span class="accent">Proctor</span> <span id="wordmark-subtitle" style="font-size:0.8rem; font-family:'DM Sans',sans-serif; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-left:0.5rem;" data-i18n="admin.divisionAdmin">Division Admin</span></span>
         <div style="display:flex; align-items:center; gap:1.5rem;">
           <span id="admin-email" class="label"></span>
-          <a href="/dashboard.html" class="btn btn--ghost btn--small">My Dashboard</a>
-          <a href="/settings.html" class="btn btn--ghost btn--small">Settings</a>
+          <a href="/dashboard.html" class="btn btn--ghost btn--small" data-i18n="admin.myDashboard">My Dashboard</a>
+          <a href="/settings.html" class="btn btn--ghost btn--small" data-i18n="admin.settings">Settings</a>
           <span class="lang-toggle" id="lang-toggle"></span>
-          <button class="btn btn--ghost btn--small" onclick="handleSignOut()">Sign out</button>
+          <button class="btn btn--ghost btn--small" onclick="handleSignOut()" data-i18n="admin.signOut">Sign out</button>
         </div>
       </div>
     </div>
@@ -107,8 +107,8 @@
     <h1 style="font-size:1.6rem; line-height:1.2; margin-bottom:1.5rem;" id="division-name-title">—</h1>
 
     <div class="admin-tabs">
-      <button class="admin-tab admin-tab--active" onclick="divisionSwitchTab('overview', this)">Overview</button>
-      <button class="admin-tab" onclick="divisionSwitchTab('content', this)">Content</button>
+      <button class="admin-tab admin-tab--active" id="tab-overview" data-i18n="admin.divisionAdmin.tabs.overview" onclick="divisionSwitchTab('overview', this)">Overview</button>
+      <button class="admin-tab" id="tab-content" data-i18n="admin.divisionAdmin.tabs.content" onclick="divisionSwitchTab('content', this)">Content</button>
     </div>
 
     <!-- Overview panel -->
@@ -118,65 +118,65 @@
     <div class="stats-row">
       <div class="stat-box">
         <div id="stat-schools" class="stat-box__value">—</div>
-        <div class="label">Schools</div>
+        <div class="label" data-i18n="admin.divisionAdmin.stats.schools">Schools</div>
       </div>
       <div class="stat-box">
         <div id="stat-teachers" class="stat-box__value">—</div>
-        <div class="label">Teachers</div>
+        <div class="label" data-i18n="admin.divisionAdmin.stats.teachers">Teachers</div>
       </div>
       <div class="stat-box">
         <div id="stat-active" class="stat-box__value">—</div>
-        <div class="label">Active This Year</div>
+        <div class="label" data-i18n="admin.divisionAdmin.stats.activeThisYear">Active This Year</div>
       </div>
       <div class="stat-box">
         <div id="stat-sessions" class="stat-box__value">—</div>
-        <div class="label">Total Sessions</div>
+        <div class="label" data-i18n="admin.divisionAdmin.stats.totalSessions">Total Sessions</div>
       </div>
     </div>
 
     <!-- Billing -->
     <div class="card" style="margin-bottom:1.5rem;">
       <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
-        <p class="label">Division Plan</p>
+        <p class="label" data-i18n="admin.divisionAdmin.billing.divisionPlan">Division Plan</p>
         <div id="billing-badge" class="tier-badge hidden" style="font-size:0.65rem;"></div>
       </div>
       <div id="billing-block" style="padding:1.25rem 1.5rem; border:var(--border); background:var(--warm-mid); font-size:0.9rem;">
-        <p>Loading billing information…</p>
+        <p data-i18n="admin.divisionAdmin.billing.loading">Loading billing information…</p>
       </div>
     </div>
 
     <!-- Assessment window chart -->
     <div class="card" style="margin-bottom:1.5rem;">
       <div class="card__header">
-        <p class="label">Assessment Activity</p>
+        <p class="label" data-i18n="admin.divisionAdmin.activity.title">Assessment Activity</p>
       </div>
       <div id="activity-chart">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
     <!-- Schools -->
     <div class="card">
       <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
-        <p class="label">Schools</p>
+        <p class="label" data-i18n="admin.divisionAdmin.schools.title">Schools</p>
         <div style="display:flex; gap:0.5rem;">
-          <button class="btn btn--ghost btn--small" onclick="showInviteTeacherModal()">Invite Teacher</button>
-          <button class="btn btn--ghost btn--small" onclick="exportDivisionCsv()">Export CSV</button>
+          <button class="btn btn--ghost btn--small" data-i18n="admin.divisionAdmin.schools.inviteButton" onclick="showInviteTeacherModal()">Invite Teacher</button>
+          <button class="btn btn--ghost btn--small" data-i18n="admin.divisionAdmin.schools.exportCsv" onclick="exportDivisionCsv()">Export CSV</button>
         </div>
       </div>
 
       <div id="schools-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
 
       <!-- School drill-down panel (shown on click) -->
       <div id="drill-down-panel" class="drill-down-panel hidden">
         <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem;">
-          <button class="btn btn--ghost btn--small" onclick="closeDrillDown()">← Back to Schools</button>
+          <button class="btn btn--ghost btn--small" id="btn-back-schools" onclick="closeDrillDown()" data-i18n="admin.divisionAdmin.schools.backToSchools">← Back to Schools</button>
           <h2 id="drill-down-title" style="font-size:1.1rem; margin:0;"></h2>
         </div>
         <div id="drill-down-container">
-          <div class="empty-state"><p class="label">Loading…</p></div>
+          <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
         </div>
       </div><!-- /drill-down-panel -->
     </div><!-- /card (schools) -->
@@ -186,10 +186,10 @@
     <!-- Content panel -->
     <div id="panel-content" class="admin-panel">
       <div class="section-toolbar">
-        <p class="label">Division Teacher Uploads</p>
+        <p class="label" data-i18n="admin.content.divisionTitle">Division Teacher Uploads</p>
       </div>
       <div id="content-container">
-        <div class="empty-state"><p class="label">Loading…</p></div>
+        <div class="empty-state"><p class="label" data-i18n="common.loading">Loading…</p></div>
       </div>
     </div>
 
@@ -198,23 +198,23 @@
   <!-- Invite Teacher modal -->
   <div id="invite-teacher-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <p class="label" style="margin-bottom:0.75rem;">Invite a Teacher</p>
-      <h2>Send an invitation to join your division</h2>
-      <p style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;">An email will be sent with a link to accept the invitation and create an account.</p>
+      <p class="label" style="margin-bottom:0.75rem;" data-i18n="admin.divisionAdmin.inviteTeacher.title">Invite a Teacher</p>
+      <h2 data-i18n="admin.divisionAdmin.inviteTeacher.description">Send an invitation to join your division</h2>
+      <p style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.5rem;" data-i18n="admin.divisionAdmin.inviteTeacher.emailDesc">An email will be sent with a link to accept the invitation and create an account.</p>
       <div class="form-group">
-        <label class="label" for="invite-email-input">Teacher's Email</label>
-        <input type="email" id="invite-email-input" class="input-field" placeholder="teacher@school.edu" maxlength="255">
+        <label class="label" for="invite-email-input" data-i18n="admin.divisionAdmin.inviteTeacher.emailLabel">Teacher's Email</label>
+        <input type="email" id="invite-email-input" class="input-field" placeholder="teacher@school.edu" maxlength="255" data-i18n-placeholder="admin.divisionAdmin.inviteTeacher.emailPlaceholder">
       </div>
       <div class="form-group">
-        <label class="label" for="invite-school-select">School <span style="font-weight:300; text-transform:none; letter-spacing:0;">(optional — leave blank for division-wide)</span></label>
+        <label class="label" for="invite-school-select" data-i18n="admin.divisionAdmin.inviteTeacher.schoolLabel">School</label> <span style="font-weight:300; text-transform:none; letter-spacing:0;" data-i18n="admin.divisionAdmin.inviteTeacher.schoolOptional">(optional — leave blank for division-wide)</span>
         <select id="invite-school-select" class="input-field">
-          <option value="">— Any school in this division —</option>
+          <option value="" data-i18n="admin.divisionAdmin.inviteTeacher.anySchool">— Any school in this division —</option>
         </select>
       </div>
       <div id="invite-notice" class="notice hidden" style="margin-bottom:0.75rem;"></div>
       <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
-        <button class="btn btn--primary" onclick="inviteTeacher()">Send Invitation</button>
-        <button class="btn btn--ghost" onclick="document.getElementById('invite-teacher-modal').classList.add('hidden'); document.getElementById('invite-notice').classList.add('hidden');">Cancel</button>
+        <button class="btn btn--primary" id="btn-send-invitation" onclick="inviteTeacher()" data-i18n="admin.divisionAdmin.inviteTeacher.sendButton">Send Invitation</button>
+        <button class="btn btn--ghost" onclick="document.getElementById('invite-teacher-modal').classList.add('hidden'); document.getElementById('invite-notice').classList.add('hidden');" data-i18n="admin.divisionAdmin.inviteTeacher.cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -234,13 +234,38 @@
       btn.classList.add('admin-tab--active');
     }
 
+    function applyDivisionAdminI18n() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.dataset.i18n);
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.placeholder = t(el.dataset.i18nPlaceholder);
+      });
+      document.title = 'AudioProctor \u2014 ' + t('admin.divisionAdmin');
+    }
+
     (async () => {
       const user = await requireAuth();
       if (!user) return;
       document.getElementById('admin-email').textContent = user.email;
+      await i18nReady;
+      applyDivisionAdminI18n();
       await initDivisionAdmin(user);
       await initDivisionContent();
     })();
+
+    window.addEventListener('localechanged', function() {
+      applyDivisionAdminI18n();
+      // Re-render division admin panels when language toggles
+      if (typeof initDivisionAdmin === 'function') {
+        // Don't re-fetch all data — just re-run the render functions
+        if (typeof loadDivisionReport === 'function') loadDivisionReport();
+        if (typeof renderDivisionBilling === 'function') renderDivisionBilling();
+        if (typeof loadActivityChart === 'function') loadActivityChart();
+        if (typeof loadSchools === 'function') loadSchools();
+        if (typeof initDivisionContent === 'function') initDivisionContent();
+      }
+    });
   </script>
 
 </body>

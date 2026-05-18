@@ -27,9 +27,9 @@ async function initDivisionAdmin(user) {
     document.body.innerHTML = `
       <div style="display:flex; align-items:center; justify-content:center; min-height:100vh; padding:2rem; text-align:center;">
         <div>
-          <p class="label" style="margin-bottom:1rem; color:var(--accent);">Access denied</p>
-          <p style="color:var(--muted); margin-bottom:1.5rem;">This page requires the Division Admin role.</p>
-          <a href="/dashboard.html" class="btn btn--ghost">Go to Dashboard</a>
+          <p class="label" style="margin-bottom:1rem; color:var(--accent);">${t('admin.accessDenied')}</p>
+          <p style="color:var(--muted); margin-bottom:1.5rem;">${t('admin.divisionAdmin.accessDenied')}</p>
+          <a href="/dashboard.html" class="btn btn--ghost">${t('admin.goToDashboard')}</a>
         </div>
       </div>`;
     return;
@@ -93,9 +93,9 @@ async function renderDivisionBilling() {
   if (!block) return;
 
   if (divisionTier === 'division') {
-    const statusLabel = divisionStripStatus === 'active' ? 'Active' :
-      divisionStripStatus === 'past_due' ? 'Past Due' :
-      divisionStripStatus === 'canceled' ? 'Canceled' : 'Active';
+    const statusLabel = divisionStripStatus === 'active' ? t('admin.divisionAdmin.billing.statusActive') :
+      divisionStripStatus === 'past_due' ? t('admin.divisionAdmin.billing.statusPastDue') :
+      divisionStripStatus === 'canceled' ? t('admin.divisionAdmin.billing.statusCanceled') : t('admin.divisionAdmin.billing.statusActive');
 
     const statusColor = divisionStripStatus === 'active' ? '#4a7c59' :
       divisionStripStatus === 'past_due' ? 'var(--accent)' : 'var(--muted)';
@@ -108,16 +108,15 @@ async function renderDivisionBilling() {
 
     const bandLabel = divisionEnrolmentBand
       ? capitalize(divisionEnrolmentBand) + ' Division'
-      : 'Division Plan';
+      : t('admin.divisionAdmin.billing.divisionPlan');
 
     block.innerHTML = `
-      <p><strong>This division is on a ${bandLabel}.</strong></p>
+      <p><strong>${t('admin.divisionAdmin.billing.onPlan', { plan: bandLabel })}</strong></p>
       <p style="margin-top:0.5rem; color:var(--muted);">
-        All schools and teachers under this division have unlimited uploads, full analytics,
-        and all premium features included.
+        ${t('admin.divisionAdmin.billing.onPlanDesc')}
       </p>
       <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
-        Billing is managed by your division or platform administrator.
+        ${t('admin.divisionAdmin.billing.billingManaged')}
       </p>`;
   } else {
     badge.classList.add('hidden');
@@ -147,24 +146,23 @@ async function renderDivisionBilling() {
     }
 
     block.innerHTML = `
-      <p><strong>This division is on the Free tier.</strong></p>
+      <p><strong>${t('admin.divisionAdmin.billing.onFreeTier')}</strong></p>
       <p style="margin-top:0.5rem; color:var(--muted); line-height:1.6; margin-bottom:1rem;">
-        Purchase a Division Plan to give every school and teacher under this division
-        unlimited uploads, full analytics, and all premium features.
+        ${t('admin.divisionAdmin.billing.purchasePrompt')}
       </p>
       ${optionsHtml ? `
         <div style="margin-top:0.5rem; margin-bottom:1.25rem; border:var(--border); padding:0.75rem 1rem;">
-          <p class="label" style="margin-bottom:0.5rem;">Select Enrolment Band</p>
+          <p class="label" style="margin-bottom:0.5rem;">${t('admin.divisionAdmin.billing.selectBand')}</p>
           ${optionsHtml}
         </div>
       ` : ''}
       <div style="display:flex; gap:1rem; align-items:center;">
         <button id="btn-purchase-division-plan" class="btn btn--primary btn--small"
-          onclick="startDivisionCheckout()">Purchase Division Plan</button>
-        <span style="font-size:0.75rem; color:var(--muted);">Billed annually</span>
+          onclick="startDivisionCheckout()">${t('admin.divisionAdmin.billing.purchaseButton')}</button>
+        <span style="font-size:0.75rem; color:var(--muted);">${t('admin.divisionAdmin.billing.billedAnnually')}</span>
       </div>
       <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
-        Need a PO or invoice? <a href="/request-access" style="color:var(--ink);">Submit a request</a>.
+        ${t('admin.divisionAdmin.billing.invoiceLink')}
       </p>`;
   }
 }
@@ -173,7 +171,7 @@ async function startDivisionCheckout() {
   const btn = document.getElementById('btn-purchase-division-plan');
   if (btn) {
     btn.disabled = true;
-    btn.textContent = 'Redirecting…';
+    btn.textContent = t('admin.divisionAdmin.billing.redirecting');
   }
 
   const session = await getSession();
@@ -198,10 +196,10 @@ async function startDivisionCheckout() {
     if (!res.ok) throw new Error(data.error || 'Checkout failed');
     window.location = data.url;
   } catch (err) {
-    alert('Could not start checkout: ' + err.message);
+    alert(t('admin.divisionAdmin.billing.checkoutError', { error: err.message }));
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'Purchase Division Plan';
+      btn.textContent = t('admin.divisionAdmin.billing.purchaseButton');
     }
   }
 }
@@ -211,7 +209,7 @@ if (new URLSearchParams(window.location.search).get('upgraded') === 'division') 
   history.replaceState(null, '', window.location.pathname);
   const banner = document.createElement('div');
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--ink);color:var(--paper);text-align:center;padding:0.6rem;font-size:0.85rem;z-index:999;';
-  banner.textContent = 'Division Plan activated! All schools and teachers in this division now have unlimited access.';
+  banner.textContent = t('admin.divisionAdmin.billing.activatedBanner');
   document.body.prepend(banner);
   setTimeout(() => banner.remove(), 6000);
 }
@@ -224,13 +222,13 @@ async function loadActivityChart() {
     const data = await orgApi('division-activity');
     renderActivityChart(data, container);
   } catch (err) {
-    container.innerHTML = `<p class="label text-muted" style="padding:0.75rem 0;">No activity data yet.</p>`;
+    container.innerHTML = `<p class="label text-muted" style="padding:0.75rem 0;">${t('admin.divisionAdmin.activity.noData')}</p>`;
   }
 }
 
 function renderActivityChart(data, container) {
   if (!data || data.length === 0 || data.every(d => d.sessions === 0)) {
-    container.innerHTML = `<p style="font-size:0.85rem; color:var(--muted); padding:0.5rem 0;">No session data yet. Data will appear here once students use access codes.</p>`;
+    container.innerHTML = `<p style="font-size:0.85rem; color:var(--muted); padding:0.5rem 0;">${t('admin.divisionAdmin.activity.noSessionData')}</p>`;
     return;
   }
 
@@ -260,7 +258,7 @@ function renderActivityChart(data, container) {
         ${bars}
       </svg>
     </div>
-    <p style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">Sessions per week (last 12 weeks)</p>
+    <p style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">${t('admin.divisionAdmin.activity.sessionsPerWeek')}</p>
   `;
 }
 
@@ -272,13 +270,13 @@ async function loadSchools() {
     allSchools = await orgApi('division-schools');
 
     if (!allSchools.length) {
-      container.innerHTML = `<div class="empty-state"><p class="label">No schools attached to this division yet.</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p class="label">${t('admin.divisionAdmin.schools.noData')}</p></div>`;
       return;
     }
 
     renderSchoolsTable(allSchools, container);
   } catch (err) {
-    container.innerHTML = `<p class="label text-accent">Could not load schools: ${escapeHtml(err.message)}</p>`;
+    container.innerHTML = `<p class="label text-accent">${t('admin.divisionAdmin.schools.loadError', { error: escapeHtml(err.message) })}</p>`;
   }
 }
 
@@ -292,8 +290,8 @@ function renderSchoolsTable(schools, container) {
       <td style="text-align:center;">${s.replays}</td>
       <td>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-          <button class="btn btn--ghost btn--small" onclick="openDrillDown('${s.id}', '${escapeHtml(s.name)}')">View Teachers</button>
-          <button class="btn btn--ghost btn--small" onclick="detachSchool('${s.id}', '${escapeHtml(s.name)}', this)">Remove from Division</button>
+          <button class="btn btn--ghost btn--small" onclick="openDrillDown('${s.id}', '${escapeHtml(s.name)}')">${t('admin.divisionAdmin.schools.viewTeachers')}</button>
+          <button class="btn btn--ghost btn--small" onclick="detachSchool('${s.id}', '${escapeHtml(s.name)}', this)">${t('admin.divisionAdmin.schools.removeFromDivision')}</button>
         </div>
       </td>
     </tr>`).join('');
@@ -302,12 +300,12 @@ function renderSchoolsTable(schools, container) {
     <table class="admin-table">
       <thead>
         <tr>
-          <th>School</th>
-          <th style="text-align:center;">Teachers</th>
-          <th style="text-align:center;">Sessions</th>
-          <th style="text-align:center;">Completion</th>
-          <th style="text-align:center;">Replays</th>
-          <th>Actions</th>
+          <th>${t('admin.divisionAdmin.schools.tableHeaders.school')}</th>
+          <th style="text-align:center;">${t('admin.divisionAdmin.schools.tableHeaders.teachers')}</th>
+          <th style="text-align:center;">${t('admin.divisionAdmin.schools.tableHeaders.sessions')}</th>
+          <th style="text-align:center;">${t('admin.divisionAdmin.schools.tableHeaders.completion')}</th>
+          <th style="text-align:center;">${t('admin.divisionAdmin.schools.tableHeaders.replays')}</th>
+          <th>${t('admin.divisionAdmin.schools.tableHeaders.actions')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -315,16 +313,16 @@ function renderSchoolsTable(schools, container) {
 }
 
 async function detachSchool(schoolId, name, btn) {
-  if (!confirm(`Remove "${name}" from this division? The school and its teachers revert to free tier immediately. Existing uploads remain until they expire.`)) return;
+  if (!confirm(t('admin.divisionAdmin.schools.removeConfirm', { name }))) return;
   btn.disabled    = true;
-  btn.textContent = 'Removing…';
+  btn.textContent = t('admin.divisionAdmin.schools.removing');
   try {
     await orgApi('detach-school', 'POST', { schoolId });
     await Promise.all([loadSchools(), loadDivisionReport()]);
   } catch (err) {
-    alert('Could not remove school: ' + err.message);
+    alert(t('admin.divisionAdmin.schools.removeError', { error: err.message }));
     btn.disabled    = false;
-    btn.textContent = 'Remove from Division';
+    btn.textContent = t('admin.divisionAdmin.schools.removeFromDivision');
   }
 }
 
@@ -337,14 +335,14 @@ async function openDrillDown(schoolId, schoolName) {
   document.getElementById('drill-down-title').textContent = schoolName;
 
   const container = document.getElementById('drill-down-container');
-  container.innerHTML = `<div class="empty-state"><p class="label">Loading…</p></div>`;
+  container.innerHTML = `<div class="empty-state"><p class="label">${t('common.loading')}</p></div>`;
 
   try {
     const detail = await orgApi('school-detail', 'GET', null, `&schoolId=${encodeURIComponent(schoolId)}`);
     const teachers = detail.teachers || [];
 
     if (!teachers.length) {
-      container.innerHTML = `<div class="empty-state"><p class="label">No teachers attached to this school.</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p class="label">${t('admin.divisionAdmin.schools.drillDownNoData')}</p></div>`;
       return;
     }
 
@@ -371,8 +369,8 @@ async function openDrillDown(schoolId, schoolName) {
           <td style="color:var(--muted); font-size:0.82rem;">${lastActive}</td>
           <td>
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-              <button class="btn btn--ghost btn--small" onclick="detachTeacher('${t.id}', '${escapeHtml(t.email || t.id)}', this)">Detach</button>
-              ${t.role === 'school_admin' ? `<button class="btn btn--ghost btn--small" onclick="removeSchoolAdmin('${t.id}', '${escapeHtml(t.email || t.id)}', this)">Remove Admin Role</button>` : ''}
+              <button class="btn btn--ghost btn--small" onclick="detachTeacher('${t.id}', '${escapeHtml(t.email || t.id)}', this)">${t('admin.divisionAdmin.schools.detach')}</button>
+              ${t.role === 'school_admin' ? `<button class="btn btn--ghost btn--small" onclick="removeSchoolAdmin('${t.id}', '${escapeHtml(t.email || t.id)}', this)">${t('admin.divisionAdmin.schools.removeAdminRole')}</button>` : ''}
             </div>
           </td>
         </tr>`;
@@ -382,20 +380,20 @@ async function openDrillDown(schoolId, schoolName) {
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Email</th>
-            <th style="text-align:center;">Uploads</th>
-            <th style="text-align:center;">Sessions</th>
-            <th style="text-align:center;">Completion</th>
-            <th style="text-align:center;">Replays</th>
-            <th style="text-align:center;">Avg Listen</th>
-            <th>Last Active</th>
-            <th>Actions</th>
+            <th>${t('admin.divisionAdmin.schools.drillDownTableHeaders.email')}</th>
+            <th style="text-align:center;">${t('admin.divisionAdmin.schools.drillDownTableHeaders.uploads')}</th>
+            <th style="text-align:center;">${t('admin.divisionAdmin.schools.drillDownTableHeaders.sessions')}</th>
+            <th style="text-align:center;">${t('admin.divisionAdmin.schools.drillDownTableHeaders.completion')}</th>
+            <th style="text-align:center;">${t('admin.divisionAdmin.schools.drillDownTableHeaders.replays')}</th>
+            <th style="text-align:center;">${t('admin.divisionAdmin.schools.drillDownTableHeaders.avgListen')}</th>
+            <th>${t('admin.divisionAdmin.schools.drillDownTableHeaders.lastActive')}</th>
+            <th>${t('admin.divisionAdmin.schools.drillDownTableHeaders.actions')}</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>`;
   } catch (err) {
-    container.innerHTML = `<p class="label text-accent">Could not load school details: ${escapeHtml(err.message)}</p>`;
+    container.innerHTML = `<p class="label text-accent">${t('admin.divisionAdmin.schools.drillDownLoadError', { error: escapeHtml(err.message) })}</p>`;
   }
 }
 
@@ -405,32 +403,32 @@ function closeDrillDown() {
 }
 
 async function removeSchoolAdmin(userId, email, btn) {
-  if (!confirm(`Remove the School Admin role from ${email}? They will revert to a regular teacher.`)) return;
+  if (!confirm(t('admin.divisionAdmin.schools.removeAdminRoleConfirm', { email }))) return;
   btn.disabled    = true;
-  btn.textContent = 'Removing…';
+  btn.textContent = t('common.saving');
   try {
     await orgApi('remove-school-admin', 'POST', { userId });
     btn.closest('td').innerHTML = '';
   } catch (err) {
-    alert('Could not remove admin role: ' + err.message);
+    alert(t('admin.divisionAdmin.schools.removeAdminRoleError', { error: err.message }));
     btn.disabled    = false;
-    btn.textContent = 'Remove Admin Role';
+    btn.textContent = t('admin.divisionAdmin.schools.removeAdminRole');
   }
 }
 
 // ─── Detach teacher ───────────────────────────────────────────────────────
 
 async function detachTeacher(userId, email, btn) {
-  if (!confirm(`Detach ${email}? They will be removed from their school and division and revert to free tier immediately. Existing uploads remain until they expire.`)) return;
-  btn.disabled    = true;
-  btn.textContent = 'Detaching…';
+  if (!confirm(t('admin.divisionAdmin.schools.detachConfirm', { email }))) return;
+  btn.disabled = true;
+  btn.textContent = t('admin.divisionAdmin.schools.detaching');
   try {
     await orgApi('detach-teacher', 'POST', { userId });
     btn.closest('tr').remove();
   } catch (err) {
-    alert('Could not detach teacher: ' + err.message);
+    alert(t('admin.divisionAdmin.schools.detachError', { error: err.message }));
     btn.disabled    = false;
-    btn.textContent = 'Detach';
+    btn.textContent = t('admin.divisionAdmin.schools.detach');
   }
 }
 
@@ -443,7 +441,7 @@ function showInviteTeacherModal() {
 
   // Populate school selector from allSchools
   const select = document.getElementById('invite-school-select');
-  select.innerHTML = '<option value="">— Any school in this division —</option>';
+  select.innerHTML = `<option value="">${t('admin.divisionAdmin.inviteTeacher.anySchool')}</option>`;
   allSchools.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.id;
@@ -461,7 +459,7 @@ async function inviteTeacher() {
   const schoolId = document.getElementById('invite-school-select').value || null;
   const notice = document.getElementById('invite-notice');
   if (!email) {
-    notice.textContent = 'Please enter an email address.';
+    notice.textContent = t('admin.divisionAdmin.inviteTeacher.emailRequired');
     notice.className = 'notice';
     notice.classList.remove('hidden');
     return;
@@ -469,13 +467,13 @@ async function inviteTeacher() {
 
   const btn = document.querySelector('#invite-teacher-modal .btn--primary');
   btn.disabled = true;
-  btn.textContent = 'Sending…';
+  btn.textContent = t('admin.divisionAdmin.inviteTeacher.sending');
 
   try {
     const body = { email };
     if (schoolId) body.schoolId = schoolId;
     await orgApi('invite-teacher', 'POST', body);
-    notice.textContent = 'Invitation sent!';
+    notice.textContent = t('admin.divisionAdmin.inviteTeacher.sent');
     notice.className = 'notice';
     notice.classList.remove('hidden');
     document.getElementById('invite-email-input').value = '';
@@ -487,12 +485,12 @@ async function inviteTeacher() {
       notice.classList.add('hidden');
     }, 2000);
   } catch (err) {
-    notice.textContent = 'Failed to send invitation: ' + err.message;
+    notice.textContent = t('admin.divisionAdmin.inviteTeacher.failed', { error: err.message });
     notice.className = 'notice text-accent';
     notice.classList.remove('hidden');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Send Invitation';
+    btn.textContent = t('admin.divisionAdmin.inviteTeacher.sendButton');
   }
 }
 
@@ -500,12 +498,12 @@ async function inviteTeacher() {
 
 async function exportDivisionCsv() {
   const btn = document.querySelector('[onclick="exportDivisionCsv()"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'Exporting…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('admin.divisionAdmin.csv.exporting'); }
 
   try {
-    if (!allSchools.length) { alert('No schools to export.'); return; }
+    if (!allSchools.length) { alert(t('admin.divisionAdmin.csv.noSchools')); return; }
 
-    const headers = ['School', 'Teachers', 'Total Sessions'];
+    const headers = [t('admin.divisionAdmin.schools.tableHeaders.school'), t('admin.divisionAdmin.schools.tableHeaders.teachers'), t('admin.divisionAdmin.stats.totalSessions')];
     const rows    = allSchools.map(s => [
       `"${(s.name || '').replace(/"/g, '""')}"`,
       s.teacher_count,
@@ -521,9 +519,9 @@ async function exportDivisionCsv() {
     a.click();
     URL.revokeObjectURL(url);
   } catch (err) {
-    alert('Export failed: ' + err.message);
+    alert(t('admin.divisionAdmin.csv.failed', { error: err.message }));
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Export CSV'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('admin.divisionAdmin.csv.button'); }
   }
 }
 
