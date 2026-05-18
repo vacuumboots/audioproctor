@@ -117,8 +117,8 @@ Analytics. `session_events` tracks code_entered, playback_started, playback_comp
 | `contact.js` | `POST /api/contact` | Contact/demo request form via Resend. |
 
 API libraries:
-| `_lib/i18n.js` | Shared language detection (`getRequestLanguage`, `apiMessage`) for all endpoints |
-| `locales/api-messages.json` | API error/success messages in English and French (~39 keys) |
+| `api/_lib/i18n.js` | Shared language detection (`getRequestLanguage`, `apiMessage`) for all endpoints |
+| `api/locales/api-messages.json` | API error/success messages in English and French (~39 keys) |
 
 `admin.js` actions: `list-teacher-uploads`, `get-upload-content`, `overview`, `divisions`, `schools`, `teachers`, `audit-log`, `login-link`, `list-invitations`, `list-requests`, `platform-analytics`, `set-tier`, `set-expires`, `set-notes`, `set-role`, `attach-teacher`, `reassign-teacher`, `create-division`, `create-school`, `approve-request`, `reject-request`, `invite`, `resend-invite`, `seed-demo`, `delete-teacher`, `delete-school`, `delete-division`, `toggle-deactivation`, `cancel-subscription` (cancels school/division Stripe sub with proration).
 
