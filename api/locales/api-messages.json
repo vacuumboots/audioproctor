@@ -90,5 +90,73 @@
   "forbidden": {
     "en": "Access denied. You do not have permission to perform this action.",
     "fr": "Accès refusé. Vous n'avez pas la permission d'effectuer cette action."
+  },
+  "missingParam": {
+    "en": "Missing parameter: {param}",
+    "fr": "Paramètre manquant : {param}"
+  },
+  "userIdRequired": {
+    "en": "userId required",
+    "fr": "userId requis"
+  },
+  "invalidRole": {
+    "en": "Invalid role",
+    "fr": "Rôle invalide"
+  },
+  "couldNotUpdateRole": {
+    "en": "Could not update role",
+    "fr": "Impossible de mettre à jour le rôle"
+  },
+  "teacherIdRequired": {
+    "en": "teacher_id required",
+    "fr": "teacher_id requis"
+  },
+  "schoolIdRequired": {
+    "en": "school_id required for school_admin role",
+    "fr": "school_id requis pour le rôle school_admin"
+  },
+  "divisionIdRequired": {
+    "en": "division_id required for division_admin role",
+    "fr": "division_id requis pour le rôle division_admin"
+  },
+  "couldNotAssignRole": {
+    "en": "Could not assign role",
+    "fr": "Impossible d'attribuer le rôle"
+  },
+  "couldNotAttachTeacher": {
+    "en": "Could not attach teacher",
+    "fr": "Impossible d'associer l'enseignant"
+  },
+  "couldNotReassignTeacher": {
+    "en": "Could not reassign teacher",
+    "fr": "Impossible de réassigner l'enseignant"
+  },
+  "nameRequired": {
+    "en": "name required",
+    "fr": "nom requis"
+  },
+  "couldNotCreateDivision": {
+    "en": "Could not create division",
+    "fr": "Impossible de créer la division"
+  },
+  "couldNotCreateSchool": {
+    "en": "Could not create school",
+    "fr": "Impossible de créer l'école"
+  },
+  "requestIdRequired": {
+    "en": "requestId required",
+    "fr": "requestId requis"
+  },
+  "requestNotFound": {
+    "en": "Request not found",
+    "fr": "Demande introuvable"
+  },
+  "couldNotUpdateProfile": {
+    "en": "Could not update teacher profile",
+    "fr": "Impossible de mettre à jour le profil de l'enseignant"
+  },
+  "missingAuth": {
+    "en": "Missing authorization header",
+    "fr": "En-tête d'autorisation manquant"
   }
 }
