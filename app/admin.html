@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AudioProctor — Platform Admin</title>
+  <script>
+    // i18n module loads deferred — provide placeholder so regular scripts
+    // can call window.i18nReady.then() before the module executes.
+    window.i18nReady = new Promise(function (r) { window._i18nBridge = r; });
+  </script>
   <script type="module" src="/js/i18n.js"></script>
   <link rel="stylesheet" href="/css/styles.css">
   <style>
@@ -393,7 +398,9 @@
   <script src="/js/admin-demo.js"></script>
   <script src="/js/content-browser.js"></script>
   <script src="/js/admin-content.js"></script>
-  <script>
+  <script type="module">
+    import { t, i18nReady } from '/js/i18n.js';
+
     // ─── i18n DOM initializer ────────────────────────────────────
     // Applies t() to all [data-i18n] elements and [data-i18n-attr] placeholders.
     function applyAdminTranslations() {
@@ -408,16 +415,14 @@
       });
     }
 
-    (async () => {
-      await window.i18nReady;
-      applyAdminTranslations();
+    await i18nReady;
+    applyAdminTranslations();
 
-      const user = await requireAuth();
-      if (!user) return;
-      document.getElementById('admin-email').textContent = user.email;
-      await initAdmin(user);
-      await initAdminContent();
-    })();
+    const user = await requireAuth();
+    if (!user) return;  // requireAuth redirects to login if not signed in
+    document.getElementById('admin-email').textContent = user.email;
+    await initAdmin(user);
+    await initAdminContent();
 
     // Re-apply translations when locale changes
     window.addEventListener('localechanged', applyAdminTranslations);

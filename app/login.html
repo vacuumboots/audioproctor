@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AudioProctor</title>
+  <script>
+    // i18n module loads deferred — provide placeholder so regular scripts
+    // can call window.i18nReady.then() before the module executes.
+    window.i18nReady = new Promise(function (r) { window._i18nBridge = r; });
+  </script>
   <script type="module" src="/js/i18n.js"></script>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -28,7 +33,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="/js/supabase-client.js"></script>
   <script src="/js/auth.js"></script>
-  <script>
+  <script type="module">
+    import { t, i18nReady } from '/js/i18n.js';
+
     async function redirectByRole(session) {
       // If the user arrived via an invitation link, send them there to complete acceptance
       const pendingToken = localStorage.getItem('ap_pending_invite_token');
@@ -46,6 +53,18 @@
       }[profile?.role] || '/dashboard.html';
       window.location.href = dest;
     }
+
+    // ─── Auth state handler ─────────────────────────────────────────
+    // MUST be registered before awaiting i18n — OAuth callback fires
+    // synchronously when Supabase detects the token in the URL hash.
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Remove the token hash from the browser history before navigating away
+        history.replaceState(null, '', window.location.pathname);
+        await redirectByRole(session);
+      }
+    });
+
     // ─── i18n: populate translated text ──────────────────────────────
     function applyLoginI18n() {
       document.title = 'AudioProctor \u2014 ' + t('auth.signIn');
@@ -60,26 +79,17 @@
       var requestLink = document.getElementById('request-access-link');
       if (requestLink) requestLink.textContent = t('auth.requestAccess');
     }
-    window.i18nReady.then(applyLoginI18n);
+    i18nReady.then(applyLoginI18n);
     window.addEventListener('localechanged', applyLoginI18n);
-
-    // ─── Auth state handler ─────────────────────────────────────────
-    // Handles both: OAuth callback (token in hash) and returning signed-in users.
-    // onAuthStateChange fires immediately if Supabase detects a token in the URL hash.
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        // Remove the token hash from the browser history before navigating away
-        history.replaceState(null, '', window.location.pathname);
-        await redirectByRole(session);
-      }
-    });
 
     // Show error from URL param (e.g. if OAuth provider returns an error)
     var params = new URLSearchParams(window.location.search);
     if (params.get('error')) {
-      var el = document.getElementById('notice');
-      el.textContent = t('auth.couldNotStartSignIn');
-      el.classList.remove('hidden');
+      i18nReady.then(function () {
+        var el = document.getElementById('notice');
+        el.textContent = t('auth.couldNotStartSignIn');
+        el.classList.remove('hidden');
+      });
     }
   </script>
 </body>

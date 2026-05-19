@@ -101,3 +101,9 @@ window.t = t;
 window.getLocale = getLocale;
 window.setLocale = setLocale;
 window.i18nReady = initPromise;
+
+// If a bridge placeholder exists (set by inline script before module loaded),
+// resolve it so regular scripts that called .then() on the placeholder fire.
+if (window._i18nBridge) {
+  initPromise.then(function () { window._i18nBridge(); });
+}
