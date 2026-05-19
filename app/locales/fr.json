@@ -271,7 +271,7 @@
       "ending": "L'essai se termine dans {days} jour{plural}",
       "endingSoon": "L'essai se termine dans {days} jour{plural} — Mettez à niveau pour conserver les téléversements illimités et l'audio de haute qualité.",
       "expired": "Votre essai a expiré — Vous êtes de retour au forfait Gratuit.",
-      "welcomePremium": "Bienvenue à Teacher Premium! L'audio de haute qualité et les téléversements illimités sont maintenant actifs."
+      "welcomePremium": "Bienvenue à Enseignant Premium! L'audio de haute qualité et les téléversements illimités sont maintenant actifs."
     },
     "cta": {
       "free": "Vous êtes sur le forfait Gratuit — 3 téléversements/mois, 50 Mo de stockage, audio 32 kbps.",
@@ -283,7 +283,7 @@
     },
     "tierBadge": {
       "free": "Gratuit",
-      "premium": "Teacher Premium",
+      "premium": "Enseignant Premium",
       "school": "Forfait École",
       "division": "Forfait Division"
     },
@@ -812,7 +812,7 @@
     "planFeaturesVia": "T\u00e9l\u00e9versements illimit\u00e9s \u00b7 Analytique compl\u00e8te \u00b7 Toutes les fonctionnalit\u00e9s incluses{via}.",
     "manageDivisionPlan": "G\u00e9rer le plan de division \u2192",
     "manageSchoolPlan": "G\u00e9rer le plan d\u2019\u00e9cole \u2192",
-    "premiumTitle": "Vous \u00eates sur Teacher Premium.",
+    "premiumTitle": "Vous êtes sur Enseignant Premium.",
     "billingComing": "La gestion de la facturation sera disponible dans une prochaine mise \u00e0 jour.",
     "loadingDetails": "Chargement des d\u00e9tails de l\u2019abonnement\u2026",
     "deleteAccount": "Supprimer le compte",

@@ -546,12 +546,18 @@
     window.i18nReady.then(applyDashboardI18n);
     window.addEventListener('localechanged', applyDashboardI18n);
 
-    (async () => {
+    // Re-render dynamic content (quota, table) when language changes
+    window.addEventListener('localechanged', function () {
+      loadQuota();
+      loadUploads();
+    });
+
+    window.i18nReady.then(async function () {
       const user = await requireAuth();
       document.getElementById('user-email').textContent = user.email;
       await Promise.all([loadUploads(), loadQuota()]);
       await checkFirstLogin();
-    })();
+    });
   </script>
 
 </body>

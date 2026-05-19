@@ -45,7 +45,12 @@ All notable changes to AudioProctor are documented in this file.
   content using existing `site/locales` `index.*` keys, plus an inline i18n script
   matching the `use-cases.html` pattern. Pricing feature lists are rendered
   dynamically from locale arrays via `resolveKey()`.
-- **Login page broken after ES module conversion** — `supabaseClient` was declared with
+- **Dashboard i18n not applying on initial load** — the inline IIFE ran `loadUploads()`
+  and `loadQuota()` immediately without waiting for the locale to load, so table headers,
+  trial banner, quota text, and CTA rendered in English regardless of selected language.
+  Fixed by wrapping init in `window.i18nReady.then()` and adding a `localechanged`
+  listener that re-renders both quota and table. Also fixed `fr.json` tier badge:
+  "Teacher Premium" → "Enseignant Premium".
   `const` in a classic script but referenced from `<script type="module">` on login.html.
   Module scope cannot resolve classic-script `const`/`let` bindings, causing a
   ReferenceError that killed the entire inline module: no auth handler registered, no
