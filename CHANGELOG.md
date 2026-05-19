@@ -45,11 +45,19 @@ All notable changes to AudioProctor are documented in this file.
   content using existing `site/locales` `index.*` keys, plus an inline i18n script
   matching the `use-cases.html` pattern. Pricing feature lists are rendered
   dynamically from locale arrays via `resolveKey()`.
-- **CSP `eval` blocking supabase-js** — added a minimal `Content-Security-Policy`
-  header with `script-src 'unsafe-eval'` to `vercel.json` so the supabase-js UMD
-  bundle (loaded from `cdn.jsdelivr.net`) can use `eval()` internally. Only restricts
-  `script-src`; all other directives remain unrestricted to avoid breaking existing
-  functionality. This unblocks login (`login.html`) and admin panel data loading.
+- **CSP `eval` blocking supabase-js** — investigated and determined the CSP eval error
+  is a red herring (supabase-js v2.106.0 has zero `eval()` calls). The CSP header added
+  in a previous attempt has been removed from `vercel.json`. The eval violation likely
+  originates from a browser extension or managed Chrome policy.
+- **ES module race condition blocking login and admin pages** — `app/js/i18n.js` loads
+  as `<script type="module">` (deferred execution after document parse), but inline
+  `<script>` blocks and `language-toggle.js` reference `window.i18nReady` during
+  synchronous parsing. This caused `TypeError` at `window.i18nReady.then()`, killing
+  all subsequent code: i18n translations never applied, `onAuthStateChange` never
+  registered, and OAuth callbacks were silently ignored (user stayed on `login.html#`).
+  Fix: bridge placeholder promise on all 8 app pages, i18n.js resolves the placeholder
+  when the real locale promise settles. Login + admin inline scripts also converted
+  to `type="module"` with direct imports.
 
 ## [1.3.1] - 2026-05-09
 
