@@ -18,6 +18,8 @@
     { "source": "/school-admin.html", "destination": "/app/school-admin.html" },
 
     { "source": "/css/:path*",        "destination": "/app/css/:path*" },
-    { "source": "/js/:path*",         "destination": "/app/js/:path*" }
+    { "source": "/js/:path*",         "destination": "/app/js/:path*" },
+    { "source": "/locales/:path*",    "destination": "/app/locales/:path*" },
+    { "source": "/fonts/:path*",      "destination": "/app/fonts/:path*" }
   ]
 }
