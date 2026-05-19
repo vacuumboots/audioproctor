@@ -50,7 +50,8 @@ All notable changes to AudioProctor are documented in this file.
   Module scope cannot resolve classic-script `const`/`let` bindings, causing a
   ReferenceError that killed the entire inline module: no auth handler registered, no
   i18n translations applied. Fixed by exposing `window.supabaseClient` in
-  `supabase-client.js`.
+  `supabase-client.js` and removing the module/i18n dependency from login.html entirely
+  — the page now uses a classic script with hardcoded bilingual (EN/FR) text.
 - **CSP `eval` blocking supabase-js** — investigated and determined the CSP eval error
   is a red herring (supabase-js v2.106.0 has zero `eval()` calls). The CSP header added
   in a previous attempt has been removed from `vercel.json`. The eval violation likely
