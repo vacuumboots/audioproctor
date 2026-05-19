@@ -69,6 +69,8 @@ STRIPE_PRICE_ID=
 │   ├── privacy.html
 │   ├── terms.html
 │   ├── nav.js                  # Shared nav/footer injected on every marketing page
+│   ├── js/i18n.js              # Marketing site i18n (language detection, toggle, locale loading)
+│   ├── locales/                # Marketing site locale JSON files (en.json, fr.json)
 │   └── site.css                # Marketing-only styles
 │
 ├── app/                        # Teacher-facing application
@@ -157,6 +159,8 @@ STRIPE_PRICE_ID=
 │   │   ├── 023                 # processing_status + staging storage RLS
 │   │   ├── 024                 # onboarding_emails table (deferred: see ROADMAP)
 │   │   └── 025                 # platform admin RLS policies
+│   │   ├── 026                 # Alberta schools & divisions pre-populated (91 divisions + 2,318 schools)
+│   │   └── 027                 # lang column on profiles (en|fr-CA)
 │   └── seeds/dev-seed.sql      # Demo data for local dev
 │
 ├── docs/                       # Project documentation

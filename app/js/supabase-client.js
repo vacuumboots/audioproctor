@@ -7,4 +7,4 @@ const SUPABASE_URL      = 'https://rtdzqhgsxyrfstldojjr.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_DlFia01vmDaS-eQUlOXrdg_J0NoAuN_';
 
 const { createClient } = supabase; // `supabase` loaded from CDN before this script
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

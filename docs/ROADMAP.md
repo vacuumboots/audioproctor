@@ -519,7 +519,7 @@ below require a cron endpoint. Deferred until Vercel Pro upgrade or off-platform
 ---
 
 ## Project Health
-*What's working, what's not, and how to keep it working. Last reviewed May 15, 2026.*
+*What's working, what's not, and how to keep it working. Last reviewed May 18, 2026.*
 
 ### What works well
 
@@ -551,10 +551,11 @@ below require a cron endpoint. Deferred until Vercel Pro upgrade or off-platform
 1. **Documentation drift is the biggest process risk.** See Stage 2 item: documentation
    review as release gate. The README, roadmap, and AGENTS.md all drifted from the live
    codebase. One minute of review per release prevents it.
-2. **Automated tests are the biggest product risk.** See Stage 2 item. The session API,
-   exit word hashing, and access code validation are security-critical paths with zero
-   test coverage. A dozen targeted tests would cover the paths where a bug means a
-   student is stuck in a locked window.
+2. **Automated tests now exist but coverage gap remains.** 93 vitest tests across 5 test
+   files (session, event, admin, exit-word, player) cover the security-critical paths.
+   The session API, exit word hashing, and access code validation are tested. Extension
+   player TTS and Chrome-specific APIs remain uncovered — these need real Chrome (Playwright
+   or manual smoke).
 3. **The `.hermes/plans/` pattern works.** Implementation plans with exact file paths,
    code snippets, verification steps, and commit hashes. Useful for AI agents picking up
    work later, for auditing what was done, and for not re-solving solved problems.

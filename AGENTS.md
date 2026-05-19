@@ -82,7 +82,7 @@ Text: `text_content` stores HTML (may include `<img data-apimg-idx="N">` placeho
 Images: stored in `assessment-images` bucket at `{teacher_id}/{access_code}/img_N.ext`. Session API resolves placeholders to signed URLs.
 
 ### `divisions` / `schools`
-Org hierarchy. Schools optionally belong to divisions. Both have `tier`, `expires_at`, `notes`.
+Org hierarchy. Schools optionally belong to divisions. Both have `tier`, `expires_at`, `notes`. Divisions have an `enrolment_band` (small/medium/large/metro) used for pricing band selection and UI size labels; pre-populated from Alberta Education data (migration 026).
 
 ### `teacher_requests` (access requests)
 ```
@@ -118,6 +118,8 @@ Analytics. `session_events` tracks code_entered, playback_started, playback_comp
 
 API libraries:
 | `api/_lib/i18n.js` | Shared language detection (`getRequestLanguage`, `apiMessage`) for all endpoints |
+| `api/_lib/signed-url.js` | Signed URL generation for audio files and inline images in assessment content |
+| `api/_lib/email.js` | Shared Resend helper for invitation emails, access request notifications, and contact form |
 | `api/locales/api-messages.json` | API error/success messages in English and French (~39 keys) |
 
 `admin.js` actions: `list-teacher-uploads`, `get-upload-content`, `overview`, `divisions`, `schools`, `teachers`, `audit-log`, `login-link`, `list-invitations`, `list-requests`, `platform-analytics`, `set-tier`, `set-expires`, `set-notes`, `set-role`, `attach-teacher`, `reassign-teacher`, `create-division`, `create-school`, `approve-request`, `reject-request`, `invite`, `resend-invite`, `seed-demo`, `delete-teacher`, `delete-school`, `delete-division`, `toggle-deactivation`, `cancel-subscription` (cancels school/division Stripe sub with proration).
@@ -189,7 +191,7 @@ For extension dev: open Chrome → `chrome://extensions` → Developer mode → 
 - ✅ Access code format simplified — standard + custom only
 - ❌ No automated email reminders before trial expiry (code built then pruned in 8148d63 to stay under Vercel 12-function limit)
 - ❌ No full staging environment (single Supabase project shared by dev and prod)
-- ❌ Zero automated test coverage (vitest scaffold exists, no tests written)
+- ✅ 93 vitest tests across 5 test files (session, event, admin, exit-word, player)
 
 ## Common pitfalls for agents
 
