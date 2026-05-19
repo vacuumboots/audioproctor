@@ -21,5 +21,16 @@
     { "source": "/js/:path*",         "destination": "/app/js/:path*" },
     { "source": "/locales/:path*",    "destination": "/app/locales/:path*" },
     { "source": "/fonts/:path*",      "destination": "/app/fonts/:path*" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://rtdzqhgsxyrfstldojjr.supabase.co"
+        }
+      ]
+    }
   ]
 }
