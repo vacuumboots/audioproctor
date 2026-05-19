@@ -37,6 +37,20 @@ All notable changes to AudioProctor are documented in this file.
   Free tier remains at 32kbps. Server-side ffmpeg transcoding in trigger-normalize.js branches on
   get_effective_tier().
 
+### Fixed
+- **Root homepage i18n wiring** — the marketing homepage (`index.html`) had
+  hardcoded English text with no `data-i18n` attributes and no inline translation
+  script, so the FR language toggle in the nav changed nothing visible. Added
+  `data-i18n` attributes to all hero, how-it-works, why, pricing, and CTA band
+  content using existing `site/locales` `index.*` keys, plus an inline i18n script
+  matching the `use-cases.html` pattern. Pricing feature lists are rendered
+  dynamically from locale arrays via `resolveKey()`.
+- **CSP `eval` blocking supabase-js** — added a minimal `Content-Security-Policy`
+  header with `script-src 'unsafe-eval'` to `vercel.json` so the supabase-js UMD
+  bundle (loaded from `cdn.jsdelivr.net`) can use `eval()` internally. Only restricts
+  `script-src`; all other directives remain unrestricted to avoid breaking existing
+  functionality. This unblocks login (`login.html`) and admin panel data loading.
+
 ## [1.3.1] - 2026-05-09
 
 Maintenance release: code cleanup, bug fixes, and documentation overhaul.
