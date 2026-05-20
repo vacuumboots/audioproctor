@@ -55,7 +55,7 @@
       "step2Title": "Student enters the code",
       "step2Body": "The student types the access code into the AudioProctor extension on their Chromebook. A locked fullscreen player opens for audio, or a read-aloud text reader for text assessments.",
       "step3Title": "Teacher unlocks to exit",
-      "step3Body": "When the assessment is done, the teacher reads the exit word aloud. The student types it in, the player closes, and the Chromebook returns to normal."
+      "step3Body": "When the assessment is done, the teacher shares the exit word \u2014 read aloud, written on the board, or sent directly to the student. The student types it in, the player closes, and the Chromebook returns to normal."
     },
     "why": {
       "label": "Why AudioProctor",

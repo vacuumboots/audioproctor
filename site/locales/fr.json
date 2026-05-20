@@ -55,7 +55,7 @@
       "step2Title": "L\u2019\u00e9l\u00e8ve entre le code",
       "step2Body": "L\u2019\u00e9l\u00e8ve saisit le code d\u2019acc\u00e8s dans l\u2019extension AudioProctor sur son Chromebook. Un lecteur verrouill\u00e9 plein \u00e9cran s\u2019ouvre pour l\u2019audio, ou un lecteur de texte avec lecture \u00e0 voix haute pour les \u00e9valuations textuelles.",
       "step3Title": "L\u2019enseignant d\u00e9verrouille la sortie",
-      "step3Body": "Lorsque l\u2019\u00e9valuation est termin\u00e9e, l\u2019enseignant lit le mot de sortie \u00e0 voix haute. L\u2019\u00e9l\u00e8ve le saisit, le lecteur se ferme et le Chromebook revient \u00e0 la normale."
+      "step3Body": "Lorsque l\u2019\u00e9valuation est termin\u00e9e, l\u2019enseignant partage le mot de sortie \u2014 lu \u00e0 voix haute, \u00e9crit au tableau ou envoy\u00e9 directement \u00e0 l\u2019\u00e9l\u00e8ve. L\u2019\u00e9l\u00e8ve le saisit, le lecteur se ferme et le Chromebook revient \u00e0 la normale."
     },
     "why": {
       "label": "Pourquoi AudioProctor",
