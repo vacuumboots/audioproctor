@@ -1,6 +1,6 @@
 # AudioProctor
 
-Audio and text accommodation for provincial assessments on managed Chromebooks.
+Audio and text accommodation for assessments on managed Chromebooks.
 
 Teachers create an assessment — upload an audio file or paste text with inline images — and get a short access code. The student enters the code into the Chrome extension on their Chromebook. For audio, a locked fullscreen player opens. For text, a fullscreen reader with built-in read-aloud opens. When the assessment is done, the teacher provides an exit word to close the session.
 
@@ -217,7 +217,7 @@ AudioProctor is available on the Chrome Web Store:
 - Listing: `https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj`
 - Extension ID: `fcphbkffopenkinliokmlopfnglbcfdj`
 
-The eventual deployment model: managed Chromebooks receive AudioProctor through **Google Admin Console** by force-installing the Chrome Web Store listing by Store ID. Currently the extension is publicly available on the Chrome Web Store — teachers can install it manually or share the link with students. Force-install via Google Admin is not yet active for any school or division.
+The extension is available on the Chrome Web Store. Teachers install it manually and share the link with students — no Google Admin Console required. Force-install via Google Admin is available as a deployment option for schools and divisions that want automatic rollout to every managed Chromebook, but it is not required to get started.
 
 **Planned:** The extension will be locked to ChromeOS only. Windows, Mac, and Linux users will be blocked with a message directing them to a Chromebook. This closes the gap created by the public Chrome Web Store listing: any student on any OS can install it today, and the lock must be enforced in-extension. Managed Chromebooks get additional security via Google Admin, but the OS lock applies universally. See `docs/ROADMAP.md` Parking Lot for implementation details.
 

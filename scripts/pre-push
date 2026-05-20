@@ -132,7 +132,7 @@ fi
 
 # ── 9. Deleted JS file still required elsewhere ─────────────────────
 echo "  Stale require() references..."
-STAGED_DEL=$(git diff --cached --diff-filter=D --name-only 2>/dev/null | grep '\.js$' || true)
+STAGED_DEL=$(git diff --cached --diff-filter=D --name-only 2>/dev/null | grep '\\.js$' || true)
 if [ -n "$STAGED_DEL" ]; then
     while IFS= read -r deleted; do
         base=$(basename "$deleted" .js)
@@ -143,6 +143,22 @@ if [ -n "$STAGED_DEL" ]; then
             HAS_ERRORS=1
         fi
     done <<< "$STAGED_DEL"
+fi
+
+# ── 10. Marketing copy changed → README might be stale ──────────────
+echo "  README vs marketing copy..."
+STAGED_LOCALE=$(git diff --cached --name-only 2>/dev/null | grep 'site/locales/en.json' || true)
+STAGED_SITE_INDEX=$(git diff --cached --name-only 2>/dev/null | grep -E '(site/)?index.html$' || true)
+if [ -n "$STAGED_LOCALE" ] || [ -n "$STAGED_SITE_INDEX" ]; then
+    if ! git diff --cached --name-only 2>/dev/null | grep -q 'README.md'; then
+        # Extract key phrases changed in the locale diff and check if README still has old ones
+        LOCALE_DIFF=$(git diff --cached site/locales/en.json 2>/dev/null || true)
+        if echo "$LOCALE_DIFF" | grep -qE '^\-\s+"(eyebrow|headline|subtitle|feature[0-9]Title|feature[0-9]Body|step[0-9]Body|metaDescription|tagline)"' ; then
+            echo -e "    ${RED}✗${NC} Marketing copy changed (hero/how-it-works/why/pricing) but README.md not staged"
+            echo "      README.md may have stale copy that no longer matches the live site."
+            HAS_ERRORS=1
+        fi
+    fi
 fi
 
 # ── Summary ─────────────────────────────────────────────────────────
