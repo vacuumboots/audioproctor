@@ -398,15 +398,13 @@
   <script src="/js/admin-demo.js"></script>
   <script src="/js/content-browser.js"></script>
   <script src="/js/admin-content.js"></script>
-  <script type="module">
-    import { t, i18nReady } from '/js/i18n.js';
-
+  <script>
     // ─── i18n DOM initializer ────────────────────────────────────
     // Applies t() to all [data-i18n] elements and [data-i18n-attr] placeholders.
     function applyAdminTranslations() {
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.dataset.i18n;
-        const attr = el.dataset.i18nAttr;
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        var key = el.dataset.i18n;
+        var attr = el.dataset.i18nAttr;
         if (attr) {
           el.setAttribute(attr, t(key));
         } else {
@@ -415,17 +413,16 @@
       });
     }
 
-    await i18nReady;
-    applyAdminTranslations();
-
-    const user = await requireAuth();
-    if (!user) return;  // requireAuth redirects to login if not signed in
-    document.getElementById('admin-email').textContent = user.email;
-    await initAdmin(user);
-    await initAdminContent();
-
-    // Re-apply translations when locale changes
+    window.i18nReady.then(applyAdminTranslations);
     window.addEventListener('localechanged', applyAdminTranslations);
+
+    window.i18nReady.then(async function () {
+      var user = await requireAuth();
+      if (!user) return;  // requireAuth redirects to login if not signed in
+      document.getElementById('admin-email').textContent = user.email;
+      await initAdmin(user);
+      await initAdminContent();
+    });
   </script>
 </body>
 </html>
