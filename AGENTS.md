@@ -193,6 +193,8 @@ For extension dev: open Chrome → `chrome://extensions` → Developer mode → 
 - ✅ Self-hosted fonts — zero Google Fonts CDN requests
 - ✅ Modular JS — dashboard.js and admin.js split into responsibility-focused files
 - ✅ Access code format simplified — standard + custom only
+- ✅ Extension published on Chrome Web Store — teachers install manually via CWS link; Google Admin force-install is available but not yet active for any school or division. Early trial users only; no paid deployments.
+
 - ❌ No automated email reminders before trial expiry (code built then pruned in 8148d63 to stay under Vercel 12-function limit)
 - ❌ No full staging environment (single Supabase project shared by dev and prod)
 - ✅ 93 vitest tests across 5 test files (session, event, admin, exit-word, player)
