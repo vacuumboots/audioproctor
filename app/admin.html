@@ -416,9 +416,20 @@
     window.i18nReady.then(applyAdminTranslations);
     window.addEventListener('localechanged', applyAdminTranslations);
 
+    var _adminUser = null;
+
+    // Re-render all admin panels when language changes
+    window.addEventListener('localechanged', function () {
+      if (_adminUser) {
+        initAdmin(_adminUser);
+        initAdminContent();
+      }
+    });
+
     window.i18nReady.then(async function () {
       var user = await requireAuth();
-      if (!user) return;  // requireAuth redirects to login if not signed in
+      if (!user) return;
+      _adminUser = user;
       document.getElementById('admin-email').textContent = user.email;
       await initAdmin(user);
       await initAdminContent();
