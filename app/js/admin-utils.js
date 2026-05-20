@@ -16,9 +16,9 @@ function toggleCreateForm(id) {
 // ─── Option helpers ───────────────────────────────────────────────
 
 function tierOptions(current) {
-  return ['free','premium','school','division'].map(t =>
-    `<option value="${t}" ${t === current ? 'selected' : ''}>${t(`admin.entities.tierOptions.${t}`)}</option>`
-  ).join('');
+  return ['free','premium','school','division'].map(function (tier) {
+    return '<option value="' + tier + '"' + (tier === current ? ' selected' : '') + '>' + t('admin.entities.tierOptions.' + tier) + '</option>';
+  }).join('');
 }
 
 function roleOptions(current) {
