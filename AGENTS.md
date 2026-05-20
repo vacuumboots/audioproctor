@@ -4,7 +4,7 @@ This file is for AI agents, coding assistants, and automated systems working on 
 
 ## One-line summary
 
-AudioProctor is a vanilla-HTML/CSS/JS web app + Chrome extension for K-12 audio accessibility assessments, backed by Supabase, hosted on Vercel.
+AudioProctor is a vanilla-HTML/CSS/JS web app + Chrome extension for K-12 audio and text accommodation on assessments, backed by Supabase, hosted on Vercel.
 
 ## Architecture at a glance
 
