@@ -62,8 +62,8 @@
       "headline": "Con\u00e7u autour d\u2019une v\u00e9ritable lacune dans le fonctionnement des \u00e9valuations.",
       "feature1Title": "Aucune donn\u00e9e \u00e9tudiante collect\u00e9e",
       "feature1Body": "Les \u00e9l\u00e8ves sont anonymes pour le syst\u00e8me. Pas de noms, pas d\u2019identifiants \u00e9tudiants, pas d\u2019identifiants d\u2019appareil. Ce n\u2019est pas qu\u2019une politique. C\u2019est structurel. Il n\u2019y a aucun endroit dans la base de donn\u00e9es pour stocker des informations sur les \u00e9l\u00e8ves.",
-      "feature2Title": "D\u00e9ploy\u00e9 par les TI, pas install\u00e9 par les enseignants",
-      "feature2Body": "L\u2019extension Chrome est install\u00e9e de force via la console d\u2019administration Google. Chaque Chromebook de la division l\u2019obtient automatiquement. Les enseignants n\u2019ont jamais \u00e0 toucher \u00e0 une page de param\u00e8tres.",
+      "feature2Title": "Configuration simple, sans billet TI",
+      "feature2Body": "Les enseignants installent l\u2019extension une fois depuis le Chrome Web Store. Les \u00e9l\u00e8ves n\u2019ont qu\u2019\u00e0 entrer un code \u2014 aucune configuration, aucune permission \u00e0 g\u00e9rer.",
       "feature3Title": "Con\u00e7u pour la r\u00e9alit\u00e9 des \u00e9valuations",
       "feature3Body": "Prend en charge les accommodations audio et textuelles dans un seul outil. Le mod\u00e8le de code d\u2019acc\u00e8s, le lecteur verrouill\u00e9 et le mot de sortie ont \u00e9t\u00e9 con\u00e7us autour des frictions r\u00e9elles de la prestation des accommodations en classe."
     },
@@ -132,7 +132,7 @@
     "ctaBand": {
       "label": "Contactez-nous",
       "headline": "Voyez-le dans votre division.",
-      "subtitle": "Une d\u00e9mo de 20 minutes couvre le flux de t\u00e9l\u00e9versement de l\u2019enseignant, l\u2019exp\u00e9rience \u00e9tudiante et le processus de d\u00e9ploiement TI depuis la console d\u2019administration Google. Aucune diapositive.",
+      "subtitle": "Une d\u00e9mo de 20 minutes couvre le flux de t\u00e9l\u00e9versement de l\u2019enseignant, l\u2019exp\u00e9rience \u00e9tudiante et comment l\u2019extension s\u2019int\u00e8gre dans une journ\u00e9e d\u2019\u00e9valuation. Aucune diapositive.",
       "button": "Planifier une d\u00e9mo"
     }
   },

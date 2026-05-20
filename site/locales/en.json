@@ -62,8 +62,8 @@
       "headline": "Designed around a real gap in how assessments work.",
       "feature1Title": "No student data collected",
       "feature1Body": "Students are anonymous to the system. No names, no student IDs, no device identifiers. This isn\u2019t just a policy. It\u2019s structural. There\u2019s no place in the database to store student information.",
-      "feature2Title": "Deployed by IT, not installed by teachers",
-      "feature2Body": "The Chrome extension is force-installed via Google Admin Console. Every Chromebook in the division gets it automatically. Teachers never touch a settings page.",
+      "feature2Title": "Simple setup, no IT ticket",
+      "feature2Body": "Teachers install the extension once from the Chrome Web Store. Students just enter a code \u2014 no setup, no configuration, no permissions to manage.",
       "feature3Title": "Built for how assessments actually work",
       "feature3Body": "Supports both audio and text-based accommodations in a single tool. The access code model, the lockdown player, and the exit word were all designed around the real friction of delivering accommodations in the classroom."
     },
@@ -132,7 +132,7 @@
     "ctaBand": {
       "label": "Get in touch",
       "headline": "See it in your division.",
-      "subtitle": "A 20-minute demo covers the teacher upload flow, the student experience, and the IT deployment process from the Google Admin Console. No slides.",
+      "subtitle": "A 20-minute demo covers the teacher upload flow, the student experience, and how the extension fits into an assessment day. No slides.",
       "button": "Schedule a Demo"
     }
   },
