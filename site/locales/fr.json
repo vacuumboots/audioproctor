@@ -70,8 +70,8 @@
     "pricing": {
       "label": "Tarifs",
       "headline": "Des tarifs adapt\u00e9s au fonctionnement r\u00e9el des \u00e9coles.",
-      "intro": "Que vous soyez un enseignant seul, une \u00e9cole avec un minibudget ou une division qui d\u00e9ploie sur tous les Chromebooks \u00e0 la fois, il existe un forfait adapt\u00e9 \u00e0 votre fa\u00e7on de prendre des d\u00e9cisions.",
-      "footnote": "Tous les prix en CAD. La tarification des divisions se fait par facture annuelle. Les forfaits Teacher Premium et \u00c9cole sont en libre-service par carte de cr\u00e9dit ({contactUrl} pour acheter en attendant).",
+      "intro": "Il existe un forfait adapt\u00e9 \u00e0 votre fa\u00e7on de prendre des d\u00e9cisions. Que vous soyez un enseignant seul, une \u00e9cole avec un budget discr\u00e9tionnaire ou une division qui d\u00e9ploie sur tous les Chromebooks.",
+      "footnote": "Tous les prix en CAD. La tarification des divisions se fait par facture annuelle. Les forfaits Teacher Premium et \u00c9cole sont en libre-service par carte de cr\u00e9dit. Contactez-nous pour les bons de commande.",
       "free": {
         "name": "Gratuit \u2014 Enseignant individuel",
         "price": "0\u00a0$",
@@ -110,7 +110,7 @@
           "Rapport d\u2019utilisation \u00e0 l\u2019\u00e9chelle de l\u2019\u00e9cole",
           "Facture annuelle unique ou carte de cr\u00e9dit"
         ],
-        "tagline": "Pour les directeurs d\u2019\u00e9cole qui utilisent un minibudget.",
+        "tagline": "Pour les directeurs d\u2019\u00e9cole qui utilisent un budget discr\u00e9tionnaire.",
         "cta": "Demander un devis"
       },
       "division": {
@@ -149,7 +149,7 @@
     "solutionBody1": "AudioProctor a \u00e9t\u00e9 con\u00e7u pour combler cet \u00e9cart. Un enseignant t\u00e9l\u00e9verse un fichier audio ou colle un texte d\u2019\u00e9valuation, g\u00e9n\u00e8re un code d\u2019acc\u00e8s court et le remet \u00e0 l\u2019\u00e9l\u00e8ve. L\u2019\u00e9l\u00e8ve saisit le code dans une extension Chrome sur son Chromebook. Pour l\u2019audio, un lecteur verrouill\u00e9 plein \u00e9cran s\u2019ouvre. L\u2019\u00e9l\u00e8ve \u00e9coute et r\u00e9\u00e9coute au besoin. Pour le texte, un lecteur plein \u00e9cran appara\u00eet avec une lecture \u00e0 voix haute int\u00e9gr\u00e9e. Lorsque l\u2019\u00e9valuation est termin\u00e9e, l\u2019enseignant fournit un mot de sortie pour fermer la session.",
     "solutionBody2": "Aucun compte \u00e9tudiant. Aucune donn\u00e9e \u00e9tudiante. Aucun billet TI par \u00e9valuation. L\u2019extension est d\u00e9ploy\u00e9e une seule fois par les TI via la console d\u2019administration Google et fonctionne sur tous les Chromebooks de la division d\u00e8s lors.",
     "pricingTitle": "Tarifs",
-    "pricingBody": "AudioProctor est tarif\u00e9 selon la port\u00e9e de l\u2019achat. Un enseignant peut s\u2019inscrire gratuitement. Une \u00e9cole peut acheter un forfait \u00e0 partir de son minibudget. Une division peut signer un seul contrat qui couvre chaque \u00e9cole, chaque enseignant et chaque Chromebook. Le prix augmente avec la portion de l\u2019organisation couverte, pas avec le nombre de fonctionnalit\u00e9s d\u00e9verrouill\u00e9es.",
+    "pricingBody": "AudioProctor est tarif\u00e9 selon la port\u00e9e de l\u2019achat. Un enseignant peut s\u2019inscrire gratuitement. Une \u00e9cole peut acheter un forfait \u00e0 partir de son budget discr\u00e9tionnaire. Une division peut signer un seul contrat qui couvre chaque \u00e9cole, chaque enseignant et chaque Chromebook. Le prix augmente avec la portion de l\u2019organisation couverte, pas avec le nombre de fonctionnalit\u00e9s d\u00e9verrouill\u00e9es.",
     "teamTitle": "Cr\u00e9\u00e9 par quelqu\u2019un dans la salle",
     "teamBody1": "AudioProctor a \u00e9t\u00e9 cr\u00e9\u00e9 par un administrateur TI d\u2019une v\u00e9ritable division scolaire de l\u2019Alberta qui a rencontr\u00e9 ce probl\u00e8me et n\u2019a pas trouv\u00e9 de solution qui ne cr\u00e9ait pas de nouveaux risques pour la confidentialit\u00e9 ou ne n\u00e9cessitait pas une infrastructure importante. L\u2019outil refl\u00e8te ce qui se passe r\u00e9ellement dans les \u00e9coles\u00a0: comment les \u00e9valuations sont men\u00e9es, comment les enseignants travaillent sous pression, et ce que les d\u00e9partements TI soutiendront ou non.",
     "pricingLink": "Voir les tarifs.",

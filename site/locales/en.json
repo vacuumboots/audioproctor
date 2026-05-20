@@ -70,8 +70,8 @@
     "pricing": {
       "label": "Pricing",
       "headline": "Pricing that fits how schools actually work.",
-      "intro": "Whether you\u2019re a single teacher, a school spending from a minibudget, or a division deploying to every Chromebook at once, there\u2019s a tier for how you actually make decisions.",
-      "footnote": "All prices in CAD. Division pricing is by annual invoice. Teacher Premium and School tiers are self-serve via credit card ({contactUrl} to purchase in the meantime).",
+      "intro": "There\u2019s a tier for how you actually make decisions. Whether you\u2019re a single teacher, a school with a discretionary budget, or a division deploying across every Chromebook.",
+      "footnote": "All prices in CAD. Division pricing is by annual invoice. Teacher Premium and School tiers are self-serve via credit card. Contact us for purchase orders.",
       "free": {
         "name": "Free \u2014 Individual Teacher",
         "price": "$0",
@@ -110,7 +110,7 @@
           "School-wide usage report",
           "Single annual invoice or credit card"
         ],
-        "tagline": "For principals spending from a school minibudget.",
+        "tagline": "For principals spending from a discretionary school budget.",
         "cta": "Request a quote"
       },
       "division": {
@@ -149,7 +149,7 @@
     "solutionBody1": "AudioProctor was built to fill that gap. A teacher uploads an audio file or pastes assessment text, generates a short access code, and hands it to the student. The student enters the code in a Chrome extension on their Chromebook. For audio, a locked fullscreen player opens. The student listens and replays as needed. For text, a fullscreen reader appears with built-in read-aloud powered by the device\u2019s text-to-speech. When the assessment is done, the teacher provides an exit word to close the session.",
     "solutionBody2": "No student accounts. No student data. No IT ticket per assessment. The extension is deployed once by IT through Google Admin Console and works across every Chromebook in the division from that point forward.",
     "pricingTitle": "Pricing",
-    "pricingBody": "AudioProctor is priced by the scope of the purchase. A teacher can sign up free. A school can buy a plan from their minibudget. A division can sign one contract that covers every school, every teacher, and every Chromebook. The price scales with how much of the organization is covered, not with how many features are unlocked.",
+    "pricingBody": "AudioProctor is priced by the scope of the purchase. A teacher can sign up free. A school can buy a plan from their discretionary budget. A division can sign one contract that covers every school, every teacher, and every Chromebook. The price scales with how much of the organization is covered, not with how many features are unlocked.",
     "teamTitle": "Built by someone in the room",
     "teamBody1": "AudioProctor was built by an IT administrator at a real Alberta school division who ran into this problem and couldn\u2019t find a solution that didn\u2019t create new privacy risks or require significant infrastructure. The tool reflects what actually happens in schools: how assessments get run, how teachers operate under time pressure, and what IT departments will and won\u2019t support.",
     "pricingLink": "See pricing.",
