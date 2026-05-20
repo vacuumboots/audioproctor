@@ -60,7 +60,7 @@ No build step. No bundler. No framework. Files are served as-is.
 | `site/js/i18n.js` | Marketing site i18n (non-module, plain `<script>`) |
 | `site/locales/` | Site locale JSON files (`en.json`, `fr.json`) |
 | `vercel.json` | URL rewrites: `/about` → `site/about.html`, `/css/*` → `app/css/*` etc. |
-| `scripts/pre-push` | Doc gate: blocks push if AGENTS.md, CHANGELOG.md, ROADMAP.md, or USERSTEPS.md have drifted from the codebase. Runs automatically on every `git push`. Skip with `git push --no-verify`. |
+| `scripts/pre-push` | Doc gate: blocks push if AGENTS.md, CHANGELOG.md, ROADMAP.md, USERSTEPS.md, or README.md have drifted from the codebase. Runs automatically on every `git push`. Skip with `git push --no-verify`. |
 | `docs/DEFINITION-OF-DONE.md` | Single release checklist. Section 1-5, web and extension rows. Run top to bottom before every release. |
 
 ## Database schema (the tables that matter)
@@ -146,7 +146,7 @@ Any new `api/*.js` file counts toward the limit. The onboarding email cron (3 fi
   - **Adding new strings:** Add the key to `en.json` first, then translate in `fr.json`. Never hardcode English text — always use locale keys.
   - **Date/number formatting:** Always use `Intl.DateTimeFormat` / `Intl.NumberFormat` with `getLocale()` (returns `'fr-CA'` for French).
   - **French locale code:** `'fr'` for file lookups, `'fr-CA'` for `Intl` formatting.
-  - **Legal text:** Privacy/Terms pages need professional human translation review.
+  - **Legal text:** Privacy/Terms French translations are machine-generated. Professional human review is planned; in the meantime the scary ⚠️ banner has been removed.
 
 ## How to run locally
 
@@ -236,5 +236,5 @@ Manual steps for the human operator live in `USERSTEPS.md`. When implementation 
 - `docs/ROADMAP.md` — staged product roadmap with checked-off items
 - `docs/OPERATIONS.md` — release runbook: attestation, rollback, key rotation (procedural commands)
 - `docs/security/` — security incident reports
-- `scripts/pre-push` — pre-push doc gate (9 automated drift checks, runs on every push)
+- `scripts/pre-push` — pre-push doc gate (10 automated drift checks, runs on every push)
 - `.gitignore` — includes patterns to prevent credential-containing scripts (`check_db*.js`, `run-*.mjs`)
