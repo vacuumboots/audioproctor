@@ -90,6 +90,7 @@ This project uses **two separate** Google OAuth clients in the same project:
    - `CHROME_CLIENT_ID`
    - `CHROME_CLIENT_SECRET`
    - `CHROME_REFRESH_TOKEN`
+   - `CHROME_PUBLISHER_ID` — find at https://chrome.google.com/webstore/devconsole → Account/Settings
 8. Enable Actions write access (repo → Settings → Actions → General):
    - **Workflow permissions:** "Read and write permissions"
    - **Allow GitHub Actions to create and approve pull requests:** checked
