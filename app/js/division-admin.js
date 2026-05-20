@@ -347,35 +347,20 @@ async function openDrillDown(schoolId, schoolName) {
       return;
     }
 
-    const rows = teachers.map(t => {
+    const rows = teachers.map(function (r) {
       const locale = window.getLocale ? window.getLocale() : 'en';
-      const lastActive = t.last_active
-        ? new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(t.last_active))
+      const lastActive = r.last_active
+        ? new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(r.last_active))
         : '—';
-      const roleTag = t.role === 'school_admin'
-        ? `<span style="display:inline-block; padding:0.1rem 0.45rem; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:500; border:1px solid var(--ink);">Admin</span> `
+      const roleTag = r.role === 'school_admin'
+        ? '<span style="display:inline-block; padding:0.1rem 0.45rem; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:500; border:1px solid var(--ink);">Admin</span> '
         : '';
-      const listenTime = t.avg_listen_seconds != null
-        ? `${Math.floor(t.avg_listen_seconds / 60)}:${String(t.avg_listen_seconds % 60).padStart(2, '0')}`
+      const listenTime = r.avg_listen_seconds != null
+        ? Math.floor(r.avg_listen_seconds / 60) + ':' + String(r.avg_listen_seconds % 60).padStart(2, '0')
         : '—';
-      const completionRate = t.completion_rate != null ? `${t.completion_rate}%` : '—';
+      const completionRate = r.completion_rate != null ? r.completion_rate + '%' : '—';
 
-      return `
-        <tr>
-          <td>${roleTag}<span style="font-size:0.85rem;">${escapeHtml(t.email || '—')}</span></td>
-          <td style="text-align:center;">${t.upload_count}</td>
-          <td style="text-align:center;">${t.session_count}</td>
-          <td style="text-align:center;">${completionRate}</td>
-          <td style="text-align:center;">${t.replays}</td>
-          <td style="text-align:center;">${listenTime}</td>
-          <td style="color:var(--muted); font-size:0.82rem;">${lastActive}</td>
-          <td>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-              <button class="btn btn--ghost btn--small" onclick="detachTeacher('${t.id}', '${escapeHtml(t.email || t.id)}', this)">${t('admin.divisionAdmin.schools.detach')}</button>
-              ${t.role === 'school_admin' ? `<button class="btn btn--ghost btn--small" onclick="removeSchoolAdmin('${t.id}', '${escapeHtml(t.email || t.id)}', this)">${t('admin.divisionAdmin.schools.removeAdminRole')}</button>` : ''}
-            </div>
-          </td>
-        </tr>`;
+      return '\n        <tr>\n          <td>' + roleTag + '<span style="font-size:0.85rem;">' + escapeHtml(r.email || '—') + '</span></td>\n          <td style="text-align:center;">' + r.upload_count + '</td>\n          <td style="text-align:center;">' + r.session_count + '</td>\n          <td style="text-align:center;">' + completionRate + '</td>\n          <td style="text-align:center;">' + r.replays + '</td>\n          <td style="text-align:center;">' + listenTime + '</td>\n          <td style="color:var(--muted); font-size:0.82rem;">' + lastActive + '</td>\n          <td>\n            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">\n              <button class="btn btn--ghost btn--small" onclick="detachTeacher(' + JSON.stringify(r.id) + ', ' + JSON.stringify(escapeHtml(r.email || r.id)) + ', this)">' + t('admin.divisionAdmin.schools.detach') + '</button>\n              ' + (r.role === 'school_admin' ? '<button class="btn btn--ghost btn--small" onclick="removeSchoolAdmin(' + JSON.stringify(r.id) + ', ' + JSON.stringify(escapeHtml(r.email || r.id)) + ', this)">' + t('admin.divisionAdmin.schools.removeAdminRole') + '</button>' : '') + '\n            </div>\n          </td>\n        </tr>';
     }).join('');
 
     container.innerHTML = `

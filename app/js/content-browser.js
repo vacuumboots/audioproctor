@@ -140,7 +140,7 @@ function renderPanel(container) {
       <select id="cb-filter-type" class="input-field"
         onchange="onFilterChange()" style="width:140px; font-size:0.875rem;">
         <option value="">${t('admin.content.allTypes')}</option>
-        ${types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(capitalize(t))}</option>`).join('')}
+        ${types.map(function (type) { return '<option value="' + escapeHtml(type) + '">' + escapeHtml(capitalize(type)) + '</option>'; }).join('')}
       </select>
 
       <span class="cb-count">${t('admin.content.count', { count: total, plural: total !== 1 ? 's' : '' })}</span>

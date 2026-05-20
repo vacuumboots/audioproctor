@@ -102,32 +102,20 @@ async function loadTeachers() {
       return;
     }
 
-    const rows = teachers.map(t => {
+    const rows = teachers.map(function (r) {
       const locale = window.getLocale ? window.getLocale() : 'en';
-      const lastActive = t.last_active
-        ? new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(t.last_active))
+      const lastActive = r.last_active
+        ? new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(r.last_active))
         : '—';
-      const roleTag = t.role === 'school_admin'
-        ? `<span class="role-badge">Admin</span> `
+      const roleTag = r.role === 'school_admin'
+        ? '<span class="role-badge">Admin</span> '
         : '';
-      const listenTime = t.avg_listen_seconds != null
-        ? `${Math.floor(t.avg_listen_seconds / 60)}:${String(t.avg_listen_seconds % 60).padStart(2, '0')}`
+      const listenTime = r.avg_listen_seconds != null
+        ? Math.floor(r.avg_listen_seconds / 60) + ':' + String(r.avg_listen_seconds % 60).padStart(2, '0')
         : '—';
-      const completionRate = t.completion_rate != null ? `${t.completion_rate}%` : '—';
+      const completionRate = r.completion_rate != null ? r.completion_rate + '%' : '—';
 
-      return `
-        <tr>
-          <td>${roleTag}<span style="font-size:0.85rem;">${escapeHtml(t.email || '—')}</span></td>
-          <td style="text-align:center;">${t.upload_count}</td>
-          <td style="text-align:center;">${t.session_count}</td>
-          <td style="text-align:center;">${completionRate}</td>
-          <td style="text-align:center;">${t.replays}</td>
-          <td style="text-align:center;">${listenTime}</td>
-          <td style="color:var(--muted); font-size:0.82rem;">${lastActive}</td>
-          <td>
-            <button class="btn btn--ghost btn--small" onclick="detachTeacher('${t.id}', '${escapeHtml(t.email || t.id)}', this)">Remove</button>
-          </td>
-        </tr>`;
+      return '\n        <tr>\n          <td>' + roleTag + '<span style="font-size:0.85rem;">' + escapeHtml(r.email || '—') + '</span></td>\n          <td style="text-align:center;">' + r.upload_count + '</td>\n          <td style="text-align:center;">' + r.session_count + '</td>\n          <td style="text-align:center;">' + completionRate + '</td>\n          <td style="text-align:center;">' + r.replays + '</td>\n          <td style="text-align:center;">' + listenTime + '</td>\n          <td style="color:var(--muted); font-size:0.82rem;">' + lastActive + '</td>\n          <td>\n            <button class="btn btn--ghost btn--small" onclick="detachTeacher(' + JSON.stringify(r.id) + ', ' + JSON.stringify(escapeHtml(r.email || r.id)) + ', this)">Remove</button>\n          </td>\n        </tr>';
     }).join('');
 
     container.innerHTML = `

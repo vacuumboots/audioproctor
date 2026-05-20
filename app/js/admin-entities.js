@@ -179,76 +179,40 @@ function renderTeachers(teachers) {
     return;
   }
 
-  const rows = teachers.map(t => {
-    const org = t.school_name
-      ? escapeHtml(t.school_name) + (t.division_name_org ? ` <span style="color:var(--muted);">/ ${escapeHtml(t.division_name_org)}</span>` : '')
-      : (t.division_name_org ? escapeHtml(t.division_name_org) : '<span style="color:var(--muted);">—</span>');
+  const rows = teachers.map(function (r) {
+    const org = r.school_name
+      ? escapeHtml(r.school_name) + (r.division_name_org ? ' <span style="color:var(--muted);">/ ' + escapeHtml(r.division_name_org) + '</span>' : '')
+      : (r.division_name_org ? escapeHtml(r.division_name_org) : '<span style="color:var(--muted);">—</span>');
 
-    const effectiveTier = t.tier_override || t.tier || 'free';
+    const effectiveTier = r.tier_override || r.tier || 'free';
 
     // Trial status
-    let trialHtml = '<span style="color:var(--muted); font-size:0.8rem;">—</span>';
-    if (t.expires_at) {
-      const exp = new Date(t.expires_at);
-      const now = new Date();
-      const locale = window.getLocale ? window.getLocale() : 'en';
-      const dateStr = new Intl.DateTimeFormat(locale, { year:'numeric', month:'short', day:'numeric' }).format(exp);
-      const daysLeft = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+    var trialHtml = '<span style="color:var(--muted); font-size:0.8rem;">—</span>';
+    if (r.expires_at) {
+      var exp = new Date(r.expires_at);
+      var now = new Date();
+      var locale = window.getLocale ? window.getLocale() : 'en';
+      var dateStr = new Intl.DateTimeFormat(locale, { year:'numeric', month:'short', day:'numeric' }).format(exp);
+      var daysLeft = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
       if (exp > now) {
-        trialHtml = `<span style="color:#4a7c59; font-size:0.8rem;">${t('admin.entities.teachers.expires', { date: dateStr })}</span>`;
+        trialHtml = '<span style="color:#4a7c59; font-size:0.8rem;">' + t('admin.entities.teachers.expires', { date: dateStr }) + '</span>';
         if (daysLeft <= 7) {
-          trialHtml = `<span style="color:var(--accent); font-size:0.8rem; font-weight:500;">${t('admin.entities.teachers.expires', { date: dateStr })}</span>`;
+          trialHtml = '<span style="color:var(--accent); font-size:0.8rem; font-weight:500;">' + t('admin.entities.teachers.expires', { date: dateStr }) + '</span>';
         }
       } else {
-        trialHtml = `<span style="color:var(--accent); font-size:0.8rem;">${t('admin.entities.teachers.expired', { date: dateStr })}</span>`;
+        trialHtml = '<span style="color:var(--accent); font-size:0.8rem;">' + t('admin.entities.teachers.expired', { date: dateStr }) + '</span>';
       }
     }
 
-    const deactivatedBadge = t.is_deactivated
-      ? `<span style="color:var(--accent); font-size:0.75rem; margin-left:0.4rem;">${t('admin.entities.teachers.deactivated')}</span>`
+    var deactivatedBadge = r.is_deactivated
+      ? '<span style="color:var(--accent); font-size:0.75rem; margin-left:0.4rem;">' + t('admin.entities.teachers.deactivated') + '</span>'
       : '';
 
-    const deactivateBtn = t.is_deactivated
-      ? `<button class="btn btn--ghost btn--small" onclick="toggleDeactivation('${escapeHtml(t.id)}', false, this)">${t('admin.entities.teachers.reactivate')}</button>`
-      : `<button class="btn btn--small" style="border:1px solid var(--warm-mid); background:transparent; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;" onclick="toggleDeactivation('${escapeHtml(t.id)}', true, this)">${t('admin.entities.teachers.deactivate')}</button>`;
+    var deactivateBtn = r.is_deactivated
+      ? '<button class="btn btn--ghost btn--small" onclick="toggleDeactivation(' + JSON.stringify(escapeHtml(r.id)) + ', false, this)">' + t('admin.entities.teachers.reactivate') + '</button>'
+      : '<button class="btn btn--small" style="border:1px solid var(--warm-mid); background:transparent; color:var(--muted); cursor:pointer; font-family:' + JSON.stringify('DM Sans') + ',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;" onclick="toggleDeactivation(' + JSON.stringify(escapeHtml(r.id)) + ', true, this)">' + t('admin.entities.teachers.deactivate') + '</button>';
 
-    return `
-      <tr style="${t.is_deactivated ? 'opacity:0.55;' : ''}">
-        <td style="font-size:0.85rem;">${escapeHtml(t.email || '—')}${deactivatedBadge}</td>
-        <td style="font-size:0.82rem;">${org}</td>
-        <td>
-          <select class="tier-select" onchange="setTier('teacher','${t.id}',this.value)">
-            ${tierOptions(effectiveTier)}
-          </select>
-        </td>
-        <td style="white-space:nowrap;">
-          ${trialHtml}
-          <button class="btn btn--ghost btn--small" style="margin-left:0.5rem; padding:0.2rem 0.5rem; font-size:0.65rem;"
-            onclick="extendTrial('${t.id}', 30)">${t('admin.entities.teachers.extend30d')}</button>
-        </td>
-        <td>
-          <select class="tier-select" onchange="setRole('${t.id}',this.value)">
-            ${roleOptions(t.role || 'teacher')}
-          </select>
-        </td>
-        <td>
-          <span class="label" style="text-transform:none; letter-spacing:0;">
-            ${t.country_code || '?'}
-          </span>
-        </td>
-        <td>
-          <input class="notes-input" type="text" value="${escapeHtml(t.notes || '')}"
-            placeholder="${t('admin.entities.teachers.addNotes')}"
-            onblur="setNotes('teacher','${t.id}',this.value)"
-            onkeydown="if(event.key==='Enter')this.blur()">
-        </td>
-        <td>
-          ${deactivateBtn}
-          <button class="btn btn--ghost btn--small" onclick="openReassignModal('${t.id}', '${escapeHtml(t.email || '')}', '${t.school_id || ''}', '${t.division_id || ''}')">${t('admin.entities.teachers.reassign')}</button>
-          <button class="btn btn--small" style="margin-left:0.5rem; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"
-            onclick="deleteTeacher('${t.id}', '${escapeHtml(t.email || '')}')">${t('common.delete')}</button>
-        </td>
-      </tr>`;
+    return '\n      <tr style="' + (r.is_deactivated ? 'opacity:0.55;' : '') + '">\n        <td style="font-size:0.85rem;">' + escapeHtml(r.email || '—') + deactivatedBadge + '</td>\n        <td style="font-size:0.82rem;">' + org + '</td>\n        <td>\n          <select class="tier-select" onchange="setTier(' + JSON.stringify('teacher') + ',' + JSON.stringify(r.id) + ',this.value)">\n            ' + tierOptions(effectiveTier) + '\n          </select>\n        </td>\n        <td style="white-space:nowrap;">\n          ' + trialHtml + '\n          <button class="btn btn--ghost btn--small" style="margin-left:0.5rem; padding:0.2rem 0.5rem; font-size:0.65rem;"\n            onclick="extendTrial(' + JSON.stringify(r.id) + ', 30)">' + t('admin.entities.teachers.extend30d') + '</button>\n        </td>\n        <td>\n          <select class="tier-select" onchange="setRole(' + JSON.stringify(r.id) + ',this.value)">\n            ' + roleOptions(r.role || 'teacher') + '\n          </select>\n        </td>\n        <td>\n          <span class="label" style="text-transform:none; letter-spacing:0;">\n            ' + (r.country_code || '?') + '\n          </span>\n        </td>\n        <td>\n          <input class="notes-input" type="text" value="' + escapeHtml(r.notes || '') + '"\n            placeholder="' + t('admin.entities.teachers.addNotes') + '"\n            onblur="setNotes(' + JSON.stringify('teacher') + ',' + JSON.stringify(r.id) + ',this.value)"\n            onkeydown="if(event.key==' + JSON.stringify('Enter') + ')this.blur()">\n        </td>\n        <td>\n          ' + deactivateBtn + '\n          <button class="btn btn--ghost btn--small" onclick="openReassignModal(' + JSON.stringify(r.id) + ', ' + JSON.stringify(escapeHtml(r.email || '')) + ', ' + JSON.stringify(r.school_id || '') + ', ' + JSON.stringify(r.division_id || '') + ')">' + t('admin.entities.teachers.reassign') + '</button>\n          <button class="btn btn--small" style="margin-left:0.5rem; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:' + JSON.stringify('DM Sans') + ',sans-serif; font-size:0.75rem; padding:0.3rem 0.75rem;"\n            onclick="deleteTeacher(' + JSON.stringify(r.id) + ', ' + JSON.stringify(escapeHtml(r.email || '')) + ')">' + t('common.delete') + '</button>\n        </td>\n      </tr>';
   }).join('');
 
   container.innerHTML = `
