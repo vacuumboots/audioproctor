@@ -38,10 +38,10 @@
   },
   "index": {
     "metaTitle": "AudioProctor \u2014 Audio and text accommodation for assessments",
-    "metaDescription": "A Chrome extension and teacher dashboard that delivers audio and text accommodation for assessed students on managed Chromebooks. Built for Alberta schools.",
+    "metaDescription": "A Chrome extension and teacher dashboard that delivers audio and text accommodation for assessed students on managed Chromebooks. Built for schools.",
     "hero": {
-      "eyebrow": "Built for Alberta schools",
-      "headline": "Audio and text accommodation for provincial assessments.",
+      "eyebrow": "Built for Schools",
+      "headline": "Audio and text accommodation for assessments.",
       "subtitle": "A Chrome extension and teacher dashboard that delivers audio and text support for assessed students on managed Chromebooks, without storing any student data.",
       "scheduleDemo": "Schedule a Demo",
       "getExtension": "Get the Extension",

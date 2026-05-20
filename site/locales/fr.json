@@ -38,10 +38,10 @@
   },
   "index": {
     "metaTitle": "AudioProctor \u2014 Audio d\u2019accommodement pour les \u00e9valuations",
-    "metaDescription": "Une extension Chrome et un tableau de bord enseignant qui fournissent un accommodation audio et texte pour les \u00e9l\u00e8ves \u00e9valu\u00e9s sur des Chromebooks g\u00e9r\u00e9s. Con\u00e7u pour les \u00e9coles de l\u2019Alberta.",
+    "metaDescription": "Une extension Chrome et un tableau de bord enseignant qui fournissent un accommodation audio et texte pour les \u00e9l\u00e8ves \u00e9valu\u00e9s sur des Chromebooks g\u00e9r\u00e9s. Con\u00e7u pour les \u00e9coles.",
     "hero": {
-      "eyebrow": "Con\u00e7u pour les \u00e9coles de l\u2019Alberta",
-      "headline": "Accommodement audio et texte pour les \u00e9valuations provinciales.",
+      "eyebrow": "Con\u00e7u pour les \u00e9coles",
+      "headline": "Accommodement audio et texte pour les \u00e9valuations.",
       "subtitle": "Une extension Chrome et un tableau de bord enseignant qui fournissent du soutien audio et texte aux \u00e9l\u00e8ves \u00e9valu\u00e9s sur des Chromebooks g\u00e9r\u00e9s, sans stocker aucune donn\u00e9e \u00e9tudiante.",
       "scheduleDemo": "Planifier une d\u00e9mo",
       "getExtension": "Obtenir l\u2019extension",
