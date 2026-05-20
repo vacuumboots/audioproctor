@@ -55,9 +55,9 @@
 
     var localeHtml = ''
       + '<div class="site-nav__locale">'
-      + '<button class="site-nav__locale-btn' + (isEn ? ' site-nav__locale-btn--active' : '') + '" data-locale="en">EN</button>'
+      + '<button class="site-nav__locale-btn' + (isEn ? ' site-nav__locale-btn--active' : '') + '" data-locale="en" title="Available in English and French for Alberta\u2019s francophone school communities.">EN</button>'
       + '<span class="site-nav__locale-sep">|</span>'
-      + '<button class="site-nav__locale-btn' + (isFr ? ' site-nav__locale-btn--active' : '') + '" data-locale="fr">FR</button>'
+      + '<button class="site-nav__locale-btn' + (isFr ? ' site-nav__locale-btn--active' : '') + '" data-locale="fr" title="Disponible en anglais et en fran\u00e7ais pour les communaut\u00e9s scolaires francophones de l\u2019Alberta.">FR</button>'
       + '</div>';
 
     document.getElementById('site-nav').innerHTML = ''
