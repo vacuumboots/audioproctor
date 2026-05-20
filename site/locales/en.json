@@ -205,7 +205,7 @@
     "pageTitle": "Privacy Policy",
     "sectionLabel": "Legal",
     "lastUpdated": "Last updated: March 31, 2026",
-    "legalNote": "\u26a0\ufe0f IMPORTANT: This is a machine translation of a legal document. Professional human translation review is required before production use.",
+    "legalNote": "",
     "sections": {
       "whatWeCollectTitle": "What we collect",
       "whatWeCollectBody1": "AudioProctor collects two categories of data: teacher account information and anonymous session analytics.",
@@ -232,7 +232,7 @@
     "pageTitle": "Terms of Service",
     "sectionLabel": "Legal",
     "lastUpdated": "Last updated: March 29, 2026",
-    "legalNote": "\u26a0\ufe0f IMPORTANT: This is a machine translation of a legal document. Professional human translation review is required before production use.",
+    "legalNote": "",
     "sections": {
       "acceptanceTitle": "Acceptance",
       "acceptanceBody": "By creating an account and using AudioProctor, you agree to these terms. If you are accepting on behalf of a school or division, you represent that you have authority to bind that organization.",
