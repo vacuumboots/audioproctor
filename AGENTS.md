@@ -147,6 +147,10 @@ Any new `api/*.js` file counts toward the limit. The onboarding email cron (3 fi
   - **Date/number formatting:** Always use `Intl.DateTimeFormat` / `Intl.NumberFormat` with `getLocale()` (returns `'fr-CA'` for French).
   - **French locale code:** `'fr'` for file lookups, `'fr-CA'` for `Intl` formatting.
   - **Legal text:** Privacy/Terms French translations are machine-generated. Professional human review is planned; in the meantime the scary ⚠️ banner has been removed.
+- **Copy conventions:**
+  - No em dashes in body copy. Use sentence breaks, colons, or restructuring instead. Page `<title>` tags are the only intentional exception.
+  - French educational terminology: use "mesures d'adaptation" not "accommodement" / "accommodation" — this is the proper Franco-Albertan term used in Alberta government French documentation.
+  - Front page positioning is deliberately agnostic: "Built for Schools" not "Built for Alberta schools," "assessments" not "provincial assessments." Deep pages (About, Privacy, Terms) retain Alberta-specific references where geographically relevant.
 
 ## How to run locally
 
