@@ -91,6 +91,7 @@ All notable changes to AudioProctor are documented in this file.
   `t()` function in `admin-utils.js`.
 - **Pricing polish** — intro trimmed, footnote fix, minibudget language.
 - **Payment methods broadened** — pricing page now lists purchase orders and annual invoices before credit cards for schools and divisions. Footnote reads "whatever your finance office prefers." School tier feature bullet updated to "Pay by invoice, purchase order, or credit card." French locale updated to match.
+- **Onboarding wizard copy** — step 2 expanded with Google Docs/Word copy-paste and drag-and-drop image instructions. Em dashes removed from all three step bodies (step1, step2, step3) in both English and French.
 - **Exit word delivery broadened** — step 3 copy no longer assumes in-person read-aloud.
 - **supabase-client.js module scope** — defined `const` in a classic script but referenced from `<script type="module">` on login.html.
   Module scope cannot resolve classic-script `const`/`let` bindings, causing a
