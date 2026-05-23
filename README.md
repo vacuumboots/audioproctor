@@ -86,6 +86,8 @@ STRIPE_PRICE_ID=
 │   └── js/
 │       ├── auth.js             # Shared auth helpers (requireAuth, ensureProfile, getEffectiveTier)
 │       ├── supabase-client.js  # Supabase client initialisation
+│       ├── i18n.js             # Core i18n — t(), getLocale(), setLocale(), localechanged event
+│       ├── language-toggle.js  # EN|FR toggle in top-bar nav, localStorage + server persistence
 │       ├── dashboard-state.js  # Shared constants, exit word lists, module state
 │       ├── dashboard-utils.js  # escapeHtml, formatExpiry, file helpers, notices, progress
 │       ├── dashboard-access-codes.js  # Code generation, exit word picking, hashWord
@@ -94,6 +96,7 @@ STRIPE_PRICE_ID=
 │       ├── dashboard-upload.js # Upload handler, inline image upload, duplicate, retry normalize
 │       ├── dashboard-table.js  # Uploads table rendering, insights, CSV export, rename/expiry/delete
 │       ├── dashboard-quota.js  # Quota display, tier badges, trial banners, Stripe upgrade, first login
+│       ├── onboarding.js       # First-visit tutorial wizard — 5-step walkthrough, localStorage gating
 │       ├── admin-state.js      # State vars, initAdmin, adminApi helper
 │       ├── admin-utils.js       # switchTab, toggleCreateForm, tierOptions, roleOptions
 │       ├── admin-overview.js    # loadOverview, renderAnomalies

@@ -519,7 +519,7 @@ below require a cron endpoint. Deferred until Vercel Pro upgrade or off-platform
 ---
 
 ## Project Health
-*What's working, what's not, and how to keep it working. Last reviewed May 18, 2026.*
+*What's working, what's not, and how to keep it working. Last reviewed May 22, 2026.*
 
 ### What works well
 
