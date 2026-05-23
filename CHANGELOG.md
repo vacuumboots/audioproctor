@@ -31,11 +31,33 @@ All notable changes to AudioProctor are documented in this file.
   marketing site pages. Locale-aware date (DD/MM/YYYY) and number (1 000,50) formatting.
   Architecture: JSON locale files + `t()` function, `window`-exposed for vanilla JS,
   `chrome.storage.local` for extension, `api/_lib/i18n.js` for serverless functions.
+- **Onboarding tutorial wizard** — 5-step friendly walkthrough for new teachers with
+  0 uploads. Steps cover welcome, assessment creation (text + audio), sharing access
+  codes, student extension flow, and getting started. Repeatable via "Tutorial" button
+  in the upload card header. Keyboard-navigable (arrows, Escape). Gated by
+  `localStorage['ap-onboarding-seen']` — auto-shows on first visit after division
+  gate, never re-shows unless triggered manually.
+- **Mobile-responsive CSS** — all 5 app pages now have a single `@media (max-width: 640px)`
+  breakpoint in the shared stylesheet. 165 lines of duplicated inline `<style>` blocks
+  consolidated from dashboard.html, admin.html, school-admin.html, division-admin.html,
+  and settings.html into `app/css/styles.css`. Top bar stacks vertically, cards reduce
+  padding, tables scroll horizontally, modals are scrollable, stats grids go to single
+  column, content browser filter bars stack, create forms go single-column. Type toggle
+  goes full-width on mobile.
+- **Text assessment as default** — the upload form now defaults to the text editor
+  instead of audio file upload. Toggle still works both ways. Post-upload reset also
+  returns to text mode. Fallback default in `getSelectedAssessmentType()` changed
+  from `'audio'` to `'text'`.
 
 ### Changed
 - Non-free tiers (premium, school, division) now get 128kbps mono MP3 audio encoding instead of 32kbps.
   Free tier remains at 32kbps. Server-side ffmpeg transcoding in trigger-normalize.js branches on
   get_effective_tier().
+- **Text assessment now the default type** — swap from audio to text (see Added above).
+- **CSS consolidated** — all inline `<style>` blocks moved from 5 HTML files into
+  `app/css/styles.css`. Single source of truth. `admin-tabs` was defined in both
+  `styles.css` and `admin.html` inline — now defined once. `notice--success` now
+  uses green styling (`#f0f8f0` / `#4a7c59`) instead of `var(--warm-mid)`.
 
 ### Fixed
 - **Root homepage i18n wiring** — the marketing homepage (`index.html`) had
@@ -49,9 +71,28 @@ All notable changes to AudioProctor are documented in this file.
   and `loadQuota()` immediately without waiting for the locale to load, so table headers,
   trial banner, quota text, and CTA rendered in English regardless of selected language.
   Fixed by wrapping init in `window.i18nReady.then()` and adding a `localechanged`
-  listener that re-renders both quota and table. Also fixed `fr.json` tier badge:
-  "Teacher Premium" → "Enseignant Premium".
-  `const` in a classic script but referenced from `<script type="module">` on login.html.
+  listener that re-renders both quota and table.
+- **French pricing page had "Teacher Premium" in English** — 3 locations in
+  `site/locales/fr.json` (pricing tier name, footnote, school features list) changed
+  to "Enseignant Premium". Admin tier dropdown also changed from bare "Premium" to
+  "Enseignant Premium" for consistency with the rest of the French locale.
+- **Removed scary machine-translation banners from legal pages** — privacy and terms
+  pages no longer show the ⚠️ warning about machine translation quality.
+- **French copy: accommodement → mesures d'adaptation** — correct Franco-Albertan
+  educational terminology throughout all French locales.
+- **Em dashes removed from body copy** — steps and feature descriptions no longer
+  use em dashes, per copy style conventions.
+- **Front page de-Alberta-fied** — broader, agnostic positioning. Reflects trial-mode
+  reality (no paid deployments yet).
+- **Admin `localechange` event** — admin panels now re-render on language switch.
+- **`.map()` parameter shadowing** — callback parameter `t` renamed to `r` in 4 files
+  to avoid shadowing the global `t()` translation function.
+- **`tierOptions` variable shadowing** — map callback parameter `t` hid the global
+  `t()` function in `admin-utils.js`.
+- **Pricing polish** — intro trimmed, footnote fix, minibudget language.
+- **Payment methods broadened** — pricing page now lists purchase orders and annual invoices before credit cards for schools and divisions. Footnote reads "whatever your finance office prefers." School tier feature bullet updated to "Pay by invoice, purchase order, or credit card." French locale updated to match.
+- **Exit word delivery broadened** — step 3 copy no longer assumes in-person read-aloud.
+- **supabase-client.js module scope** — defined `const` in a classic script but referenced from `<script type="module">` on login.html.
   Module scope cannot resolve classic-script `const`/`let` bindings, causing a
   ReferenceError that killed the entire inline module: no auth handler registered, no
   i18n translations applied. Fixed by exposing `window.supabaseClient` in

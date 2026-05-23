@@ -53,7 +53,7 @@ function handleFileSelect(input) {
 // ─── Assessment Type Toggle ──────────────────────────────────────
 
 function getSelectedAssessmentType() {
-  return document.getElementById('assessment-type')?.value || 'audio';
+  return document.getElementById('assessment-type')?.value || 'text';
 }
 
 function selectAssessmentType(type) {

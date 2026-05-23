@@ -71,7 +71,7 @@
       "label": "Tarifs",
       "headline": "Des tarifs adapt\u00e9s au fonctionnement r\u00e9el des \u00e9coles.",
       "intro": "Il existe un forfait adapt\u00e9 \u00e0 votre fa\u00e7on de prendre des d\u00e9cisions. Que vous soyez un enseignant seul, une \u00e9cole avec un budget discr\u00e9tionnaire ou une division qui d\u00e9ploie sur tous les Chromebooks.",
-      "footnote": "Tous les prix en CAD. La tarification des divisions se fait par facture annuelle. Les forfaits Teacher Premium et \u00c9cole sont en libre-service par carte de cr\u00e9dit. Contactez-nous pour les bons de commande.",
+      "footnote": "Tous les prix en CAD. Les écoles et divisions peuvent payer par bon de commande, facture annuelle ou carte de crédit — selon la préférence de votre service des finances. Le forfait Enseignant Premium est en libre-service par carte de crédit.",
       "free": {
         "name": "Gratuit \u2014 Enseignant individuel",
         "price": "0\u00a0$",
@@ -87,7 +87,7 @@
         "cta": "Connectez-vous pour commencer"
       },
       "premium": {
-        "name": "Teacher Premium",
+        "name": "Enseignant Premium",
         "priceNote": "Essai gratuit de 1\u00a0mois inclus",
         "features": [
           "1 compte enseignant",
@@ -104,11 +104,11 @@
         "name": "\u00c9cole",
         "priceNote": "Contactez-nous pour les tarifs",
         "features": [
-          "Toutes les fonctionnalit\u00e9s Teacher Premium",
+          "Toutes les fonctionnalit\u00e9s Enseignant Premium",
           "Jusqu\u2019\u00e0 50 comptes enseignants",
           "R\u00f4le d\u2019administrateur scolaire : inviter et retirer des enseignants",
           "Rapport d\u2019utilisation \u00e0 l\u2019\u00e9chelle de l\u2019\u00e9cole",
-          "Facture annuelle unique ou carte de cr\u00e9dit"
+          "Payer par facture, bon de commande ou carte de crédit"
         ],
         "tagline": "Pour les directeurs d\u2019\u00e9cole qui utilisent un budget discr\u00e9tionnaire.",
         "cta": "Demander un devis"

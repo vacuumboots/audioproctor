@@ -393,6 +393,11 @@ async function submitDivisionSetup() {
     .eq('id', session.user.id);
 
   document.getElementById('first-login-modal').classList.add('hidden');
+
+  // Show onboarding wizard for new teachers with no uploads
+  if (typeof allUploads !== 'undefined' && allUploads.length === 0 && typeof startOnboardingIfNeeded === 'function') {
+    startOnboardingIfNeeded();
+  }
 }
 
 // ─── In-App Request Flow ─────────────────────────────────────────

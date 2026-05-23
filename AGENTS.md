@@ -49,6 +49,11 @@ No build step. No bundler. No framework. Files are served as-is.
 | `app/js/division-admin-content.js` | Division admin content browser init |
 | `app/js/auth.js` | Supabase auth helpers, `ensureProfile()`, `getEffectiveTier()` |
 | `app/js/supabase-client.js` | Single Supabase client init for the browser |
+| `app/js/player.js` | Web player page (player.html) — inline script with fallback audio element |
+| `app/js/settings.js` | Settings page (settings.html) — profile editing, subscription display, account deletion |
+| `app/js/school-admin.js` | School admin dashboard (school-admin.html) — org-scoped views and teacher management |
+| `app/js/division-admin.js` | Division admin dashboard (division-admin.html) — division-scoped views and school drill-down |
+| `app/js/onboarding.js` | First-visit tutorial wizard — 5-step walkthrough, localStorage gating, repeatable via help button |
 | `extension/` | Chrome extension Manifest V3: popup + player + options |
 | `extension/popup.js` | Validates access code, calls `/api/session`, stores in `chrome.storage.session` |
 | `extension/player.js` | Fullscreen audio player + text assessment with TTS read-aloud (voice selection, speed, paragraph navigation, inline images) |
@@ -138,6 +143,7 @@ Any new `api/*.js` file counts toward the limit. The onboarding email cron (3 fi
 - **Stripe billing:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` (Teacher Premium). Additional tier price IDs are configured in the `division_pricing` DB table. All tiers use the single `stripe-checkout.js` endpoint. Env vars in Vercel dashboard + `.env.local` for local dev.
 - **Exit word hashing:** SHA-256 of lowercased+trimmed input. Used identically in `app/js/dashboard-access-codes.js` (upload) and `extension/player.js` (verification).
 - **Auth:** Google OAuth via Supabase Auth. Redirects to `https://app.audioproctor.com/dashboard.html`. `ensureProfile()` calls `/api/check-access` to verify email against `ALLOWED_EMAIL_PATTERN` (when set), then creates the `profiles` row on first login with `tier='premium'` and `expires_at` 30 days out. Existing users are grandfathered through the email gate.
+- **First-login division gate:** All new teachers must provide their school division name before reaching the dashboard. This gate is intentionally mandatory — it is the primary mechanism for knowing who is using the product across Alberta. The autocomplete dropdown queries the `divisions` table (populated from Alberta Education data via migration 026, 91 divisions). If no match is found the teacher can free-type their division name and an admin links it later. Do not remove or weaken this gate; it is not "metadata collection" — it is teacher identity registration. The onboarding tutorial wizard (`app/js/onboarding.js`) is designed to follow this gate, not precede it.
 - **Access codes:** Standard format (`ABC-123`) or custom (3–20 alphanumeric, teacher-defined). Short format was removed.
 - **i18n / bilingual support:** The app supports English and French Canadian (`fr-CA`). Locale files live in `app/locales/`, `extension/_locales/`, `site/locales/`, and `api/locales/`.
   - **Locale files:** `app/locales/{en,fr}.json` (web app), `extension/_locales/{en,fr}.json` (extension), `site/locales/{en,fr}.json` (marketing site), `api/locales/api-messages.json` (serverless functions).

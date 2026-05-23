@@ -403,8 +403,8 @@ async function handleUpload() {
     const quality = (currentTier !== 'free') ? '128kbps' : '32kbps';
     document.getElementById('file-hint').textContent = t('dashboard.audioHint', { bitrate: quality });
     document.getElementById('text-hint').textContent = t('dashboard.textHint');
-    document.getElementById('assessment-type').value = 'audio';
-    selectAssessmentType('audio');
+    document.getElementById('assessment-type').value = 'text';
+    selectAssessmentType('text');
     if (document.getElementById('exit-word-mode'))  document.getElementById('exit-word-mode').value  = 'random-short';
     if (document.getElementById('code-format'))     document.getElementById('code-format').value     = 'standard';
     if (document.getElementById('custom-exit-word')) document.getElementById('custom-exit-word').value = '';

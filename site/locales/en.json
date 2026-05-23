@@ -71,7 +71,7 @@
       "label": "Pricing",
       "headline": "Pricing that fits how schools actually work.",
       "intro": "There\u2019s a tier for how you actually make decisions. Whether you\u2019re a single teacher, a school with a discretionary budget, or a division deploying across every Chromebook.",
-      "footnote": "All prices in CAD. Division pricing is by annual invoice. Teacher Premium and School tiers are self-serve via credit card. Contact us for purchase orders.",
+      "footnote": "All prices in CAD. Schools and divisions can pay by purchase order, annual invoice, or credit card — whatever your finance office prefers. Teacher Premium is self-serve via credit card.",
       "free": {
         "name": "Free \u2014 Individual Teacher",
         "price": "$0",
@@ -108,7 +108,7 @@
           "Up to 50 teacher accounts",
           "School admin role: invite and remove teachers",
           "School-wide usage report",
-          "Single annual invoice or credit card"
+          "Pay by invoice, purchase order, or credit card"
         ],
         "tagline": "For principals spending from a discretionary school budget.",
         "cta": "Request a quote"
