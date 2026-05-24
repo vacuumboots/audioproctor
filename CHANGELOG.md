@@ -60,6 +60,9 @@ All notable changes to AudioProctor are documented in this file.
   uses green styling (`#f0f8f0` / `#4a7c59`) instead of `var(--warm-mid)`.
 
 ### Fixed
+- **Remaining em dashes purged from locale files** — 6 em dashes in `app/locales/en.json` and `app/locales/fr.json` replaced with periods or removed (4 keys: `noneOption`, `enrolmentBands.none`, `anySchool`, `deactivateHint`).
+- **Missing EN locale key added** — `auth.inviteNetworkError` existed only in French; English string added.
+- **Docs sweep** — README file tree now includes `i18n.js`, `language-toggle.js`, `onboarding.js`. ROADMAP review date bumped to May 22. Stale `docs/release-checklist.md` and `docs/extension-release-checklist.md` deleted.
 - **Root homepage i18n wiring** — the marketing homepage (`index.html`) had
   hardcoded English text with no `data-i18n` attributes and no inline translation
   script, so the FR language toggle in the nav changed nothing visible. Added
