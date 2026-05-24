@@ -23,7 +23,7 @@ Check off items as you complete them.
 - [ ] **Chrome Web Store store assets** — screenshots, promo tiles, and demo video.
   See `store-assets/README.md` for specs. Upload manually via Developer Dashboard.
 - [ ] **Purge `store-assets/README.md` placeholders** when actual assets are added.
-- [ ] **Run migration 027** (`add_lang_to_profiles`) in Supabase SQL Editor — adds `lang` column to `profiles` table with default `'en'`
+- [x] **Run migration 027** (`add_lang_to_profiles`) in Supabase SQL Editor — adds `lang` column to `profiles` table with default `'en'`
 
 ## Completed
 
