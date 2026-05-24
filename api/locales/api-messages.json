@@ -91,6 +91,10 @@
     "en": "Access denied. You do not have permission to perform this action.",
     "fr": "Accès refusé. Vous n'avez pas la permission d'effectuer cette action."
   },
+  "missing_param": {
+    "en": "Missing required parameter: {param}",
+    "fr": "Paramètre requis manquant : {param}"
+  },
   "missingParam": {
     "en": "Missing parameter: {param}",
     "fr": "Paramètre manquant : {param}"
@@ -154,6 +158,10 @@
   "couldNotUpdateProfile": {
     "en": "Could not update teacher profile",
     "fr": "Impossible de mettre à jour le profil de l'enseignant"
+  },
+  "missing_auth": {
+    "en": "Missing authorization header",
+    "fr": "En-tête d'autorisation manquant"
   },
   "missingAuth": {
     "en": "Missing authorization header",
