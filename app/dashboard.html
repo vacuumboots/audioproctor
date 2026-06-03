@@ -408,6 +408,14 @@
     window.i18nReady.then(async function () {
       const user = await requireAuth();
       document.getElementById('user-email').textContent = user.email;
+
+      // Initialize text editor immediately — page defaults to text mode,
+      // so toggleAssessmentType() is never triggered on page load.
+      if (typeof initTextEditor === 'function') {
+        initTextEditor();
+        document.getElementById('text-content-editor')._initialized = true;
+      }
+
       await Promise.all([loadUploads(), loadQuota()]);
       await checkFirstLogin();
       // If first-login modal was not shown (division already set),
