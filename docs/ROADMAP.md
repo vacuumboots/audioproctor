@@ -519,56 +519,57 @@ below require a cron endpoint. Deferred until Vercel Pro upgrade or off-platform
 ---
 
 ## Project Health
-*What's working, what's not, and how to keep it working. Last reviewed May 22, 2026.*
+*Honest assessment. Last reviewed June 3, 2026.*
 
-### What works well
+### Where it's actually at
 
-- **Architecture is AI-augmentation friendly.** No build step, no framework, no bundler.
-  Every file is readable in isolation. An AI agent can pick up any file, understand it,
-  and make changes without running a build pipeline. API endpoints are one file each.
-  Extension is separated from the app. Migrations are numbered and self-contained.
-- **Privacy model is structural, not policy-based.** No student data column exists in the
-  database. The system can't leak what it doesn't store. This is the difference between
-  "trust us" and "there's nothing to trust us with."
-- **Role model is well-scoped.** Teacher, school admin, division admin, platform admin.
-  Each has their own dashboard, their own API scope, their own permissions. The
-  `get_effective_tier()` cascade resolves inherited tiers server-side so the UI never
-  has to reason about org hierarchy.
-- **Extension supply-chain attestation is novel.** The public mirror repo, the subtree
-  SHA matching, the artifact hashing, and the Chrome Web Store version mapping give
-  AudioProctor a cryptographically verifiable chain of custody. This is unusual for any
-  product and effectively unheard of in edtech.
-- **Self-serve distribution works.** Open Google login with auto 30-day premium trial,
-  teacher request flow with Resend email notification, admin approval with invitation
-  email. A teacher can go from "heard about it" to "running assessments" without direct
-  platform admin intervention.
-- **Design system is consistent.** Editorial print aesthetic applied uniformly across the
-  marketing site, teacher dashboard, admin dashboards, and extension. The design
-  principles (`docs/design-principles.md`) are documented and followed.
+The project is in an awkward gap: functional enough that real teachers are using it,
+but missing the things that make it a business. Pre-revenue with a product in teachers'
+hands. The Stripe integration for schools and divisions isn't done — the pricing page
+literally says "coming soon" for credit card payments. Teachers are on free trials.
+Nobody can pay even if they wanted to.
 
-### Process notes (from April 2026 review)
+### Technical weaknesses
 
-1. **Documentation drift is the biggest process risk.** See Stage 2 item: documentation
-   review as release gate. The README, roadmap, and AGENTS.md all drifted from the live
-   codebase. One minute of review per release prevents it.
-2. **Automated tests now exist but coverage gap remains.** 93 vitest tests across 5 test
-   files (session, event, admin, exit-word, player) cover the security-critical paths.
-   The session API, exit word hashing, and access code validation are tested. Extension
-   player TTS and Chrome-specific APIs remain uncovered — these need real Chrome (Playwright
-   or manual smoke).
-3. **The `.hermes/plans/` pattern works.** Implementation plans with exact file paths,
-   code snippets, verification steps, and commit hashes. Useful for AI agents picking up
-   work later, for auditing what was done, and for not re-solving solved problems.
-4. **Constraint-setting is the key AI collaboration skill.** "Light cleanup, don't touch
-   .hermes/plans, ask before moving files" gives the agent enough structure to work
-   independently without guessing. Fast corrections with evidence ("actually, the
-   self-serve signup works") keep the agent aligned.
-5. **The `AGENTS.md` file should reference files that exist.** Resolved in v1.3.1:
-   `CLAUDE.md` deleted, `AGENTS.md` no longer references it. Keeping this principle
-   active — stale file references drift back quickly.
-6. **Docs subdirectories are partially in place.** Three subdirectories
-   (security/, test-runs/, plans/) group related docs. 9 files remain at root —
-   consider operations/ and pilot/ groupings to keep navigation clean as docs grow.
+- **~12,000 lines of untyped vanilla JavaScript.** No linter, no formatter, no CI
+  running the 93 vitest tests that exist. Those tests only run when someone remembers
+  to run them.
+- **The i18n system took down login and admin for multiple days in May** because of an
+  ES module race condition that required a clever-but-fragile bridge placeholder pattern
+  to fix. It works now but the fix is delicate — any page that forgets the bridge
+  pattern will break silently.
+- **The extension player has zero automated tests.** The thing students actually use.
+  If TTS breaks, nobody knows until a teacher emails.
+- **The Vercel Hobby plan's 12-function limit is a real constraint.** Already deleted
+  working features (onboarding emails) to stay under it. Every new endpoint requires
+  awkward merging into existing files. The API surface is getting weirder.
+- **No observability.** No error tracking, no uptime monitoring, no alerting. The
+  extension supply chain — public mirror repo, subtree SHA attestation, manual CWS
+  publishing — is clever engineering but fragile. The chrome-webstore-upload-cli v4
+  breakage already bit once.
+- **0 of the 93 tests cover the extension.** Session API, exit word hashing, access
+  codes are tested. The actual student-facing player (TTS, image rendering, exit word
+  verification, lockdown) is not.
+
+### What's actually good
+
+- The architecture is genuinely AI-friendly — no build step, readable files, self-contained
+  endpoints. An agent can land and work immediately.
+- Privacy is structural, not trust-based. No student data column exists. The system can't
+  leak what it doesn't store.
+- The role model (teacher / school admin / division admin / platform admin) with
+  `get_effective_tier()` cascade works well. Each role has its own scope and dashboard.
+- Documentation discipline is unusually strong — 11-check pre-push gate, detailed AGENTS.md,
+  skills that capture every learned pitfall. The `.hermes/plans/` directory with
+  implementation plans and commit hashes means past decisions are recoverable.
+- The design system is consistent. Editorial print aesthetic applied uniformly across
+  marketing, dashboard, admin, and extension.
+
+### Biggest risk
+
+Teachers are trying a free product with no path to paying. If something breaks silently
+(and with no monitoring, it will), teachers stop using it without telling you why.
+Documentation and process discipline don't catch runtime errors.
 
 ---
 
