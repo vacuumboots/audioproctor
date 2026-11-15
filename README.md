@@ -2,7 +2,7 @@
 
 Audio and text accommodation for assessments on managed Chromebooks.
 
-Teachers create an assessment — upload an audio file or paste text with inline images — and get a short access code. The student enters the code into the Chrome extension on their Chromebook. For audio, a locked fullscreen player opens. For text, a fullscreen reader with built-in read-aloud opens. When the assessment is done, the teacher provides an exit word to close the session.
+Teachers create an assessment by uploading an audio file or pasting text with inline images, then get a short access code. The student enters the code into the Chrome extension on their Chromebook. For audio, a locked fullscreen player opens. For text, a fullscreen reader with built-in read-aloud opens. When the assessment is done, the teacher provides an exit word to close the session.
 
 No student accounts. No student data. No IT ticket per assessment.
 
@@ -86,7 +86,7 @@ STRIPE_PRICE_ID=
 │   └── js/
 │       ├── auth.js             # Shared auth helpers (requireAuth, ensureProfile, getEffectiveTier)
 │       ├── supabase-client.js  # Supabase client initialisation
-│       ├── i18n.js             # Core i18n — t(), getLocale(), setLocale(), localechanged event
+│       ├── i18n.js             # Core i18n: t(), getLocale(), setLocale(), localechanged event
 │       ├── language-toggle.js  # EN|FR toggle in top-bar nav, localStorage + server persistence
 │       ├── dashboard-state.js  # Shared constants, exit word lists, module state
 │       ├── dashboard-utils.js  # escapeHtml, formatExpiry, file helpers, notices, progress
@@ -96,7 +96,7 @@ STRIPE_PRICE_ID=
 │       ├── dashboard-upload.js # Upload handler, inline image upload, duplicate, retry normalize
 │       ├── dashboard-table.js  # Uploads table rendering, insights, CSV export, rename/expiry/delete
 │       ├── dashboard-quota.js  # Quota display, tier badges, trial banners, Stripe upgrade, first login
-│       ├── onboarding.js       # First-visit tutorial wizard — 5-step walkthrough, localStorage gating
+│       ├── onboarding.js       # First-visit tutorial wizard: 5-step walkthrough, localStorage gating
 │       ├── admin-state.js      # State vars, initAdmin, adminApi helper
 │       ├── admin-utils.js       # switchTab, toggleCreateForm, tierOptions, roleOptions
 │       ├── admin-overview.js    # loadOverview, renderAnomalies
@@ -123,8 +123,8 @@ STRIPE_PRICE_ID=
 │   ├── accept-invite.js        # Validate + accept invitation tokens
 │   ├── stripe-checkout.js      # Unified Stripe Checkout Session (Teacher Premium, School, Division)
 │   ├── stripe-webhook.js       # Handle Stripe subscription events
-│   ├── trigger-normalize.js    # Audio normalization via ffmpeg — free: 32kbps, non-free: 128kbps mono MP3
-│   ├── check-access.js         # Email allowlist gate — blocks signups not matching ALLOWED_EMAIL_PATTERN
+│   ├── trigger-normalize.js    # Audio normalization via ffmpeg (free: 32kbps, non-free: 128kbps mono MP3)
+│   ├── check-access.js         # Email allowlist gate: blocks signups not matching ALLOWED_EMAIL_PATTERN
 │   ├── contact.js              # Contact/demo request form handler
 │   └── _lib/
 │       ├── email.js            # Shared Resend helper
@@ -134,7 +134,7 @@ STRIPE_PRICE_ID=
 │   ├── manifest.json
 │   ├── popup.html/js           # Code entry UI
 │   ├── player.html/js          # Fullscreen locked player (audio + text reader)
-│   ├── background.js           # Service worker — window lifecycle + fullscreen enforcement
+│   ├── background.js           # Service worker: window lifecycle + fullscreen enforcement
 │   ├── offscreen.html/js       # Audio playback (Chrome offscreen document)
 │   └── icons/
 │
@@ -169,11 +169,11 @@ STRIPE_PRICE_ID=
 ├── docs/                       # Project documentation
 │   ├── ROADMAP.md              # Staged product roadmap
 │   ├── OPERATIONS.md           # Release, attestation, rollback, key rotation runbook
+│   ├── agent-notes/            # Implementation plans written while building features
 │   ├── security/               # Security incident reports
 │   └── ...                     # See docs/ for full listing
-│
-├── archive/                    # Historical documents
-└── .hermes/plans/              # Implementation plans (active working documents)
+
+└── archive/                    # Historical documents
 ```
 
 ---
@@ -181,7 +181,7 @@ STRIPE_PRICE_ID=
 ## Key flows
 
 ### Teacher upload
-`dashboard-upload.js handleUpload()` — validates quota and storage cap client-side (enforced server-side via RLS), uploads audio files to Supabase Storage staging path (or wraps text in `<p>` tags with inline images for text assessments), inserts row to `uploads` with `processing_status`. For audio, triggers `/api/trigger-normalize` which transcodes to 128kbps mono MP3 (non-free tiers) or 32kbps (free) via ffmpeg and moves to final path. For text, images are uploaded to `assessment-images` bucket and replaced with `data-apimg-idx` placeholders in the stored HTML.
+`dashboard-upload.js handleUpload()` validates quota and storage cap client-side (enforced server-side via RLS), uploads audio files to Supabase Storage staging path (or wraps text in `<p>` tags with inline images for text assessments), inserts row to `uploads` with `processing_status`. For audio, triggers `/api/trigger-normalize` which transcodes to 128kbps mono MP3 (non-free tiers) or 32kbps (free) via ffmpeg and moves to final path. For text, images are uploaded to `assessment-images` bucket and replaced with `data-apimg-idx` placeholders in the stored HTML.
 
 ### Student access (extension)
 `popup.js` → `GET /api/session?code=ABC-123` → stores typed session data in `chrome.storage.session` → opens `player.html` in a fullscreen popup window → `player.js` branches on `assessmentType`:
@@ -195,7 +195,7 @@ Teachers can request upgraded access from two paths: the `/request-access` form 
 Teacher Premium: `/api/stripe-checkout.js` creates a Checkout Session for any tier (teacher, school, or division) by inspecting the caller's profile. School/Division tiers use enrolment band pricing from `division_pricing` table. `/api/stripe-webhook.js` handles subscription lifecycle events (created, updated, deleted) and updates tier accordingly.
 
 ### Exit word verification
-Both the dashboard (`dashboard-access-codes.js`) and extension (`player.js`) use identical `hashWord()` — SHA-256 via Web Crypto API, input lowercased and trimmed before hashing.
+Both the dashboard (`dashboard-access-codes.js`) and extension (`player.js`) use identical `hashWord()`: SHA-256 via Web Crypto API, input lowercased and trimmed before hashing.
 
 ---
 
@@ -208,7 +208,7 @@ Both the dashboard (`dashboard-access-codes.js`) and extension (`player.js`) use
 | School | All teachers at a school | School purchases ($200 CAD/yr) |
 | Division | All teachers in a division | Division contract (from $800 CAD/yr) |
 
-Tiers cascade: `tier_override → division.tier → school.tier → profiles.tier → free`. Resolved server-side by `get_effective_tier(user_id)` Postgres function — called via RPC so the cascade is always current.
+Tiers cascade: `tier_override → division.tier → school.tier → profiles.tier → free`. Resolved server-side by `get_effective_tier(user_id)` Postgres function, called via RPC so the cascade is always current.
 
 See [`docs/account-lifecycle-states.md`](docs/account-lifecycle-states.md) for the complete state matrix: what happens when a teacher is detached, deactivated, lapsed, or deleted.
 
@@ -220,7 +220,7 @@ AudioProctor is available on the Chrome Web Store:
 - Listing: `https://chromewebstore.google.com/detail/audioproctor/fcphbkffopenkinliokmlopfnglbcfdj`
 - Extension ID: `fcphbkffopenkinliokmlopfnglbcfdj`
 
-The extension is available on the Chrome Web Store. Teachers install it manually and share the link with students — no Google Admin Console required. Force-install via Google Admin is available as a deployment option for schools and divisions that want automatic rollout to every managed Chromebook, but it is not required to get started.
+The extension is available on the Chrome Web Store. Teachers install it manually and share the link with students. No Google Admin Console required. Force-install via Google Admin is available as a deployment option for schools and divisions that want automatic rollout to every managed Chromebook, but it is not required to get started.
 
 **Planned:** The extension will be locked to ChromeOS only. Windows, Mac, and Linux users will be blocked with a message directing them to a Chromebook. This closes the gap created by the public Chrome Web Store listing: any student on any OS can install it today, and the lock must be enforced in-extension. Managed Chromebooks get additional security via Google Admin, but the OS lock applies universally. See `docs/ROADMAP.md` Parking Lot for implementation details.
 
@@ -234,7 +234,7 @@ For pilot prerequisites, validation, rollback, and rollout checks, see [`docs/it
 
 ## Design system
 
-Editorial print aesthetic — mid-century typeset, The Economist tone.
+Editorial print aesthetic: mid-century typeset, The Economist tone.
 
 | Token | Value |
 |-------|-------|
@@ -244,7 +244,7 @@ Editorial print aesthetic — mid-century typeset, The Economist tone.
 | `--warm-mid` | `#e8e0d0` |
 | `--muted` | `#6b6560` |
 
-Fonts: **Playfair Display** (headlines) · **DM Sans 300/500** (body/labels). No border-radius, no box-shadow, no icons except `—` list bullets. Borders are `1px solid var(--ink)` — never soft gray.
+Fonts: **Playfair Display** (headlines) · **DM Sans 300/500** (body/labels). No border-radius, no box-shadow, no icons except `—` list bullets. Borders are `1px solid var(--ink)`, never soft gray.
 
 ---
 

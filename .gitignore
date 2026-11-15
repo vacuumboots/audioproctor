@@ -17,3 +17,6 @@ supabase/.temp/
 check_db*.js
 supabase/migrations/run-*.mjs
 supabase/migrations/run-*.js
+data/
+# Local agent working state. Implementation plans live in docs/agent-notes/
+.hermes/

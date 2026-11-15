@@ -50,6 +50,12 @@ All notable changes to AudioProctor are documented in this file.
   from `'audio'` to `'text'`.
 
 ### Changed
+- **Repo prepared for public release.** MIT licence added. Implementation plans moved from
+  `.hermes/plans/` to `docs/agent-notes/` with an index explaining how they were written,
+  and `.hermes/` added to `.gitignore` so local agent state stays local. Division names
+  removed from the pricing table examples. README em dashes removed. The Project Health
+  section re-checked against the running system: CI now runs the 93 tests on every push,
+  which the June review said it did not.
 - Non-free tiers (premium, school, division) now get 128kbps mono MP3 audio encoding instead of 32kbps.
   Free tier remains at 32kbps. Server-side ffmpeg transcoding in trigger-normalize.js branches on
   get_effective_tier().

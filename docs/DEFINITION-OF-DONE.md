@@ -49,7 +49,7 @@ Do these last, after everything is deployed and verified:
 - [ ] **README.md**: If file structure, features, or tier model changed, update the README. _(manual — if applicable)_
 - [ ] **AGENTS.md**: If new API endpoints, migrations, or pitfalls discovered, update AGENTS.md. _(manual — if applicable)_
 - [ ] **USERSTEPS.md**: If the release requires operator action (Supabase SQL Editor, Stripe dashboard, Google Admin), add a checklist item. _(manual — if applicable)_
-- [ ] **`.hermes/plans/`**: Archive or delete the plan file for this feature. _(manual)_
+- [ ] **`docs/agent-notes/`**: Archive or delete the plan file for this feature. _(manual)_
 
 ---
 

@@ -519,7 +519,7 @@ below require a cron endpoint. Deferred until Vercel Pro upgrade or off-platform
 ---
 
 ## Project Health
-*Honest assessment. Last reviewed June 3, 2026.*
+*Honest assessment. Last reviewed November 14, 2026.*
 
 ### Where it's actually at
 
@@ -531,9 +531,10 @@ Nobody can pay even if they wanted to.
 
 ### Technical weaknesses
 
-- **~12,000 lines of untyped vanilla JavaScript.** No linter, no formatter, no CI
-  running the 93 vitest tests that exist. Those tests only run when someone remembers
-  to run them.
+- **~12,000 lines of untyped vanilla JavaScript.** No linter, no formatter. The 93
+  vitest tests now run in CI on every push and PR to `main`/`dev`: `.github/workflows/ci.yml`
+  also syntax-checks every JS file and runs the 11-check `scripts/pre-push` doc gate.
+  Nothing enforces coverage, and the extension contributes almost none of it.
 - **The i18n system took down login and admin for multiple days in May** because of an
   ES module race condition that required a clever-but-fragile bridge placeholder pattern
   to fix. It works now but the fix is delicate — any page that forgets the bridge
@@ -560,7 +561,7 @@ Nobody can pay even if they wanted to.
 - The role model (teacher / school admin / division admin / platform admin) with
   `get_effective_tier()` cascade works well. Each role has its own scope and dashboard.
 - Documentation discipline is unusually strong — 11-check pre-push gate, detailed AGENTS.md,
-  skills that capture every learned pitfall. The `.hermes/plans/` directory with
+  skills that capture every learned pitfall. The `docs/agent-notes/` directory with
   implementation plans and commit hashes means past decisions are recoverable.
 - The design system is consistent. Editorial print aesthetic applied uniformly across
   marketing, dashboard, admin, and extension.
@@ -639,9 +640,9 @@ Documentation and process discipline don't catch runtime errors.
 | Division Size | Enrolled Students | Annual Price (CAD) | Example |
 |---|---|---|---|
 | Small | Under 2,000 | $800 | Most rural Alberta divisions |
-| Medium | 2,000–8,000 | $1,500 | Foothills SD, Rocky View SD |
-| Large | 8,000–25,000 | $3,000 | Red Deer Public, Lethbridge SD |
-| Metro | 25,000+ | $6,000 | Edmonton Public, Calgary Board |
+| Medium | 2,000–8,000 | $1,500 | Mid-size rural and small-city divisions |
+| Large | 8,000–25,000 | $3,000 | Larger urban divisions |
+| Metro | 25,000+ | $6,000 | Major metro boards |
 
 *Enrolment figures from Alberta Education's annual school authority report.*
 
