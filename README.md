@@ -19,6 +19,11 @@ extension is published; the Chrome Web Store listing is in the deployment sectio
 
 ![Why AudioProctor: no student data collected, simple setup, built for how assessments actually work](docs/images/home-why.png)
 
+![The locked student player: playback controls, playback speed, and the exit word box that closes the assessment](docs/images/player-store-listing.png)
+
+The player image is the listing asset from the Chrome Web Store, where it sits
+next to the install button. The screenshots above it are the live site.
+
 ---
 
 ## Architecture
