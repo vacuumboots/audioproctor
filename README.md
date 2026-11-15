@@ -6,6 +6,19 @@ Teachers create an assessment by uploading an audio file or pasting text with in
 
 No student accounts. No student data. No IT ticket per assessment.
 
+Live at [audioproctor.com](https://audioproctor.com). Teachers use it; the Chrome
+extension is published; the Chrome Web Store listing is in the deployment section below.
+
+---
+
+## What it looks like
+
+![AudioProctor homepage: audio and text accommodation for assessments](docs/images/home-hero.png)
+
+![The three-step flow: teacher uploads, student enters a code, teacher unlocks with an exit word](docs/images/home-how-it-works.png)
+
+![Why AudioProctor: no student data collected, simple setup, built for how assessments actually work](docs/images/home-why.png)
+
 ---
 
 ## Architecture
